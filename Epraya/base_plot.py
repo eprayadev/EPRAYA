@@ -41,7 +41,7 @@ from joblib import Parallel, delayed
 from threadpoolctl import threadpool_limits
 import re
 from itertools import product as iterproduct
-
+from importlib import resources
 def Sload(dat,rows,cols): #Loads counts and field data
     dt=np.loadtxt(dat,usecols=(cols))
     sh=np.shape(dt)
