@@ -41,7 +41,7 @@ from joblib import Parallel, delayed
 from threadpoolctl import threadpool_limits
 import re
 from itertools import product as iterproduct
-
+from .base_powd import *
 @jaxdatclass
 class JHval:
     S: Union[float,int]=1/2   # Spin
