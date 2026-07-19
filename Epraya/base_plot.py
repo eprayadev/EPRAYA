@@ -883,7 +883,7 @@ class BaselineTuner: #For data tuning
         lt=ltval
         polval=self.polvar.get()
         if polval>=lt:
-            polval=t-1
+            polval=lt-1
             if polval<0:
                 polval=0 
             self.root.after(10,lambda: self.polvar.set(polval))
