@@ -40,6 +40,7 @@ import concurrent.futures
 from joblib import Parallel, delayed
 from threadpoolctl import threadpool_limits
 import re
+import threading
 from itertools import product as iterproduct
 from .base_cris import *
 from .base_ham import *
@@ -69,7 +70,7 @@ def CostfNM(exper,intens,metric='rmse'):
         return 1-pearson
 
 def Nelder1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,dtype='data',mode='p'):
-    global stopvar
+    #global stopvar
     #Based on the code by Hadrien Crassous
     def Fincost(points,funcname):
         if stopvar:
@@ -296,7 +297,7 @@ def Nelder1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,dtype='data',mode='p'):
         return funtiona(Ham,Exp,graph='False',table='False')[1]
 
 def Nelder2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,dtype='data',mode='p'):
-    global stopvar
+    #global stopvar
     #Based on the code by Hadrien Crassous
     def Fincost(points,funcname):
         if stopvar:
@@ -635,12 +636,13 @@ def Genio1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,dtype='data',mode='p'):
             spect=Eresonant(Ham,Exp,graph='False',table='False')[1]
         wcost=CostfG(exper,spect)
         return wcost
-    global stopvar
+    #global stopvar
     Ham=deepcopy(Hamer)
     Exp=deepcopy(Expe)
     Var=deepcopy(Vara)
     lowfron=[]
     hifron=[]
+    bplayer=0
     if mode=='p':
         funtiona=Powder#(Ham,Exp,graph='False')
     elif mode=='c':
@@ -803,12 +805,13 @@ def Genio2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,dtype='data',mode='p'):
             return wcost
         except Exception:
             return 1e6
-    global stopvar
+    #global stopvar
     Ham=deepcopy(Hamer)
     Exp=deepcopy(Expe)
     Var=deepcopy(Vara)
     lowfron=[]
     hifron=[]
+    bplayer=0
     if mode=='p':
         funtiona=Mulpol#(Ham,Exp,graph='False')
     elif mode=='c':
@@ -1034,7 +1037,7 @@ def Metrostair(Hamer,Exp,Var,date,stepsize,ocos,para,variable,funcname,dtype='da
             return Hamer,ocos,False
 
 def Metro1(Hamer,Exp,Var,dat,maximal,dtype='data',mode='p'):
-    global stopvar
+    #global stopvar
     Ham1=deepcopy(Hamer)
     iwas,jwas,kwas,weight,hulk=Delaunay(Exp)
     if mode=='p':
@@ -1348,7 +1351,7 @@ def Metrostair2(Hamer,Exp,Var,date,stepsize,ocos,para,variable,aktsys,funcname,d
             return Hamer,ocos,False
 
 def Metro2(Hamer,Exp,Var,dat,maximal,dtype='data',mode='p'):
-    global stopvar
+    #global stopvar
     Ham1=deepcopy(Hamer)
     if mode=='p':
         funtiona=Mulpol#(Ham,Exp,graph='False')
@@ -1662,7 +1665,7 @@ def UnpackHam(point,Hamer,Var):
     return Ham
 
 def Residuals(point,Hame,Exp,exper,Vary,fname):
-    global stopvar
+    #global stopvar
     if stopvar:
         raise KeyboardInterrupt("Stopped by user")
     Ham1=UnpackHam(point,Hame,Vary)
@@ -1769,7 +1772,7 @@ def UnpackHam2(point,Hamer,Var):
     return Ham
 
 def Residuals2(point,Hame,Exp,exper,Vary,fname):
-    global stopvar
+    #global stopvar
     if stopvar:
         raise KeyboardInterrupt("Stopped by user")
     Ham1=UnpackHam2(point,Hame,Vary)

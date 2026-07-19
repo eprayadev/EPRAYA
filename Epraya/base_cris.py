@@ -40,6 +40,7 @@ import concurrent.futures
 from joblib import Parallel, delayed
 from threadpoolctl import threadpool_limits
 import re
+import threading
 from itertools import product as iterproduct
 from .base_ham import *
 from .base_plot import *
