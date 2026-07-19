@@ -47,7 +47,8 @@ from .base_plot import *
 from .base_powd import *
 from .base_rotate import *
 
-
+stopvar=False
+result={}
 def CostfNM(exper,intens,metric='rmse'):
     norm=np.sum(intens*intens)
     if norm==0 or np.max(intens)<1e-10:
