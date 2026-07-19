@@ -704,7 +704,7 @@ def Seek(field=None,counts=None):
         if field is None:
             field=dfield/10
         if counts is None:
-            counts=decounts
+            counts=dcounts
     root=tk.Tk()
     app=TkinterApp2(root,field,counts)
     root.mainloop()   
