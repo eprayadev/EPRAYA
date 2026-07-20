@@ -261,6 +261,7 @@ def Nelder1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,dtype='data',mode='p'):
             if stopvar:
                 break
     except KeyboardInterrupt:
+        _=Fincost(melhor,funcname)
         print("\n"+"="*50)
         print(f"Process stopped at iteration:{iter} with best cost: {cmelhor:.5e}")
         print("="*50)
@@ -278,6 +279,7 @@ def Nelder1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,dtype='data',mode='p'):
             return funtiona(Ham,Exp,graph='False')[1]
         elif funcname in ['Eresonant']:
             return funtiona(Ham,Exp,graph='False',table='False')[1]
+    _=Fincost(melhor,funcname)
     print("\n"+"="*50)
     print(f"Process stopped at iteration:{iter} with best cost: {cmelhor:.5e}")
     print("="*50)
@@ -494,6 +496,7 @@ def Nelder2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,dtype='data',mode='p'):
             if stopvar:
                 break
     except KeyboardInterrupt:
+        _=Fincost(melhor,funcname)
         print("\n"+"="*50)
         print(f"Process stopped at iteration:{iter} with best cost: {cmelhor:.5e}")
         print("="*50)
@@ -513,6 +516,7 @@ def Nelder2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,dtype='data',mode='p'):
             return funtiona(Ham,Exp,graph='False')[1]
         elif funcname in ['Music']:
             return funtiona(Ham,Exp,graph='False',table='False')[1]
+    _=Fincost(melhor,funcname)
     print("\n"+"="*50)
     print(f"Process stopped at iteration:{iter} with best cost: {cmelhor:.5e}")
     print("="*50)
@@ -535,12 +539,12 @@ def Nelder2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,dtype='data',mode='p'):
 
 def Nelder(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,dtype='data',mode='p'):
     if type(Hamer)==Multham:
-         if Exp.Mexp[0].Points!=len(exper):
-            Exp.Mexp[0].Points=len(exper)
+         if Expe.Mexp[0].Points!=len(exper):
+            Expe.Mexp[0].Points=len(exper)
          scpe=Nelder2(Hamer,Expe,Vara,exper,eps,maximal,dtype,mode)
     elif type(Hamer)==Hval:
-         if Exp.Points!=len(exper):
-            Exp.Points=len(exper)
+         if Expe.Points!=len(exper):
+            Expe.Points=len(exper)
          scpe=Nelder1(Hamer,Expe,Vara,exper,eps,maximal,dtype,mode)
 
     return scpe
@@ -948,12 +952,12 @@ def Genio2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,dtype='data',mode='p'):
 
 def Genio(Hamer,Expe,Vara,exper,eps=1e-10,maximal=100,dtype='data',mode='p'):
     if type(Hamer)==Multham:
-         if Exp.Mexp[0].Points!=len(exper):
-            Exp.Mexp[0].Points=len(exper)
+         if Expe.Mexp[0].Points!=len(exper):
+            Expe.Mexp[0].Points=len(exper)
          scpe=Genio2(Hamer,Expe,Vara,exper,eps,maximal,dtype,mode)
     elif type(Hamer)==Hval:
-         if Exp.Points!=len(exper):
-            Exp.Points=len(exper)
+         if Expe.Points!=len(exper):
+            Expe.Points=len(exper)
          scpe=Genio1(Hamer,Expe,Vara,exper,eps,maximal,dtype,mode)
 
     return scpe
@@ -1830,12 +1834,12 @@ def LSquare2(Ham1,Expe,Vary,exper,maximal=1000,mode='p'):
 
 def LSquare(Ham1,Expe,Vary,exper,maximal=1000,mode='p'):
     if type(Ham1)==Multham:
-         if Exp.Mexp[0].Points!=len(exper):
-            Exp.Mexp[0].Points=len(exper)
+         if Expe.Mexp[0].Points!=len(exper):
+            Expe.Mexp[0].Points=len(exper)
          scpe=LSquare2(Ham1,Expe,Vary,exper,maximal,mode)
     elif type(Ham1)==Hval:
-         if Exp.Points!=len(exper):
-            Exp.Points=len(exper)
+         if Expe.Points!=len(exper):
+            Expe.Points=len(exper)
          scpe=LSquare1(Ham1,Expe,Vary,exper,maximal,mode)
     return scpe
 
@@ -1898,7 +1902,10 @@ def Fitting(Hamer,Exper,Vara,datexp):
                         fig=Figure(figsize=(8,10))
                         canvas=FigureCanvasAgg(fig)
                         ax=fig.add_subplot(211)
-                        Bla=np.linspace(Exper.Frange[0],Exper.Frange[1],Exper.Points)
+                        if len(Exper)!=1:
+                            Bla=np.linspace(Exper.Mexp[0].Frange[0],Exper.Mexp[0].Frange[1],Exper.Mexp[0].Points)
+                        else:
+                            Bla=np.linspace(Exper.Frange[0],Exper.Frange[1],Exper.Points)
                         ax.plot(Bla,datexp,color='blue',label='Data')
                         if resultexper is not None:
                             ax.plot(Bla,resultexper/np.max(resultexper)*np.max(datexp),color='red',label='Fit')
@@ -1908,7 +1915,7 @@ def Fitting(Hamer,Exper,Vara,datexp):
                         fig.savefig(buf,format='png',bbox_inches='tight')
                         buf.seek(0)
                         img=Image(data=buf.getvalue(),format='png')
-                        outside.append_display_data(img)
+                        display(img)
                         buf.close()
                         fig.clf()
                 except Exception as e:
