@@ -1915,7 +1915,7 @@ def Fitting(Hamer,Exper,Vara,datexp):
                         fig.savefig(buf,format='png',bbox_inches='tight')
                         buf.seek(0)
                         img=Image(data=buf.getvalue(),format='png')
-                        display(img)
+                        outside.append_display_data(img)
                         buf.close()
                         fig.clf()
                 except Exception as e:
