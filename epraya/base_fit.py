@@ -1601,7 +1601,7 @@ def Metro2(Hamer,Exp,Var,dat,maximal,dtype='data',mode='p'):
             print(f'D={bestHam.Mulham[i].D[0]:.4f} | E={bestHam.Mulham[i].D[1]:.4f}')
         if np.any(Var.Mvary[i].Hpp):
             print(f'Hppg={bestHam.Mulham[i].Hpp[0]:.4f} | Hppl={bestHam.Mulham[i].Hpp[1]:.4f}')
-    if funcname in ['Multa']:
+    if funcname in ['Mulpol']:
         return funtiona(bestHam,Exp,graph='False')[1]
     elif funcname in ['Music']:
         return funtiona(bestHam,Exp,graph='False',table='False')[1]
@@ -1902,7 +1902,7 @@ def Fitting(Hamer,Exper,Vara,datexp):
                         fig=Figure(figsize=(8,10))
                         canvas=FigureCanvasAgg(fig)
                         ax=fig.add_subplot(211)
-                        if len(Exper)!=1:
+                        if hasatrr(Exper,'Mexp'):
                             Bla=np.linspace(Exper.Mexp[0].Frange[0],Exper.Mexp[0].Frange[1],Exper.Mexp[0].Points)
                         else:
                             Bla=np.linspace(Exper.Frange[0],Exper.Frange[1],Exper.Points)
