@@ -422,6 +422,7 @@ def JBoltfactor(Eghz,di,dj,Temp):
     return (popui-popuj)
 
 @partial(jx.jit,static_argnames=['dim'])
+@partial(jx.jit,static_argnames=['dim'])
 def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2):
     iidx,jidx=jxn.triu_indices(dim,k=1)
     Vdag=Vlist.conj().swapaxes(-1,-2)
@@ -462,7 +463,9 @@ def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2):
     dEr=diffv[1:,:]
     #Search for crossings
     cross=(dEl*dEr<=0.0)&(dEl!=dEr)
-    t=-dEl/(dEr-dEl)
+    denom=dEr-dEl
+    denom=jxn.where(denom== 0.0,1e-10,denom)
+    t=-dEl/denom
     t=jxn.where(cross,t,0.0)
     Bl=Blist[:-1,None]
     Br=Blist[1:,None]
