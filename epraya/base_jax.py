@@ -469,19 +469,21 @@ def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2):
     res=Bl+t*(Br-Bl)
     intle=intensy[:-1,:]
     intri=intensy[1:,:]
-    eintensy=intle+t* (intri-intle)
-    res=jxn.where(cross,res,0.0).flatten()
-    inter=jxn.where(cross,eintensy,0.0).flatten()
-    vmask=cross.flatten()
-    ntrans=jxn.sum(vmask).astype(jxn.int32)
-    indexe=jxn.argsort(~vmask)
-    sres=res[indexe]
-    sint=inter[indexe]
-    maxtrans=dim*(dim-1) 
-    fres=sres[:maxtrans]
-    fint=sint[:maxtrans]
-    
-    return fres,fint,ntrans
+    eintensy=intle+t*(intri-intle)
+    fres=jxn.where(cross,res,0.0).flatten()
+    fint=jxn.where(cross,eintensy,0.0).flatten()
+    cross=cross.flatten()
+    ntrans=jxn.sum(cross).astype(jxn.int32)
+    Ktra=200
+    #Scores for transition possibility
+    scores=jxn.where(cross,1.0+fint,-1.0)
+    topones,toponesind=jx.lax.top_k(scores,Ktra)
+    ffres=fres[toponesind]
+    ffint=fint[toponesind]
+    maski=topones>0.0
+    ffres=jxn.where(maski,ffres,0.0)
+    ffint=jxn.where(maski,ffint,0.0)
+    return ffres,ffint,ntrans
 
 def Meshtriangle():
     numd=15
@@ -500,6 +502,7 @@ def Meshtriangle():
 @partial(jx.jit, static_argnames=['points'])
 #@jx.checkpoint
 def JCaltriangle(Bmin,dB,allres,allint,transi,hulk,weight,points):
+    Baxs=jxn.linspace(Bmin,Bmin+dB*(points-1), points)
     def Takeonetriangle(trindex):
         i1,i2,i3=trindex[0],trindex[1],trindex[2]
         B1,B2, B3=allres[i1],allres[i2],allres[i3]
@@ -508,16 +511,27 @@ def JCaltriangle(Bmin,dB,allres,allint,transi,hulk,weight,points):
         pointweg=weig/tpoints
         Bin=ww1*B1+ww2*B2+ww3*B3
         Iint=(ww1*I1+ww2*I2+ww3*I3)*pointweg
-        igdam=jxn.floor((Bin-Bmin)/dB).astype(jxn.int32)
-        figdam=igdam.flatten()
+        diferb=(Bin-Bmin)/dB
+        fdiferb=diferb.flatten()
         fIint=Iint.flatten()
-        #Check values
-        rightone=(figdam>=0)&(figdam<points)
-        figdam=jxn.where(rightone,figdam,0)
-        fIint=jxn.where(rightone,fIint,0.0)
+        # Find the neighbours
+        vecl=jxn.floor(fdiferb).astype(jxn.int32)
+        vecr=vecl+1
+        #Divides the intensity between the neighbours, by percentages 
+        fracr=fdiferb-vecl
+        fracl=1.0-fracr
+        Ilef=fIint*fracl
+        Irig=fIint*fracr
+        # Is in range?
+        rleft=(vecl>=0)&(vecl<points)
+        rright=(vecr>=0)&(vecr<points)
+        vecl=jxn.where(rleft,vecl,0)
+        vecr=jxn.where(rright,vecr,0)
+        Ilef=jxn.where(vecl,Ilef,0.0)
+        Irig=jxn.where(vecr,Irig,0.0)
         sketch1=jxn.zeros(points)
-        sketch1=sketch1.at[figdam].add(fIint)
-        #Choose to take the triangle into account
+        sketch1=sketch1.at[vecl].add(Ilef)
+        sketch1=sketch1.at[vecr].add(Irig)
         n1,n2,n3=transi[i1],transi[i2],transi[i3]
         taketrian=(n1==n2)&(n2==n3)&(n1>0)
         return jxn.where(taketrian,sketch1,jxn.zeros_like(sketch1))
@@ -623,7 +637,7 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None'):
     ntrans=ntrans.reshape(-1)[:tlen]
     sketch=JCaltriangle(Bmin,dB,allres,allint,ntrans,hulk,weight,Exp.Points)
     maxlenght=jxn.max(jxn.array(Ham.Hpp))*10
-    kpoints=201 
+    kpoints=501 
     kaxis=jxn.arange(-kpoints//2+1,kpoints//2+1)*dB
     kvoigt=JVoigtp(kaxis,jxn.array([1.0]),jxn.array([0.0]),Ham.Hpp,etas)
     espectotal=jsig.fftconvolve(sketch,kvoigt,mode='same')*dB
