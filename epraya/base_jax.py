@@ -422,9 +422,7 @@ def JBoltfactor(Eghz,di,dj,Temp):
     return (popui-popuj)
 
 @partial(jx.jit,static_argnames=['dim'])
-def JNresina(Blist2,Blist1,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,h2):
-    intercep=lambda yl: jxn.interp(Blist2,Blist1,yl)
-    Elist2=jx.vmap(intercep,in_axes=1,out_axes=1)(Elist)
+def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2):
     iidx,jidx=jxn.triu_indices(dim,k=1)
     Vdag=Vlist.conj().swapaxes(-1,-2)
     Tx=Vdag@isx@Vlist
@@ -434,7 +432,6 @@ def JNresina(Blist2,Blist1,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,h2):
     Txij=Tx[:,iidx,jidx]
     Tyij=Ty[:,iidx,jidx]
     Tzij=Tz[:,iidx,jidx]
-    #Probability definition and interpolation
     M2=jxn.real(Txij*jxn.conj(Txij))+jxn.real(Tyij*jxn.conj(Tyij))+jxn.real(Tzij*jxn.conj(Tzij))
     Mn=nx*Txij+ny*Tyij+nz*Tzij
     prob=M2-jxn.abs(Mn)**2
@@ -445,7 +442,7 @@ def JNresina(Blist2,Blist1,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,h2):
     izrt=h2diag[:,jidx]
     gma=jxn.abs(izrt-dert)
     gma=jxn.where(gma<1e-4,1e-4,gma)
-    gema=1.0/gma
+    gema=1.0/gma   
     #Boltzmann distribution
     conver=1e9*scc.h
     Ej=Elist*conver
@@ -459,29 +456,97 @@ def JNresina(Blist2,Blist1,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,h2):
     popuj=boltz[:,jidx]
     boltzm=popui-popuj
     intensy=prob*gema*boltzm
-    interp=lambda yl: jxn.interp(Blist2,Blist1,yl)
-    Int=jx.vmap(interp,in_axes=1,out_axes=1)(intensy)
-    diffv=jxn.abs(Elist2[:,jidx]-Elist2[:,iidx])-Freq
-    gdelta=(Blist2[1]-Blist2[0])*1.5
-    wsti=Int*jxn.exp(-jxn.log(2.0)*(diffv**2)/(gdelta**2))
-    intensy=jxn.sum(wsti,axis=1)
-    return intensy
+    #FInd resonant fields
+    diffv=jxn.abs(Elist[:,jidx]-Elist[:, iidx])-Freq
+    dEl=diffv[:-1,:]
+    dEr=diffv[1:,:]
+    #Search for crossings
+    cross=(dEl*dEr<=0.0)&(dEl!=dEr)
+    t=-dEl/(dEr-dEl)
+    t=jxn.where(cross,t,0.0)
+    Bl=Blist[:-1,None]
+    Br=Blist[1:,None]
+    res=Bl+t*(Br-Bl)
+    intle=intensy[:-1,:]
+    intri=intensy[1:,:]
+    eintensy=intle+t* (intri-intle)
+    res=jxn.where(cross,res,0.0).flatten()
+    inter=jxn.where(cross,eintensy,0.0).flatten()
+    vmask=cross.flatten()
+    ntrans=jxn.sum(vmask).astype(jxn.int32)
+    indexe=jxn.argsort(~vmask)
+    sres=res[indexe]
+    sint=inter[indexe]
+    maxtrans=dim*(dim-1) 
+    fres=sres[:maxtrans]
+    fint=sint[:maxtrans]
+    
+    return fres,fint,ntrans
 
+def Meshtriangle():
+    numd=15
+    tpoints=(numd*(numd+1))/2.0
+    w1,w2,w3=[],[],[]
+    for i in range(numd):
+        for j in range(numd-i):
+            k=numd-1-i-j
+            w1.append(i/(numd-1))
+            w2.append(j/(numd-1))
+            w3.append(k/(numd-1))
+    w1=jxn.array(w1)[:,None]
+    w2=jxn.array(w2)[:,None]
+    w3=jxn.array(w3)[:,None]
+    return w1,w2,w3,tpoints
+@partial(jx.jit, static_argnames=['points'])
+#@jx.checkpoint
+def JCaltriangle(Bmin,dB,allres,allint,transi,hulk,weight,points):
+    def Takeonetriangle(trindex):
+        i1,i2,i3=trindex[0],trindex[1],trindex[2]
+        B1,B2, B3=allres[i1],allres[i2],allres[i3]
+        I1,I2,I3=allint[i1],allint[i2],allint[i3]
+        weig=(weight[i1]+weight[i2]+weight[i3])/3.0
+        pointweg=weig/tpoints
+        Bin=ww1*B1+ww2*B2+ww3*B3
+        Iint=(ww1*I1+ww2*I2+ww3*I3)*pointweg
+        igdam=jxn.floor((Bin-Bmin)/dB).astype(jxn.int32)
+        figdam=igdam.flatten()
+        fIint=Iint.flatten()
+        #Check values
+        rightone=(figdam>=0)&(figdam<points)
+        figdam=jxn.where(rightone,figdam,0)
+        fIint=jxn.where(rightone,fIint,0.0)
+        sketch1=jxn.zeros(points)
+        sketch1=sketch1.at[figdam].add(fIint)
+        #Choose to take the triangle into account
+        n1,n2,n3=transi[i1],transi[i2],transi[i3]
+        taketrian=(n1==n2)&(n2==n3)&(n1>0)
+        return jxn.where(taketrian,sketch1,jxn.zeros_like(sketch1))
+    csize=500
+    pad=(csize-(hulk.shape[0]%csize))%csize
+    hulkpad=jxn.pad(hulk,((0,pad),(0,0)),constant_values=0)
+    batch=hulkpad.shape[0]//csize
+    hulkbatch=hulkpad.reshape((batch,csize,3))
+    def EWsize(carry,batch):
+        bspc=jx.vmap(Takeonetriangle)(batch)
+        return carry+jxn.sum(bspc,axis=0),None
+    estotal,_=jx.lax.scan(EWsize,jxn.zeros(points),hulkbatch)
+    return estotal
+ww1,ww2,ww3,tpoints=Meshtriangle()
 
 def JPowder(Hamer,Expe,Nucl='None',graph='True'):
-    iwas,jwas,kwas,weight,_=Delaunay(Expe)
-    iwas,jwas,kwas,weight=jxn.array(iwas),jxn.array(jwas),jxn.array(kwas),jxn.array(weight)
-    Blist,epc=JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,Nucl)
+    iwas,jwas,kwas,weight,hulk=Delaunay(Expe)
+    iwas,jwas,kwas,weight,hulk=jxn.array(iwas),jxn.array(jwas),jxn.array(kwas),jxn.array(weight),jxn.array(hulk)
+    Blist,epc=JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl)
     if graph=='True':
         plt.plot(Blist,epc,color='navy')
         plt.xlabel('Field [mT]')
         plt.ylabel('Counts [U. A.]')
-        plt.xlim(Exp.Frange[0],Exp.Frange[1])
+        plt.xlim(Expe.Frange[0],Expe.Frange[1])
         plt.grid()
         plt.show(block=False)
     return Blist,epc
 
-def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,Nucl='None'):
+def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None'):
     frange0=jxn.where(Expe.Frange[0]<0.0,1e-4,Expe.Frange[0])
     Ham=Hamer.replace(A=jxn.asarray(Hamer.A)/1000.0,D=jxn.asarray(Hamer.D)/1000.0,Hpp=jxn.asarray(Hamer.Hpp)/1.0,Q=jxn.asarray(Hamer.Q)/1000.0,
                      Bk2=jxn.asarray(Hamer.Bk2)/1000.0,Bk4=jxn.asarray(Hamer.Bk4)/1000.0,Bk6=jxn.asarray(Hamer.Bk6)/1000.0)
@@ -526,42 +591,43 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,Nucl='None'):
         hzey-=nhzey
         hzez-=nhzez
     h1=jxn.asarray(h1,dtype=complex)
-    Blist1=jxn.linspace(Exp.Frange[0],Exp.Frange[1],400)
-    Blist2=jxn.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
-    gdelta=(Blist2[1]-Blist2[0])*1.5
+    Blist1=jxn.linspace(Exp.Frange[0],Exp.Frange[1],500)
+    dB=(Exp.Frange[1]-Exp.Frange[0])/(Exp.Points-1)
+    Bmin=Exp.Frange[0]
+    
     @jx.jit
-    def Oneori(nx,ny,nz,w):
+    def Oneori(nx,ny,nz):
         Elist,Vlist,h2=JPadaptarray(Blist1,h1,hzex,hzey,hzez,nx,ny,nz)
-        intensy=JNresina(Blist2,Blist1,Elist,Vlist,dim,Exp.Freq,isx,isy,isz,nx,ny,nz,Exp.Temperature,h2)
-        allesint=intensy*w
-        esp1=jxn.where(jxn.isclose(w,0.0),jxn.zeros_like(allesint),allesint)
-        return (esp1)
-    voneori=jx.vmap(Oneori,in_axes=(0,0,0,0))
+        resfield,intensy,ntrans=JNresina(Blist1,Elist,Vlist,dim,Exp.Freq,isx,isy,isz,nx,ny,nz,Exp.Temperature,Ham.Hpp,h2)
+        return resfield,intensy,ntrans
+    voneori=jx.vmap(Oneori,in_axes=(0,0,0))
     csize=50 #Divides the orientations blocks so the RAM doesn't explote
     tlen=len(weight)
     plen=(csize-(tlen%csize))%csize
     pdw=jxn.pad(weight,(0,plen))
-    pdi=jxn.pad(iwas,(0,plen))
+    pdi=jxn.pad(iwas,(0, plen))
     pdj=jxn.pad(jwas,(0,plen))
     pdk=jxn.pad(kwas,(0,plen))
-    nparts=len(pdw)//csize
-    batw=pdw.reshape(nparts,csize)
+    nparts=len(pdi)//csize
     bati=pdi.reshape(nparts,csize)
     batj=pdj.reshape(nparts,csize)
     batk=pdk.reshape(nparts,csize)
     @jx.checkpoint
     def Processvmap(curspect,bat):
-        bnx,bny,bnz,bw=bat
-        batspect=voneori(bnx,bny,bnz,bw)
-        nspect=curspect+jxn.sum(batspect,axis=0)
-        return nspect,None
-    espectotal,_=jx.lax.scan(Processvmap,jxn.zeros(Exp.Points),(bati,batj,batk,batw))
+        bnx,bny,bnz=bat
+        batres,batint,batntras=voneori(bnx,bny,bnz)
+        return curspect,(batres,batint,batntras)
+    _,(allres,allint,ntrans)=jx.lax.scan(Processvmap,None,(bati,batj,batk))
+    allres=allres.reshape(-1,allres.shape[-1])[:tlen]
+    allint=allint.reshape(-1,allint.shape[-1])[:tlen]
+    ntrans=ntrans.reshape(-1)[:tlen]
+    sketch=JCaltriangle(Bmin,dB,allres,allint,ntrans,hulk,weight,Exp.Points)
     maxlenght=jxn.max(jxn.array(Ham.Hpp))*10
-    dB=(Exp.Frange[1]-Exp.Frange[0])/(Exp.Points-1)
-    kpoints=501
+    kpoints=201 
     kaxis=jxn.arange(-kpoints//2+1,kpoints//2+1)*dB
     kvoigt=JVoigtp(kaxis,jxn.array([1.0]),jxn.array([0.0]),Ham.Hpp,etas)
-    espectotal=jsig.fftconvolve(espectotal,kvoigt,mode='same')
+    espectotal=jsig.fftconvolve(sketch,kvoigt,mode='same')*dB
+    Blist2=jxn.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
     return Blist2,espectotal
 
 def Jresonant(Hamer,Expe,graph='True',Nucl='None'):
@@ -570,7 +636,7 @@ def Jresonant(Hamer,Expe,graph='True',Nucl='None'):
         plt.plot(Blist,epc,color='navy')
         plt.xlabel('Field [mT]')
         plt.ylabel('Counts [U. A.]')
-        plt.xlim(Exp.Frange[0],Exp.Frange[1])
+        plt.xlim(Expe.Frange[0],Expe.Frange[1])
         plt.grid()
         plt.show(block=False)
     return Blist,epc
@@ -759,7 +825,7 @@ def JMulpol(maham,Expe,Nucl1='None',Nucl2='None',graph='True'):
         plt.plot(Blist,epc,color='navy')
         plt.xlabel('Field [mT]')
         plt.ylabel('Counts [U. A.]')
-        plt.xlim(Exp.Frange[0],Exp.Frange[1])
+        plt.xlim(Expe.Frange[0],Expe.Frange[1])
         plt.grid()
         plt.show(block=False)
     return Blist,epc
@@ -772,14 +838,14 @@ def Jcalmulta(maham,Expe,Nucl1='None',Nucl2='None'):
     Exp1=JEco()
     Exp2=JEco()
     Ham1.S,Ham1.g,Ham1.I,Ham1.L,Ham1.A,Ham1.Q,Ham1.D,Ham1.Bk2,Ham1.Bk4,Ham1.Bk6,Ham1.lc,Ham1.Hpp,Ham1.eta=maham.S1,maham.g1,maham.I1,maham.L1,maham.A1,maham.Q1,maham.D1,maham.Bk2,maham.Bk4,maham.Bk6,maham.lc1,maham.Hpp,maham.eta
-    Ham2.S,Ham2.g,Ham2.I,Ham1.L,Ham2.A,Ham2.Q,Ham2.D,Ham2.lc,Ham2.Hpp,Ham2.eta=maham.S2,maham.g2,maham.I2,maham.L2,maham.A2,maham.Q2,maham.D2,maham.lc2,maham.Hpp,maham.eta
+    Ham2.S,Ham2.g,Ham2.I,Ham2.L,Ham2.A,Ham2.Q,Ham2.D,Ham2.lc,Ham2.Hpp,Ham2.eta=maham.S2,maham.g2,maham.I2,maham.L2,maham.A2,maham.Q2,maham.D2,maham.lc2,maham.Hpp,maham.eta
     Exp1.Freq,Exp1.Points,Exp1.Temperature,Exp1.Fdirection,Exp1.Frange,Exp1.Sampleframe,Exp1.Molframe,Exp1.gframe,Exp1.Aframe,Exp1.Dframe,Exp1.Qframe=Expe.Freq,Expe.Points,Expe.Temperature,Expe.Fdirection,Expe.Frange,Expe.Sampleframe1,Expe.Molframe1,Expe.gframe1,Expe.Aframe1,Expe.Dframe1,Expe.Qframe1
     Exp2.Freq,Exp2.Points,Exp2.Temperature,Exp2.Fdirection,Exp2.Frange,Exp2.Sampleframe,Exp2.Molframe,Exp2.gframe,Exp2.Aframe,Exp2.Dframe,Exp2.Qframe=Expe.Freq,Expe.Points,Expe.Temperature,Expe.Fdirection,Expe.Frange,Expe.Sampleframe2,Expe.Molframe2,Expe.gframe2,Expe.Aframe2,Expe.Dframe2,Expe.Qframe2
-    iwas,jwas,kwas,weight,_=Delaunay(Exp1)
-    iwas,jwas,kwas,weight=jxn.array(iwas),jxn.array(jwas),jxn.array(kwas),jxn.array(weight)
+    iwas,jwas,kwas,weight,hulk=Delaunay(Exp1)
+    iwas,jwas,kwas,weight,hulk=jxn.array(iwas),jxn.array(jwas),jxn.array(kwas),jxn.array(weight),jxn.array(hulk)
     if np.allclose(maham.X1_2,0.0) and np.allclose(maham.A1_2,0.0) and np.allclose(maham.A2_1,0.0):
-        fielde,specs1=JCalpowder(Ham1,Exp1,iwas,jwas,kwas,weight,Nucl1)
-        _,specs2=JCalpowder(Ham2,Exp2,iwas,jwas,kwas,weight,Nucl2)
+        fielde,specs1=JCalpowder(Ham1,Exp1,iwas,jwas,kwas,weight,hulk,Nucl1)
+        _,specs2=JCalpowder(Ham2,Exp2,iwas,jwas,kwas,weight,hulk,Nucl2)
         specs=specs1+specs2
     else:
         frange0=jxn.where(Exp1.Frange[0]<0.0,1e-4,Exp1.Frange[0])
@@ -824,9 +890,9 @@ def Jcalmulta(maham,Expe,Nucl1='None',Nucl2='None'):
         if Ham2.S>=1:
             h1=h1+JStevensO(sx2,sy2,sz2,Ham2.S,Ham2,dim)
         if Ham1.L!=0:
-            h1=h1+JLorbit(sx1,sy1,s1z,Ham1.lc,dim,Ham1.L)
+            h1=h1+JLorbit(sx1,sy1,sz1,Ham1.lc,dim,Ham1.L)
         if Ham2.L!=0:
-            h1=h1+JLorbit(sx2,sy,sz2,Ham2.lc,dim,Ham2.L)
+            h1=h1+JLorbit(sx2,sy2,sz2,Ham2.lc,dim,Ham2.L)
         if Ham1.I!=0:
             h1=h1+JHfi(sx1,sy1,sz1,ix1,iy1,iz1,Ham1.A,dim)
             h1=h1+JQii(ix1,iy1,iz1,Ham1.Q,Ham1.I,dim)
@@ -848,15 +914,15 @@ def Jcalmulta(maham,Expe,Nucl1='None',Nucl2='None'):
             hzey-=jxn.kron(jxn.eye(dim1,dtype=complex),nhzey)
             hzez-=jxn.kron(jxn.eye(dim1,dtype=complex),nhzez)
         if jxn.any(maham.A1_2):
-            Aref=jxn.asarray(Ham.A1_2)/1000.0
+            Aref=jxn.asarray(maham.A1_2)/1000.0
             Aref=Aref*jxn.eye(3)
-            h1+=Hfi(sx1,sy1,sz1,ix2,iy2,iz2,Aref,dim)
+            h1+=JHfi(sx1,sy1,sz1,ix2,iy2,iz2,Aref,dim)
         if jxn.any(maham.A2_1):
-            Aref=jxn.asarray(Ham.A2_1)/1000.0
+            Aref=jxn.asarray(maham.A2_1)/1000.0
             Aref=Aref*jxn.eye(3)
-            h1+=Hfi(sx2,sy2,sz2,ix1,iy1,iz1,Aref,dim)
+            h1+=JHfi(sx2,sy2,sz2,ix1,iy1,iz1,Aref,dim)
         if jxn.any(maham.X1_2):
-            Xref=jxn.asarray(Ham.X1_2)/1000.0
+            Xref=jxn.asarray(maham.X1_2)/1000.0
             Xref=Xref*jxn.eye(3)
             h1+=JIee(sx1,sy1,sz1,sx2,sy2,sz2,Xref,dim)
         h1=jxn.asarray(h1,dtype=complex)
@@ -864,58 +930,60 @@ def Jcalmulta(maham,Expe,Nucl1='None',Nucl2='None'):
         stodx=np.zeros((dim,dim),dtype='complex')
         stody=np.zeros((dim,dim),dtype='complex')
         stodz=np.zeros((dim,dim),dtype='complex')
-        dimwns1=int((2*Ham.I1+1)*(2*Ham.L1+1))
-        dimwns2=int((2*Ham.I2+1)*(2*Ham.L2+1))
-        if Ham.S1>0:
+        dimwns1=int((2*Ham1.I+1)*(2*Ham1.L+1))
+        dimwns2=int((2*Ham2.I+1)*(2*Ham2.L+1))
+        if Ham1.S>0:
             sx1r=jxn.kron(sx1,jxn.eye(dimwns1,dtype=complex))
             sy1r=jxn.kron(sy1,jxn.eye(dimwns1,dtype=complex))
             sz1r=jxn.kron(sz1,jxn.eye(dimwns1,dtype=complex))
             stodx+=jxn.kron(sx1r,jxn.eye(dim2,dtype=complex))
             stody+=jxn.kron(sy1r,jxn.eye(dim2,dtype=complex))
             stodz+=jxn.kron(sz1r,jxn.eye(dim2,dtype=complex))
-        if Ham.S2>0:
+        if Ham2.S>0:
             sx2r=jxn.kron(sx2,jxn.eye(dimwns2,dtype=complex))
             sy2r=jxn.kron(sy2,jxn.eye(dimwns2,dtype=complex))
             sz2r=jxn.kron(sz2,jxn.eye(dimwns2,dtype=complex))
             stodx+=jxn.kron(jxn.eye(dim1,dtype=complex),sx2r)
             stody+=jxn.kron(jxn.eye(dim1,dtype=complex),sy2r)
             stodz+=jxn.kron(jxn.eye(dim1,dtype=complex),sz2r)
-        Blist1=jxn.linspace(Exp1.Frange[0],Exp1.Frange[1],400)
-        Blist2=jxn.linspace(Exp1.Frange[0],Exp1.Frange[1],Exp1.Points)
-        gdelta=(Blist2[1]-Blist2[0])*1.5
+
+        Blist1=jxn.linspace(Exp.Frange[0],Exp.Frange[1],500)
+        dB=(Exp.Frange[1]-Exp.Frange[0])/(Exp.Points-1)
+        Bmin=Exp.Frange[0]
+        
         @jx.jit
-        def Oneori(nx,ny,nz,w):
+        def Oneori(nx,ny,nz):
             Elist,Vlist,h2=JPadaptarray(Blist1,h1,hzex,hzey,hzez,nx,ny,nz)
-            intensy=JNresina(Blist2,Blist1,Elist,Vlist,dim,Exp1.Freq,stodx,stody,stodz,nx,ny,nz,Exp1.Temperature,h2)
-            allesint=intensy*w
-            esp1=jxn.where(jxn.isclose(w,0.0),jxn.zeros_like(allesint),allesint)
-            return (esp1)
-        voneori=jx.vmap(Oneori,in_axes=(0,0,0,0))
-        csize=5 #Divides the orientations blocks so the RAM doesn't explote
+            resfield,intensy,ntrans=JNresina(Blist1,Elist,Vlist,dim,Exp1.Freq,stodx,stody,stodz,nx,ny,nz,Exp1.Temperature,Ham1.Hpp,h2)
+            return resfield,intensy,ntrans
+        voneori=jx.vmap(Oneori,in_axes=(0,0,0))
+        csize=50 #Divides the orientations blocks so the RAM doesn't explote
         tlen=len(weight)
         plen=(csize-(tlen%csize))%csize
         pdw=jxn.pad(weight,(0,plen))
-        pdi=jxn.pad(iwas,(0,plen))
+        pdi=jxn.pad(iwas,(0, plen))
         pdj=jxn.pad(jwas,(0,plen))
         pdk=jxn.pad(kwas,(0,plen))
-        nparts=len(pdw)//csize
-        batw=pdw.reshape(nparts,csize)
+        nparts=len(pdi)//csize
         bati=pdi.reshape(nparts,csize)
         batj=pdj.reshape(nparts,csize)
         batk=pdk.reshape(nparts,csize)
         @jx.checkpoint
         def Processvmap(curspect,bat):
-            bnx,bny,bnz,bw=bat
-            batspect=voneori(bnx,bny,bnz,bw)
-            nspect=curspect+jxn.sum(batspect,axis=0)
-            return nspect,None
-        espectotal,_=jx.lax.scan(Processvmap,jxn.zeros(Exp1.Points),(bati,batj,batk,batw))
-        maxlenght=jxn.max(jxn.array(Ham.Hpp))*10
-        dB=(Exp1.Frange[1]-Exp1.Frange[0])/(Exp1.Points-1)
-        kpoints=501
+            bnx,bny,bnz=bat
+            batres,batint,batntras=voneori(bnx,bny,bnz)
+            return curspect,(batres,batint,batntras)
+        _,(allres,allint,ntrans)=jx.lax.scan(Processvmap,None,(bati,batj,batk))
+        allres=allres.reshape(-1,allres.shape[-1])[:tlen]
+        allint=allint.reshape(-1,allint.shape[-1])[:tlen]
+        ntrans=ntrans.reshape(-1)[:tlen]
+        sketch=JCaltriangle(Bmin,dB,allres,allint,ntrans,hulk,weight,Exp1.Points)
+        maxlenght=jxn.max(jxn.array(Ham1.Hpp))*10
+        kpoints=201 
         kaxis=jxn.arange(-kpoints//2+1,kpoints//2+1)*dB
-        kvoigt=JVoigtp(kaxis,jxn.array([1.0]),jxn.array([0.0]),Ham.Hpp,etas)
-        espectotal=jsig.fftconvolve(espectotal,kvoigt,mode='same')
+        kvoigt=JVoigtp(kaxis,jxn.array([1.0]),jxn.array([0.0]),Ham1.Hpp,etas)
+        espectotal=jsig.fftconvolve(sketch,kvoigt,mode='same')*dB
+        Blist2=jxn.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
         fielde,specs=Blist2,espectotal
     return fielde,specs
 
@@ -925,7 +993,7 @@ def JMusic(maham,Expe,Nucl1='None',Nucl2='None',graph='True'):
         plt.plot(Blist,epc,color='navy')
         plt.xlabel('Field [mT]')
         plt.ylabel('Counts [U. A.]')
-        plt.xlim(Exp.Frange[0],Exp.Frange[1])
+        plt.xlim(Expe.Frange[0],Expe.Frange[1])
         plt.grid()
         plt.show(block=False)
     return Blist,epc
@@ -996,9 +1064,9 @@ def Jcalmusic(maham,Expe,Nucl1='None',Nucl2='None'):
         if Ham2.S>=1:
             h1=h1+JStevensO(sx2,sy2,sz2,Ham2.S,Ham2,dim)
         if Ham1.L!=0:
-            h1=h1+JLorbit(sx1,sy1,s1z,Ham1.lc,dim,Ham1.L)
+            h1=h1+JLorbit(sx1,sy1,sz1,Ham1.lc,dim,Ham1.L)
         if Ham2.L!=0:
-            h1=h1+JLorbit(sx2,sy,sz2,Ham2.lc,dim,Ham2.L)
+            h1=h1+JLorbit(sx2,sy2,sz2,Ham2.lc,dim,Ham2.L)
         if Ham1.I!=0:
             h1=h1+JHfi(sx1,sy1,sz1,ix1,iy1,iz1,Ham1.A,dim)
             h1=h1+JQii(ix1,iy1,iz1,Ham1.Q,Ham1.I,dim)
@@ -1024,11 +1092,11 @@ def Jcalmusic(maham,Expe,Nucl1='None',Nucl2='None'):
             Aref=Aref*jxn.eye(3)
             h1+=Hfi(sx1,sy1,sz1,ix2,iy2,iz2,Aref,dim)
         if jxn.any(maham.A2_1):
-            Aref=jxn.asarray(Ham.A2_1)/1000.0
+            Aref=jxn.asarray(maham.A2_1)/1000.0
             Aref=Aref*jxn.eye(3)
             h1+=Hfi(sx2,sy2,sz2,ix1,iy1,iz1,Aref,dim)
         if jxn.any(maham.X1_2):
-            Xref=jxn.asarray(Ham.X1_2)/1000.0
+            Xref=jxn.asarray(maham.X1_2)/1000.0
             Xref=Xref*jxn.eye(3)
             h1+=JIee(sx1,sy1,sz1,sx2,sy2,sz2,Xref,dim)
         h1=jxn.asarray(h1,dtype=complex)
@@ -1036,16 +1104,16 @@ def Jcalmusic(maham,Expe,Nucl1='None',Nucl2='None'):
         stodx=np.zeros((dim,dim),dtype='complex')
         stody=np.zeros((dim,dim),dtype='complex')
         stodz=np.zeros((dim,dim),dtype='complex')
-        dimwns1=int((2*Ham.I1+1)*(2*Ham.L1+1))
-        dimwns2=int((2*Ham.I2+1)*(2*Ham.L2+1))
-        if Ham.S1>0:
+        dimwns1=int((2*Ham1.I+1)*(2*Ham1.L+1))
+        dimwns2=int((2*Ham2.I+1)*(2*Ham2.L+1))
+        if Ham1.S>0:
             sx1r=jxn.kron(sx1,jxn.eye(dimwns1,dtype=complex))
             sy1r=jxn.kron(sy1,jxn.eye(dimwns1,dtype=complex))
             sz1r=jxn.kron(sz1,jxn.eye(dimwns1,dtype=complex))
             stodx+=jxn.kron(sx1r,jxn.eye(dim2,dtype=complex))
             stody+=jxn.kron(sy1r,jxn.eye(dim2,dtype=complex))
             stodz+=jxn.kron(sz1r,jxn.eye(dim2,dtype=complex))
-        if Ham.S2>0:
+        if Ham2.S>0:
             sx2r=jxn.kron(sx2,jxn.eye(dimwns2,dtype=complex))
             sy2r=jxn.kron(sy2,jxn.eye(dimwns2,dtype=complex))
             sz2r=jxn.kron(sz2,jxn.eye(dimwns2,dtype=complex))
@@ -1097,8 +1165,8 @@ def Jcalmusic(maham,Expe,Nucl1='None',Nucl2='None'):
         intensy=prob*gema*boltzm
         deltaE=jxn.abs(Elist[:,jidx]-Elist[:,iidx])
         dfe=deltaE-Exp1.Freq
-        hppg=Ham.Hpp[0]*gma
-        hppl=Ham.Hpp[1]*gma
+        hppg=Ham1.Hpp[0]*gma
+        hppl=Ham1.Hpp[1]*gma
         hppg=jxn.where(hppg==0.0,1e-10,hppg)
         hpp=jxn.where(hppl==0.0,1e-10,hppl)
         gammag=hppg*jxn.sqrt(jxn.log(2.0)/2.0)
@@ -1782,7 +1850,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
               Hppy=Vary.Hpp[2]+(Vary.Hpp[3]-Vary.Hpp[2])*jnn.sigmoid(param['Hpp2']/T)
               print(f"| Hppg: {Hppx:.1f} | Hppl: {Hppy:.1f} |")
           if mode=='p':
-              Blis,espc=JMulpol(Hat,dExp,plot='False')
+              Blis,espc=JMulpol(Hat,dExp,graph='False')
               plt.figure(figsize=(8,6))
               plt.plot(Blis,expr,label='Data')
               plt.plot(Blis,espc/np.max(espc)*np.max(expr),label='Fit')
@@ -1793,7 +1861,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
               plt.show()
               return espc
           elif mode=='c':
-              Blis,espc=JMusic(Hat,dExp,plot='False')
+              Blis,espc=JMusic(Hat,dExp,graph='False')
               plt.figure(figsize=(8,6))
               plt.plot(Blis,expr,label='Data')
               plt.plot(Blis,espc/np.max(espc)*np.max(expr),label='Fit')
@@ -1908,7 +1976,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
           Hppy=Vary.Hpp[2]+(Vary.Hpp[3]-Vary.Hpp[2])*jnn.sigmoid(param['Hpp2']/T)
           print(f"| Hppg: {Hppx:.1f} | Hppl: {Hppy:.1f} |")
       if mode=='p':
-          Blis,espc=JMulpol(Hat,dExp,plot='False')
+          Blis,espc=JMulpol(Hat,dExp,graph='False')
           plt.figure(figsize=(8,6))
           plt.plot(Blis,expr,label='Data')
           plt.plot(Blis,espc/np.max(espc)*np.max(expr),label='Fit')
@@ -1919,7 +1987,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
           plt.show()
           return espc
       elif mode=='c':
-          Blis,espc=JMusic(Hat,dExp,plot='False')
+          Blis,espc=JMusic(Hat,dExp,graph='False')
           plt.figure(figsize=(8,6))
           plt.plot(Blis,expr,label='Data')
           plt.plot(Blis,espc/np.max(espc)*np.max(expr),label='Fit')
@@ -1929,4 +1997,3 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
           plt.title('EPR Spectrum')
           plt.show()
           return espc
-

@@ -45,7 +45,6 @@ from .base_ham import *
 from .base_plot import *
 from .base_rotate import *
 
-
 @njit
 def Lorentzp(field,Int,rfield,Hpp):
     espec=np.zeros(len(field),dtype=float)
