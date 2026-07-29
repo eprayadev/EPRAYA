@@ -1316,7 +1316,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
           SHam.Hpp=HHpp
           Hame=SHam.replace(g=gg,A=AA,D=DD,Q=QQ,Hpp=HHpp)
           if mode=='p':
-              _,simul=JCalpowder(Hame,dExp,iwas,jwas,kwas,weight)
+              _,simul=JCalpowder(Hame,dExp,iwas,jwas,kwas,weight,hulk)
           elif mode=='c':
               _,simul=Calresonant(Hame,dExp)
           maxl=jxn.max(jxn.abs(simul))
@@ -1432,7 +1432,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
               print(f"| Hppg: {Hppx:.1f} | Hppl: {Hppy:.1f} |")
 
           if mode=='p':
-              Blis,espc=JCalpowder(Hat,dExp,iwas,jwas,kwas,weight)
+              Blis,espc=JCalpowder(Hat,dExp,iwas,jwas,kwas,weight,hulk)
               plt.figure(figsize=(8,6))
               plt.plot(Blis,expr,label='Data')
               plt.plot(Blis,espc/np.max(espc)*np.max(expr),label='Fit')
