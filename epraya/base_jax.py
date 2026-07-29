@@ -1213,7 +1213,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
           pass
       if mode=='p':
           iwas,jwas,kwas,weight,hulk=Delaunay(Exp)
-          iwas,jwas,kwas,weight=jxn.array(iwas),jxn.array(jwas),jxn.array(kwas),jxn.array(weight)
+          iwas,jwas,kwas,weight,hulk=jxn.array(iwas),jxn.array(jwas),jxn.array(kwas),jxn.array(weight),jxn.array(hulk)
       SHam=StaticHam()
       SHam.S=float(Ham.S)
       SHam.I=float(Ham.I)
@@ -1512,7 +1512,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
           Hppy=Vary.Hpp[2]+(Vary.Hpp[3]-Vary.Hpp[2])*jnn.sigmoid(param['Hpp2']/T)
           print(f"| Hppg: {Hppx:.1f} | Hppl: {Hppy:.1f} |")
       if mode=='p':
-          Blis,espc=JCalpowder(Hat,dExp,iwas,jwas,kwas,weight)
+          Blis,espc=JCalpowder(Hat,dExp,iwas,jwas,kwas,weight,hulk)
           plt.figure(figsize=(8,6))
           plt.plot(Blis,expr,label='Data')
           plt.plot(Blis,espc/np.max(espc)*np.max(expr),label='Fit')
