@@ -1,6 +1,6 @@
 [project]
 name = "epraya"
-version = "0.1.25"
+version = "0.1.26"
 description = "Python package for EPR simulation"
 authors = [
     {name = "Epraya developers"}
@@ -28,3 +28,6 @@ dependencies = [
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+include = ["epraya/STRONG PITCH.dat", "epraya/nucleardaat.txt"]
