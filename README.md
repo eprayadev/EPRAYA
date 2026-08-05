@@ -34,7 +34,7 @@ For further instructions on installation and common question, see the [documenta
 - Data fitting with Nelder Mead, Metropolis, Genetic Algorithm, Least Squares and ADAM.
 - Plots angular dependance, enegy diagrams, EPR intensity and Absorption curves.
 - JAX implemenetation for GPU compatability.
-- 
+
 ## Documentation
 
 Functions description, tutorials and more specific information, can be access in the [documentation](./docs/).
