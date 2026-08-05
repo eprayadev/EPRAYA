@@ -41,6 +41,7 @@ from joblib import Parallel, delayed
 from threadpoolctl import threadpool_limits
 import re
 from itertools import product as iterproduct
+from importlib import resources
 
 @dataclass
 class Hval:
