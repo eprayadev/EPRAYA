@@ -311,7 +311,8 @@ def Qii(iix,iiy,iiz,q,dim):
 
 def Nhze(I,iix,iiy,iiz,dim,Nucl='None',direction=[0,0,1]):
     if Nucl!='None':
-        krle=read_csv('nucleardaat.txt',header=0,sep='\t')
+        route=resources.files(__package__).joinpath("nucleardaat.txt")
+        krle=read_csv(route,header=0,sep='\t')
         deq=krle[krle['Symbol']==Nucl]
         gn=deq['gN_factor'].values[0]
     else:
