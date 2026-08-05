@@ -1,6 +1,6 @@
 [project]
 name = "epraya"
-version = "0.1.26"
+version = "0.1.27"
 description = "Python package for EPR simulation"
 authors = [
     {name = "Epraya developers"}
