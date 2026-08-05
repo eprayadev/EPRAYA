@@ -1,3 +1,6 @@
+
+<img src="./images/logo.png" alt="Logo de Epraya" width="400">
+
 # EPRAYA: Python package for EPR simulation
 
 ![Python](https://img.shields.io/badge/python-3.12+-blue.svg)
