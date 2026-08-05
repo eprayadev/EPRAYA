@@ -1,7 +1,8 @@
 
-<img src="./images/logo.png" alt="Logo de Epraya" width="400">
 
 # EPRAYA: Python package for EPR simulation
+<img src="./images/logo.png" alt="Logo de Epraya" width="400">
+
 
 ![Python](https://img.shields.io/badge/python-3.12+-blue.svg)
 ![GitHub License](https://img.shields.io/github/license/eprayadev/epraya)
@@ -23,7 +24,7 @@ pip install epraya
 > [!TIP]
 >We recommend to use code editors that support tkinter and plotly (VS Code, Jupyter) to take full advantage of the functions in the package. However, it's possible to use the package in any other code editors.
 
-For further instructions on installation and common question, see the documentation.
+For further instructions on installation and common question, see the [documentation](./docs/).
 
 ## Features
 
@@ -36,7 +37,7 @@ For further instructions on installation and common question, see the documentat
 - 
 ## Documentation
 
-Functions description, tutorials and more specific information, can be access in the documentation.
+Functions description, tutorials and more specific information, can be access in the [documentation](./docs/).
 
 ## Limitations
 - Current version of EPRAYA only supports _cw EPR_. We are working in implementing _ENDOR_ and _pulse EPR_.
@@ -46,6 +47,11 @@ Functions description, tutorials and more specific information, can be access in
 ## Contributions
 EPRAYA is a open-code project and contributions are welcome.  If you find an error or bug, would like to improve the code or make the documentation clearer, please let us know by opening an issue or pull request.
 
+## Authors
 
+EPRAYA is a project of the _Física Aplicada_ group of the _Universidad Nacional de Colombia_. The principal contributors to the project are: Juan Sebastián Castro, Ovidio Almanza and Miguel E. Gámez.
+
+## License
+[License: MIT](./license/)
 
 
