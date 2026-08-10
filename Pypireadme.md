@@ -1,6 +1,3 @@
-
-<img src="https://github.com/eprayadev/EPRAYA/blob/main/images/logo.png" alt="Logo de Epraya" width="400">
-
 # EPRAYA: Python package for EPR simulation
 
 
