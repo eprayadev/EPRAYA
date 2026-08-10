@@ -1,6 +1,6 @@
 [project]
 name = "epraya"
-version = "0.1.28"
+version = "0.1.29"
 description = "Python package for EPR simulation"
 authors = [
     {name = "Epraya developers"}
@@ -31,3 +31,4 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 include = ["epraya/STRONG PITCH.dat", "epraya/nucleardaat.txt"]
+readme = "README.md"
