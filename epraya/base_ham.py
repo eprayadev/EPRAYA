@@ -51,7 +51,7 @@ class Hval:
     Parameters
     ----------
     S : float 
-        Spin value ex. (1/2,0,3/2).
+        Spin operator value ex. (1/2,0,3/2).
     g : array_like or float
         g value of system, can be float, for isotropic case or array for anisotropic.
     I : float
@@ -123,7 +123,7 @@ class Multham:
     ----------
     
     S : float 
-        Spin value ex. (1/2,0,3/2).
+        Spin operator value ex. (1/2,0,3/2).
     g : array_like or float
         g value of system, can be float, for isotropic case or array for anisotropic.
     I : float
@@ -635,7 +635,7 @@ def Pauli(s):
     ----------
 
     s : float
-        Spin value of the system.
+        Spin operator value of the system.
 
     Returns
     -------
@@ -977,18 +977,72 @@ def chaframe(Ham,Exp):
     tD=np.eye(3)*D2s
     rot=Rotationmat(Exp)
     
-    A1=rot@(Rotmatrix(Exp.Aframe[0],Exp.Aframe[1],Exp.Aframe[2]).T@tA@(Rotmatrix(Exp.Aframe[0],Exp.Aframe[1],Exp.Aframe[2]))@rot.T
-    g1=rot@(Rotmatrix(Exp.gframe[0],Exp.gframe[1],Exp.gframe[2])).T@tg@(Rotmatrix(Exp.gframe[0],Exp.gframe[1],Exp.gframe[2]))@rot.T
-    D2=rot@(Rotmatrix(Exp.Dframe[0],Exp.Dframe[1],Exp.Dframe[2])).T@tD@(Rotmatrix(Exp.Dframe[0],Exp.Dframe[1],Exp.Dframe[2]))@rot.T
-    Q1=rot@(Rotmatrix(Exp.Qframe[0],Exp.Qframe[1],Exp.Qframe[2])).T@tQ@(Rotmatrix(Exp.Qframe[0],Exp.Qframe[1],Exp.Qframe[2]))@rot.T
+    A1=(Rotmatrix(Exp.Aframe[0],Exp.Aframe[1],Exp.Aframe[2]).T@tA@(Rotmatrix(Exp.Aframe[0],Exp.Aframe[1],Exp.Aframe[2]))
+    g1=(Rotmatrix(Exp.gframe[0],Exp.gframe[1],Exp.gframe[2])).T@tg@(Rotmatrix(Exp.gframe[0],Exp.gframe[1],Exp.gframe[2]))
+    D2=(Rotmatrix(Exp.Dframe[0],Exp.Dframe[1],Exp.Dframe[2])).T@tD@(Rotmatrix(Exp.Dframe[0],Exp.Dframe[1],Exp.Dframe[2]))
+    Q1=(Rotmatrix(Exp.Qframe[0],Exp.Qframe[1],Exp.Qframe[2])).T@tQ@(Rotmatrix(Exp.Qframe[0],Exp.Qframe[1],Exp.Qframe[2]))
     Ham.A,Ham.g,Ham.D,Ham.Q=A1,g1,D2,Q1
     return Ham
 
 def Rotationmat(Exp):
+    '''
+    Creates the rotation matrix to pass from the Lab frame to the molecular frame.
     
+    Parameters
+    ---------
+    Exp : Class
+        Container for the experimental conditions.
+    
+    Returns
+    -------
+    RRmatrix: np.array
+        Matrix for the rotation.
+    
+    Example
+    -------
+    >>> import epraya as epr 
+    >>> _, Exp, _=epr.Start()
+    >>> Exp.Samplefram=[30,20,0]
+    >>> Exp.Molframe=[60,0,0]
+    >>> print(epr.Rotationmat(Exp))
+    [[ 0.5       -0.8660254  0.       ]
+    [ 0.         0.5        0.       ]
+    [ 0.         0.         1.       ]]
+    '''
     RRmatrix=Rotmatrix(Exp.Sampleframe[0],Exp.Sampleframe[1],Exp.Sampleframe[2])@Rotmatrix(Exp.Molframe[0],Exp.Molframe[1],Exp.Molframe[2])
     return RRmatrix.T
+    
 def Rotmatrix(alfa,beta,gamma):
+
+ '''
+ Creates the rotation matrix based in the Euler angles in degrees.
+
+ Parameters
+ ----------
+
+ alfa : float
+     Euler angle for rotations around the z axis
+ beta : float
+     Euler angle for rotations around the y' axis
+ gamma : float
+     Euler angle for rotations around the z'' axis
+
+Returns
+-------
+
+Reuler : np.array
+    Rotation matrix
+
+Example
+-------
+
+>>> import epraya as epr
+>>> alfa,beta,gamma=20,30,40
+>>> print(epr.Rotmatrix(alfa,beta,gamma))
+[[ 0.40355888  0.96394593 -0.38302222]
+[-0.7851017   0.52945382  0.3213938 ]
+[ 0.46984631  0.17101007  0.8660254 ]]
+'''
 
   alfa,beta,gamma=np.radians(alfa),np.radians(beta),np.radians(gamma)
   cosg,sing=np.cos(gamma),np.sin(gamma)
@@ -1007,6 +1061,20 @@ def Rotmatrix(alfa,beta,gamma):
   return Reuler
 
 def Convtarray(Ham):
+    '''
+    Conditional function to assure that the hamiltonian parameters have the right dimension.
+
+    Parameters
+    ----------
+
+    Ham : Class
+        Container of the Hamiltonian parameters.
+
+    Returns
+    -------
+    Ham : Class
+        Container of the Hamiltonian parameters with the corrected parameters.
+    '''
     def formatj(val,variable):
         iti=np.asarray(val,dtype=float)
         if iti.ndim==0:
@@ -1047,6 +1115,51 @@ def Convtarray(Ham):
 
 
 def Msmi(I,S,L=0):
+    '''
+    Determinates the quantum numbers of the operators and classify the transitions between energy levels.
+
+    Parameters
+    ----------
+
+    I : float
+        Nuclear spin operator value.
+    S : float
+        Spin operator value.
+    L : float
+        Angular momentum operator value.
+
+    Returns
+    -------
+
+    slit : np.array
+        Quantum numbers of the spin operator.
+    nlit : np.array
+        Quantum numbers of the nuclear spin operator.
+    llit : np.array
+        Quantum numbers of the angular momentum operator
+    transitions: dictionary
+        Possible transitions of the system, cataloged by type.
+
+    Example
+    -------
+
+    >>> import epraya as epr
+    >>> Ham, _, _ = epr.Start()
+    >>> Ham.S=1
+    >>> Ham.I=1
+    >>> Ham.L=0
+    >>> print(epr.Msmi(Ham.I,Ham.S,Ham.L))
+    (array([ 1.,  1.,  1.,  0.,  0.,  0., -1., -1., -1.]),
+    array([ 1.,  0., -1.,  1.,  0., -1.,  1.,  0., -1.]),
+    array([0., 0., 0., 0., 0., 0., 0., 0., 0.]),
+    {'allowed': array([[0, 3], [1, 4], [2, 5], [3, 6], [4, 7],
+       [5, 8]]), 
+    'for Dms2': array([[0, 6], [1, 7], [2, 8]]),
+    'for nuclear': array([[0, 4], [0, 5], [1, 3], [1, 5],
+       [2, 3], [2, 4], [3, 7], [3, 8], [4, 6],
+       [4, 8], [5, 6], [5, 7]]), 
+    'semi for L': array([], dtype=float64)})
+    '''
     if I<0 or S<0 or L<0:
         raise ValueError('Spin values cannot be negative')
     dim=int(2*S+1)*int(2*I+1)*int(2*L+1)
@@ -1097,6 +1210,21 @@ def Msmi(I,S,L=0):
 
 # Relates the vectors to the basis of s, i with the last value at high field
 def Assingstatestobasis(vectorhf):
+    '''
+    Relates the eigenvectors of the hamiltonian in the basis of s and i with it's quantum numbers, using the last value at high field as reference.
+
+    Parameters
+    ----------
+
+    vectorhf : np.array
+        Eigenvectors of the hamiltonian evaluated at high field.
+
+    Returns
+    -------
+
+    mapa : dictionary
+        Organized list of the eigenvectors, coincident with the quantum numbers.
+    '''
     dima=vectorhf.shape[0]
     mapa={}
     cost=1-np.abs(vectorhf)**2
@@ -1109,6 +1237,46 @@ def Assingstatestobasis(vectorhf):
 #Stevens Operators
 #Rule: k<=2s
 def StevensO(ssx,ssy,ssz,s,Ham,dim):
+    '''
+    Stevens expanded operators following the rule k<=2s and the definition by Rudowicz and Chung.
+
+    Parameters
+    ----------
+    
+    ssx : np.array
+        Pauli matrix of the spin x component.
+    ssy : np.array
+        Pauli matrix of the spin y component.
+    ssz : np.array
+        Pauli matrix of the spin z component.
+    s : float
+        Spin operator value.
+    Ham : Class
+        Hamiltonian parameters container.
+    dim : int
+        Dimension of the total hamiltonian.
+        
+    Returns
+    -------
+    
+    totales : np.array
+        Matrix with the contribution of the relevant Stevens operators.
+        
+    Example
+    -------
+    >>> import epraya as epr
+    >>> Ham, _, _ = epr.Start()
+    >>> Ham.S=1
+    >>> Ham.D=[700,200]
+    >>> Ham=epr.chaframe(Ham,Exp)
+    >>> dim=int(2*Ham.S+1)
+    >>> sx,sy,sz=epr.Pauli(Ham.S)
+    >>> print(epr.StevensO(sx,sy,sz,Ham.S,dim))
+    [[ 700.        +0.j    0.        +0.j  346.41016151+0.j    0.        +0.j]
+    [   0.        +0.j -700.        +0.j    0.        +0.j  346.41016151+0.j]
+    [ 346.41016151+0.j    0.        +0.j -700.        +0.j    0.        +0.j]
+    [   0.        +0.j  346.41016151+0.j    0.        +0.j  700.        +0.j]]
+    '''
     k=int(2*s)
     B22,B21,B20,Bq21,Bq22=Ham.Bk2
     B20,B22=3*Ham.D[2,2]/2,(Ham.D[0,0]-Ham.D[1,1])/2
@@ -1209,6 +1377,41 @@ def StevensO(ssx,ssy,ssz,s,Ham,dim):
         return totales
 
 def PMsmi(I,S,L=0):
+    '''
+    Determinates the quantum numbers for the spin, nuclear spin and angular momentum.
+
+    Parameters
+    ----------
+    I : float
+        Nuclear spin operator value.
+    S : float
+        Spin operator value.
+    L : float
+        Angular momentum operator value.
+
+    Returns
+    -------
+
+    sl : np.array
+        Quantum numbers of the spin operator.
+    nl : np.array
+        Quantum numbers of the nuclear spin operator.
+    ll : np.array
+        Quantum numbers of the angular momentum operator
+
+    Example
+    -------
+
+    >>> import epraya as epr
+    >>> Ham, _, _ = epr.Start()
+    >>> Ham.S=1
+    >>> Ham.I=1
+    >>> Ham.L=0
+    >>> print(epr.PMsmi(Ham.I,Ham.S,Ham.L))
+    (array([ 1.,  1.,  1.,  0.,  0.,  0., -1., -1., -1.]),
+    array([ 1.,  0., -1.,  1.,  0., -1.,  1.,  0., -1.]),
+    array([0., 0., 0., 0., 0., 0., 0., 0., 0.]))
+    '''
     if I<0 or S<0 or L<0:
         raise ValueError('Spin values cannot be negative')
     dim=int(2*S+1)*int(2*I+1)*int(2*L+1)
