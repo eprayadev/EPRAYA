@@ -44,6 +44,69 @@ from itertools import product as iterproduct
 from .base_powd import *
 @jaxdatclass
 class JHval:
+    '''
+    Container jax-class for hamiltonial's parameters. Must be initialized with a variable like ``Ham``. To change one parameter use the sintaxis ``Ham.S=1/2``.
+    
+    Parameters
+    ----------
+    
+    S : float 
+        Spin value ex. (1/2,0,3/2).
+    g : array_like or float
+
+        g value of system, can be float, for isotropic case or array for anisotropic.
+    I : float
+        Nuclear spin value
+
+    L : float
+        Angular momentum
+    A : array_like or float 
+        Hyperfine constant, float for isotropic and array for anisotropic
+
+    Q : array_like or float 
+        Quadrupole nuclear interaction constant, float for isotropic and array for anisotropic
+    D : array_like
+        Zero field interaction constants D and E, two value array [0,0]
+
+    Bk2 : array_like
+        Stevens k=-/+2 constants
+    Bk4 : array_like
+
+        Stevens k=-/+4 constants    
+    Bk6 : array_like
+        Stevens k=-/+6 constants      
+    lc : float
+
+        Spin-orbit interaction constant
+    Hpp : array_like
+        Peak to peak distance for the voigtian function using [Hg,Hl], for gaussian and lorentzian distance
+
+    eta : float
+        weight of the gaussian contribution to the voigtian function, from 0 to 1. If eta is 0, the function is lorentzian and if eta is 1, the function is gaussian.
+    weight: float
+
+        Dummy variable by the moment
+    Nucl : string
+        Isotope of the sample. Can be the quantum number and the element or only the element ('55Mn' or 'Mn') 
+        
+
+    Example
+    --------
+    
+    >>> import epraya as epr 
+    >>> Ham=epr.JHval()
+    >>> Ham.S=1
+    >>> Ham.I=1/2
+    >>> Ham.g=[2.003,1.8,1.5]
+    >>> print(Ham)
+    JHval(S=1, g=[2.003, 1.8, 1.5], I=0.5, L=0.0, A=0.0,
+    Q=Array([0, 0, 0], dtype=int32), 
+    D=Array([0, 0], dtype=int32), 
+    Bk2=[0, 0, 0, 0, 0], Bk4=[0, 0, 0, 0, 0, 0, 0, 0, 0],
+    Bk6=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
+    lc=0.0, Hpp=Array([0, 1], dtype=int32), eta=0.5, weight=0.0)
+
+    '''
     S: Union[float,int]=1/2   # Spin
     g: Union[List[float],float,int]=dcfield(default_factory=lambda: 2.003)  # g value
     I: float=0.0   # Nuclear spin
@@ -61,6 +124,55 @@ class JHval:
 
 @jaxdatclass
 class JEco:
+    '''
+    Container jax-class for the experimental parameters. Must be initialized with a variable like ``Exp``. To change one parameter use the sintaxis ``Exp.Freq=9.40``.
+    
+    Parameters
+    ----------
+    
+    Freq : float
+        Frequency of the microwave in the EPR spectrometer in GHz.
+    Points  : int
+        Number of points used to take the EPR spectrum.
+    Temperature : float
+        Temperature of the sample during the measurement in Kelvin.
+
+    Fdirection : list=[0,0,1]
+        Direction of incidence of the magnetic field in relation with the lab frame. By deafult it's [0,0,1], the Z direction.
+    Mwdirection : list=[1,0,0]
+        Direction of incidence of the microwave radiation in relation with the lab frame. By deafult it's [1,0,0], the X direction.
+    Frange : list=[0,1]
+        Field range used in the EPR spectrum in mT.
+    Sampleframe : list==[0,0,0]
+        Three Euler angles of the orientation of the sample in relation to the lab frame.
+    Molframe : list=[0,0,0]
+        Three Euler angles of the orientation of the  paramagnetic molecule in relation to the sample frame.
+    gframe : list=[0,0,0]
+        Three Euler angles of the orientation of the tensor g in the molecular frame.
+    Aframe : list=[0,0,0]
+        Three Euler angles of the orientation of the tensor A in the molecular frame.    
+    Dframe : list=[0,0,0]
+        Three Euler angles of the orientation of the tensor Q in the molecular frame.    
+    Qframe : list=[0,0,0]
+        Three Euler angles of the orientation of the tensor D in the molecular frame.   
+        
+    Example
+    --------
+    
+    >>> import epraya as epr 
+    >>> Exp=epr.JEco()
+    >>> Exp.Freq=9.43
+    >>> Exp.Points=2046
+    >>> Exp.Temperature=306
+    >>> Exp.Frange=[0,400]
+    >>> Exp.Mwdirection=[0,1,0]
+    >>> print(Exp)
+    JEco(Freq=9.43, Points=2046, Temperature=306, 
+    Fdirection=[0, 0, 1], Mwdirection=[0, 1, 0], 
+    Frange=[0, 400], Sampleframe=[0, 0, 0], 
+    Molframe=[0, 0, 0], gframe=[0, 0, 0], 
+    Aframe=[0, 0, 0], Dframe=[0, 0, 0], Qframe=[0, 0, 0])
+    '''
     Freq: float=9.433
     Points: int=4096
     Temperature: float=295.15
@@ -77,6 +189,38 @@ class JEco:
 
 @jaxdatclass
 class JEva:
+    '''
+    Container jax-class for the range of variation of the hamiltonian parameters by defining the minimum and then the maximum value of each variable. Must be initialized with a variable like ``Vary``. To change one parameter use the sintaxis ``Vary.g=[1.5,2.5,1.0,2.0,0.0,1.0]``.
+    
+    Parameters
+    ----------
+    
+    g : list[float]
+        Range to vary the three values of the g tensor.
+    A : list[float]  
+        Range to vary the three values of the A tensor.
+    Q : list[float]  
+        Range to vary the three values of the Q tensor.
+    D : list[float]
+        Range to vary the two values of the D tensor.
+    Hpp : list[float]
+        Range to vary the two values of the peak to peak distance.
+    weight : float
+        Dummy variable by the moment.
+    
+    Example
+    --------
+    
+    >>> import epraya as epr
+    >>> Vary=epr.JEva()
+    >>> Vary.g=[1.5,2.5,1.0,2.0,0.0,1.0]
+    >>> Vary.A=[100,300,200,400,200,250]
+    >>> Vary.Hpp=[0,20,10,15]
+    >>> print(Vary)
+    JEva(g=[1.5, 2.5, 1.0, 2.0, 0.0, 1.0],
+    A=[100, 300, 200, 400, 200, 250], Q=0.0, 
+    D=0.0, Hpp=[0, 20, 10, 15], weight=0.0)
+    '''
     g: Union[list[float],float]=0.0
     A: Union[list[float],float]=0.0     # Hyperfine constant
     Q: Union[list[float],float]=0.0     # Quadrupole interaction constant
@@ -85,6 +229,37 @@ class JEva:
     weight: float=0.0
 
 def Jstart():
+    '''
+    Creates the three JAX containers ``Ham``, ``Exp`` and ``Vary`` for one system.
+    
+    Returns
+    -------
+    
+    Ham : Class
+        Jax container for the hamiltonian parameters.
+    Exp : Class
+        Jax container for the experimental conditions.
+    Vary : Class
+        Jax container for the range and parameters to vary.
+    
+    Example
+    -------
+    
+    >>> import epraya as epr
+    >>> Ham, Exp, Vary=epr.Jstart()
+    >>> print(Ham,Exp,Vary)
+    JHval(S=0.5, g=2.003, I=0.0, L=0.0, A=0.0, 
+    Q=Array([0, 0, 0], dtype=int32), D=Array([0, 0], dtype=int32),
+    Bk2=[0, 0, 0, 0, 0], Bk4=[0, 0, 0, 0, 0, 0, 0, 0, 0],
+    Bk6=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], lc=0.0,
+    Hpp=Array([0, 1], dtype=int32), eta=0.5, weight=0.0) 
+    JEco(Freq=9.433, Points=4096, Temperature=295.15, 
+    Fdirection=[0, 0, 1], Mwdirection=[1, 0, 0], Frange=[0, 1],
+    Sampleframe=[0, 0, 0], Molframe=[0, 0, 0], gframe=[0, 0, 0],
+    Aframe=[0, 0, 0], Dframe=[0, 0, 0], Qframe=[0, 0, 0]) 
+    JEva(g=0.0, A=0.0, Q=0.0, D=0.0, 
+    Hpp=Array([0, 0], dtype=int32), weight=0.0)
+    '''
     global Exp,Vary,Ham
     Ham,Exp,Vary=JHval(),JEco(),JEva()
 
@@ -771,7 +946,75 @@ def Calresonant(Hamer,Expe,Nucl='None'):
     return Blist,spc
     
 @jaxdatclass
-class MJhval:
+class Mjhval:
+    '''
+    Jax container class for the hamiltonial parameters of  two systems. Must be initialized with a variable like ``Ham``. For the nth-system, it can be change using ``Ham.SN=1/2``.
+    
+    
+    *Note: The Hpp is the same for the two systems.*
+    
+    **Warning: The Stevens operators constants are only defined for the first system.**
+    
+    Parameters
+    ----------
+    
+    S : float 
+        Spin value ex. (1/2,0,3/2).
+    g : array_like or float
+        g value of system, can be float, for isotropic case or array for anisotropic.
+    I : float
+        Nuclear spin value
+    L : float
+        Angular momentum
+    A : array_like or float 
+        Hyperfine constant, float for isotropic and array for anisotropic
+    Q : array_like or float 
+        Quadrupole nuclear interaction constant, float for isotropic and array for anisotropic
+    D : array_like
+        Zero field interaction constants D and E, two value array [0,0]
+    Bk2 : array_like
+        Stevens k=-/+2 constants
+    Bk4 : array_like
+        Stevens k=-/+4 constants    
+    Bk6 : array_like
+        Stevens k=-/+6 constants      
+    lc : float
+        Spin-orbit interaction constant
+    Hpp : array_like
+        Peak to peak distance for the voigtian function using [Hg,Hl], for gaussian and lorentzian distance
+    eta : float
+        weight of the gaussian contribution to the voigtian function, from 0 to 1. If eta is 0, the function is lorentzian and if eta is 1, the function is gaussian.
+    weight: float
+        Dummy variable by the moment
+    Nucl : string
+        Isotope of the sample. Can be the quantum number and the element or only the element ('55Mn' or 'Mn') 
+    A1_2 : array_like
+        Hipefine interaction between the spin 1 and nuclear spin 2.
+    X1_2 : array_like
+        Electron-Electron interaction between spins 1 and 2.
+        
+    Example
+    -------
+    >>> import epraya as epr
+    >>> Ham=Mjhval()
+    >>> Ham.S1=1
+    Ham.I1=1/2
+    >>> Ham.g1=[2.003,1.8,1.5]
+    >>> Ham.S2=2
+    >>> Ham.I2=1
+    >>> Ham.g2=[2.003,1.8,1.5]
+    >>> Ham.A1_2=[200,300,200]
+    >>> Ham.X1_2=[500,1000,500]
+    >>> print(Ham)
+    Mjhval(S1=1, S2=2, g1=[2.003, 1.8, 1.5], g2=[2.003, 1.8, 1.5],
+    I1=0.5, I2=1, L1=0.0, L2=0.0, A1=0.0, A2=0.0, 
+    Q1=Array([0, 0, 0], dtype=int32), Q2=Array([0, 0, 0], dtype=int32),
+    D1=Array([0, 0], dtype=int32), D2=Array([0, 0], dtype=int32), 
+    Bk2=[0, 0, 0, 0, 0], Bk4=[0, 0, 0, 0, 0, 0, 0, 0, 0],
+    Bk6=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], lc1=0.0, lc2=0.0,
+    A1_2=[200, 300, 200], A2_1=0.0, X1_2=[500, 1000, 500], 
+    Hpp=Array([0, 1], dtype=int32), eta=0.5, weight=0.0)
+    '''
     S1: Union[float,int]=1/2   # Spin
     S2: Union[float,int]=1/2   # Spin
     g1: Union[List[float],float,int]=dcfield(default_factory=lambda: 2.003)  # g value
@@ -800,6 +1043,57 @@ class MJhval:
 
 @jaxdatclass
 class JEmco:
+    '''
+    Jax container class for the experimental parameters of two systems. Must be initialized with a variable like ``Exp``. To change one parameter use the sintaxis ``Exp.Freq=9.40``.
+    
+    Parameters
+    ----------
+    Freq : float
+        Frequency of the microwave in the EPR spectrometer in GHz.
+    Points  : int
+        Number of points used to take the EPR spectrum.
+    Temperature : float
+        Temperature of the sample during the measurement in Kelvin.
+
+    Fdirection : list=[0,0,1]
+        Direction of incidence of the magnetic field in relation with the lab frame. By deafult it's [0,0,1], the Z direction.
+    Mwdirection : list=[1,0,0]
+        Direction of incidence of the microwave radiation in relation with the lab frame. By deafult it's [1,0,0], the X direction.
+    Frange : list=[0,1]
+        Field range used in the EPR spectrum in mT.
+    Sampleframe : list==[0,0,0]
+        Three Euler angles of the orientation of the sample in relation to the lab frame.
+    Molframe : list=[0,0,0]
+        Three Euler angles of the orientation of the  paramagnetic molecule in relation to the sample frame.
+    gframe : list=[0,0,0]
+        Three Euler angles of the orientation of the tensor g in the molecular frame.
+    Aframe : list=[0,0,0]
+        Three Euler angles of the orientation of the tensor A in the molecular frame.    
+    Dframe : list=[0,0,0]
+        Three Euler angles of the orientation of the tensor Q in the molecular frame.    
+    Qframe : list=[0,0,0]
+        Three Euler angles of the orientation of the tensor D in the molecular frame.   
+        
+    Example
+    --------
+    
+    >>> import epraya as epr 
+    >>> Exp=epr.JEmco()
+    >>> Exp.Freq=9.43
+    >>> Exp.Points=2046
+    >>> Exp.Temperature=306
+    >>> Exp.Frange=[0,400]
+    >>> Exp.Mwdirection=[0,1,0]
+    >>> Exp.gframe1=[20,30,40]
+    >>> Exp.gframe2=[20,30,40]
+    >>> print(Exp)
+    JEmco(Freq=9.43, Points=2046, Temperature=306, Fdirection=[0, 0, 1],
+    Mwdirection=[0, 1, 0], Frange=[0, 400], Sampleframe1=[0, 0, 0],
+    Molframe1=[0, 0, 0], gframe1=[20, 30, 40], Aframe1=[0, 0, 0],
+    Dframe1=[0, 0, 0], Qframe1=[0, 0, 0], Sampleframe2=[0, 0, 0],
+    Molframe2=[0, 0, 0], gframe2=[20, 30, 40], Aframe2=[0, 0, 0], 
+    Dframe2=[0, 0, 0], Qframe2=[0, 0, 0])
+    '''
     Freq: float=9.433
     Points: int=4096
     Temperature: float=295.15
@@ -821,6 +1115,43 @@ class JEmco:
 
 @jaxdatclass
 class JEmva:
+    '''
+    Jax-container class for the range of variation of the hamiltonian parameters by defining the minimum and then the maximum value of each variable. Works for 2 systems and must be initialized with a variable like ``Vary``. To change one parameter use the sintaxis ``Vary.g=[1.5,2.5,1.0,2.0,0.0,1.0]``.
+    
+    *Note: The Hpp is the same for the two systems.*
+    
+    Parameters
+    ----------
+    g : list[float]
+        Range to vary the three values of the g tensor.
+    A : list[float]  
+        Range to vary the three values of the A tensor.
+    Q : list[float]  
+        Range to vary the three values of the Q tensor.
+    D : list[float]
+        Range to vary the two values of the D tensor.
+    Hpp : list[float]
+        Range to vary the two values of the peak to peak distance.
+    weight : float
+        Dummy variable by the moment.
+    
+    Example
+    --------
+    
+    >>> import epraya as epr
+    >>> Vary=epr.JEmva()
+    >>> Vary.g1=[1.5,2.5,1.0,2.0,0.0,1.0]
+    >>> Vary.A1=[100,300,200,400,200,250]
+    >>> Vary.g2=[1.2,1.5,2.003,2.005,2.5,2.6]
+    >>> Vary.A2=[200,250,500,600,200,250]
+    >>> Vary.Hpp=[0,20,10,15]
+    >>> print(Vary)
+    JEmva(g1=[1.5, 2.5, 1.0, 2.0, 0.0, 1.0], 
+    A1=[100, 300, 200, 400, 200, 250], Q1=0.0, 
+    D1=0.0, g2=[1.2, 1.5, 2.003, 2.005, 2.5, 2.6],
+    A2=[200, 250, 500, 600, 200, 250], Q2=0.0, 
+    D2=0.0, Hpp=[0, 20, 10, 15], weight=0.0)
+    '''
     g1: Union[list[float],float]=0.0
     A1: Union[list[float],float]=0.0     # Hyperfine constant
     Q1: Union[list[float],float]=0.0     # Quadrupole interaction constant
@@ -833,8 +1164,44 @@ class JEmva:
     weight: float=0.0
 
 def Jmstart():
+    '''
+    Creates the three JAX containers ``Ham``, ``Exp`` and ``Vary`` for the two systems.
+    
+    Returns
+    -------
+    
+    Ham : Class
+        Jax container for the hamiltonian parameters of the two systems.
+    Exp : Class
+        Jax container for the experimental conditions of the two systems.
+    Vary : Class
+        Jax container for the range and parameters to vary of the two systems. 
+    
+    Example
+    -------
+    
+    >>> import epraya as epr
+    >>> Ham, Exp, Vary=epr.Jmstart()
+    >>> print(Ham,Exp,Vary)
+    Mjhval(S1=0.5, S2=0.5, g1=2.003, g2=2.003, I1=0.0, I2=0.0,
+    L1=0.0, L2=0.0, A1=0.0, A2=0.0, Q1=Array([0, 0, 0], dtype=int32),
+    Q2=Array([0, 0, 0], dtype=int32), D1=Array([0, 0], dtype=int32),
+    D2=Array([0, 0], dtype=int32), Bk2=[0, 0, 0, 0, 0], 
+    Bk4=[0, 0, 0, 0, 0, 0, 0, 0, 0], 
+    Bk6=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], lc1=0.0, lc2=0.0,
+    A1_2=0.0, A2_1=0.0, X1_2=0.0, Hpp=Array([0, 1], dtype=int32),
+    eta=0.5, weight=0.0) 
+    JEmco(Freq=9.433, Points=4096, Temperature=295.15, 
+    Fdirection=[0, 0, 1], Mwdirection=[1, 0, 0], Frange=[0, 1],
+    Sampleframe1=[0, 0, 0], Molframe1=[0, 0, 0], gframe1=[0, 0, 0],
+    Aframe1=[0, 0, 0], Dframe1=[0, 0, 0], Qframe1=[0, 0, 0], 
+    Sampleframe2=[0, 0, 0], Molframe2=[0, 0, 0], gframe2=[0, 0, 0],
+    Aframe2=[0, 0, 0], Dframe2=[0, 0, 0], Qframe2=[0, 0, 0]) 
+    JEmva(g1=0.0, A1=0.0, Q1=0.0, D1=0.0, g2=0.0, A2=0.0, Q2=0.0,
+    D2=0.0, Hpp=Array([0, 0], dtype=int32), weight=0.0)
+    '''
     global Exp,Vary,Ham
-    Ham,Exp,Vary=MJhval(),JEmco(),JEmva()
+    Ham,Exp,Vary=Mjhval(),JEmco(),JEmva()
 
 def JMulpol(maham,Expe,Nucl1='None',Nucl2='None',graph='True'):
     Blist,epc=Jcalmulta(maham,Expe,Nucl1,Nucl2)

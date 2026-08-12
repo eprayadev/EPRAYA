@@ -45,6 +45,57 @@ from importlib import resources
 
 @dataclass
 class Hval:
+    '''
+    Container class for hamiltonial's parameters. Must be initialized with a variable like ``Ham``. To change one parameter use the sintaxis ``Ham.S=1/2``.
+    
+    Parameters
+    ----------
+    S : float 
+        Spin value ex. (1/2,0,3/2).
+    g : array_like or float
+        g value of system, can be float, for isotropic case or array for anisotropic.
+    I : float
+        Nuclear spin value
+    L : float
+        Angular momentum
+    A : array_like or float 
+        Hyperfine constant, float for isotropic and array for anisotropic
+    Q : array_like or float 
+        Quadrupole nuclear interaction constant, float for isotropic and array for anisotropic
+    D : array_like
+        Zero field interaction constants D and E, two value array [0,0]
+    Bk2 : array_like
+        Stevens k=-/+2 constants
+    Bk4 : array_like
+        Stevens k=-/+4 constants    
+    Bk6 : array_like
+        Stevens k=-/+6 constants      
+    lc : float
+        Spin-orbit interaction constant
+    Hpp : array_like
+        Peak to peak distance for the voigtian function using [Hg,Hl], for gaussian and lorentzian distance
+    eta : float
+        weight of the gaussian contribution to the voigtian function, from 0 to 1. If eta is 0, the function is lorentzian and if eta is 1, the function is gaussian.
+    weight: float
+        Dummy variable by the moment
+    Nucl : string
+        Isotope of the sample. Can be the quantum number and the element or only the element ('55Mn' or 'Mn') 
+        
+    Example
+    --------
+    
+    >>> import epraya as epr 
+    >>> Ham=epr.Hval()
+    >>> Ham.S=1
+    >>> Ham.I=1/2
+    >>> Ham.g=[2.003,1.8,1.5]
+    >>> print(Ham)
+    Hval(S=1, g=[2.003, 1.8, 1.5], I=0.5, L=0.0, A=array([0, 0, 0]),
+    Q=array([0, 0, 0]), D=array([0, 0]), Bk2=[0, 0, 0, 0, 0], 
+    Bk4=[0, 0, 0, 0, 0, 0, 0, 0, 0], 
+    Bk6=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
+    lc=0.0, Hpp=array([0, 1]), eta=0.5, weight=0.0, Nucl='None')
+    '''
     S: Union[float,int]=1/2   # Spin
     g: Union[List[float], float,int]=dcfield(default_factory=lambda:2.003)  # g value
     I: float=0.0   # Nuclear spin
@@ -62,25 +113,85 @@ class Hval:
     Nucl: str='None'
 
 @dataclass
-class SHval:
-    S: Union[float,int]=1/2   # Spin
-    g: Union[List[float], float,int]=dcfield(default_factory=lambda:2.003)  # g value
-    I: float=0.0   # Nuclear spin
-    A: Union[List[float], float]=dcfield(default_factory=lambda:np.array([0,0,0]))     # Hyperfine constant
-    Q: Union[list[float], float]=dcfield(default_factory=lambda:np.array([0,0,0]))    # Quadrupole interaction constant
-    D: Union[list[float], float]=dcfield(default_factory=lambda:np.array([0,0]))     # Zero field interaction D and E constants
-    Bk2: Union[list[float], float]=dcfield(default_factory=lambda:[0,0,0,0,0])
-    Bk4: Union[list[float], float]=dcfield(default_factory=lambda:[0,0,0,0,0,0,0,0,0])
-    Bk6: Union[list[float], float]=dcfield(default_factory=lambda:[0,0,0,0,0,0,0,0,0,0,0,0,0])
-    weight: float=0.0
-    Nucl: str='None'
-
-@dataclass
 class Multham:
+    '''
+    **WARNING: Must be use with the function Start(num), not directly.**
+    
+    Container class for the hamiltonial parameters of multisystems. Must be initialized with a variable like ``Ham``. For the nth-system, it can be change using ``Ham.SN=1/2``.
+    
+    Parameters
+    ----------
+    
+    S : float 
+        Spin value ex. (1/2,0,3/2).
+    g : array_like or float
+        g value of system, can be float, for isotropic case or array for anisotropic.
+    I : float
+        Nuclear spin value
+    L : float
+        Angular momentum
+    A : array_like or float 
+        Hyperfine constant, float for isotropic and array for anisotropic
+    Q : array_like or float 
+        Quadrupole nuclear interaction constant, float for isotropic and array for anisotropic
+    D : array_like
+        Zero field interaction constants D and E, two value array [0,0]
+    Bk2 : array_like
+        Stevens k=-/+2 constants
+    Bk4 : array_like
+        Stevens k=-/+4 constants    
+    Bk6 : array_like
+        Stevens k=-/+6 constants      
+    lc : float
+        Spin-orbit interaction constant
+    Hpp : array_like
+        Peak to peak distance for the voigtian function using [Hg,Hl], for gaussian and lorentzian distance
+    eta : float
+        weight of the gaussian contribution to the voigtian function, from 0 to 1. If eta is 0, the function is lorentzian and if eta is 1, the function is gaussian.
+    weight: float
+        Dummy variable by the moment
+    Nucl : string
+        Isotope of the sample. Can be the quantum number and the element or only the element ('55Mn' or 'Mn') 
+    An_m : array_like
+        Hipefine interaction between the spin n and nuclear spin m.
+    Xn_m : array_like
+        Electron-Electron interaction between spins n and m.
+        
+    Example
+    --------
+    
+    >>> import epraya as epr 
+    >>> Ham, _ , _ = epr.Start(2)
+    >>> Ham.S1=1
+    >>> Ham.I1=1/2
+    >>> Ham.g1=[2.003,1.8,1.5]
+    >>> Ham.S2=2
+    >>> Ham.I2=1
+    >>> Ham.g2=[2.003,1.8,1.5]
+    >>> Ham.A1_2=[200,300,200]
+    >>> Ham.X1_2=[500,1000,500]
+    >>> print(Ham)
+    Multham(Mulham=[Hval(S=1, g=[2.003, 1.8, 1.5], I=0.5,
+    L=0.0, A=array([0, 0, 0]), Q=array([0, 0, 0]), 
+    D=array([0, 0]), Bk2=[0, 0, 0, 0, 0], 
+    Bk4=[0, 0, 0, 0, 0, 0, 0, 0, 0], 
+    Bk6=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
+    lc=0.0, Hpp=array([0, 1]), eta=0.5, 
+    weight=0.0, Nucl='None'), 
+    Hval(S=2, g=[2.003, 1.8, 1.5], I=1, L=0.0, 
+    A=array([0, 0, 0]), Q=array([0, 0, 0]), 
+    D=array([0, 0]), Bk2=[0, 0, 0, 0, 0], 
+    Bk4=[0, 0, 0, 0, 0, 0, 0, 0, 0], 
+    Bk6=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
+    lc=0.0, Hpp=array([0, 1]), eta=0.5, weight=0.0, 
+    Nucl='None')], Amix={(0, 1): 
+    array([200, 300, 200])}, 
+    Xmix={(0, 1): array([ 500, 1000,  500])})
+
+    '''
     Mulham: List[Hval]=dcfield(default_factory=list)
     Amix: dict=dcfield(default_factory=dict)
     Xmix: dict=dcfield(default_factory=dict)
-
     def _parse_attr(self,name):
         match=re.match(r"^(S|g|I|L|A|Q|D|Bk2|Bk4|Bk6|lc|Hpp|eta|weight|Nucl)(\d+)$",name)
         if match:
@@ -135,6 +246,54 @@ class Multham:
 
 @dataclass
 class Eco:
+    '''
+    Container class for the experimental parameters. Must be initialized with a variable like ``Exp``. To change one parameter use the sintaxis ``Exp.Freq=9.40``.
+    
+    Parameters
+    ----------
+    Freq : float
+        Frequency of the microwave in the EPR spectrometer in GHz.
+    Points  : int
+        Number of points used to take the EPR spectrum.
+    Temperature : float
+        Temperature of the sample during the measurement in Kelvin.
+    Fdirection : list=[0,0,1]
+        Direction of incidence of the magnetic field in relation with the lab frame. By deafult it's [0,0,1], the Z direction.
+    Mwdirection : list=[1,0,0]
+        Direction of incidence of the microwave radiation in relation with the lab frame. By deafult it's [1,0,0], the X direction.
+    Frange : list=[0,1]
+        Field range used in the EPR spectrum in mT.
+    Sampleframe : list==[0,0,0]
+        Three Euler angles of the orientation of the sample in relation to the lab frame.
+    Molframe : list=[0,0,0]
+        Three Euler angles of the orientation of the  paramagnetic molecule in relation to the sample frame.
+    gframe : list=[0,0,0]
+        Three Euler angles of the orientation of the tensor g in the molecular frame.
+    Aframe : list=[0,0,0]
+        Three Euler angles of the orientation of the tensor A in the molecular frame.    
+    Dframe : list=[0,0,0]
+        Three Euler angles of the orientation of the tensor Q in the molecular frame.    
+    Qframe : list=[0,0,0]
+        Three Euler angles of the orientation of the tensor D in the molecular frame.   
+        
+    Example
+    --------
+    
+    >>> import epraya as epr 
+    >>> Exp=epr.Eco()
+    >>> Exp.Freq=9.43
+    >>> Exp.Points=2046
+    >>> Exp.Temperature=306
+    >>> Exp.Frange=[0,400]
+    >>> Exp.Mwdirection=[0,1,0]
+    >>> print(Exp)
+    Eco(Freq=9.43, Points=2046, Temperature=306, 
+    Fdirection=[0, 0, 1], Mwdirection=[0, 1, 0], 
+    Frange=[0, 400], Sampleframe=[0, 0, 0],
+    Molframe=[0, 0, 0], gframe=[0, 0, 0], 
+    Aframe=[0, 0, 0], Dframe=[0, 0, 0], 
+    Qframe=[0, 0, 0])
+    '''
     Freq: float=9.433
     Points: int=4096
     Temperature: float=295.15
@@ -150,6 +309,38 @@ class Eco:
 
 @dataclass
 class Eva:
+    '''
+    Container class for the range of variation of the hamiltonian parameters by defining the minimum and then the maximum value of each variable. Must be initialized with a variable like ``Vary``. To change one parameter use the sintaxis ``Vary.g=[1.5,2.5,1.0,2.0,0.0,1.0]``.
+    
+    Parameters
+    ----------
+    g : list[float]
+        Range to vary the three values of the g tensor.
+    A : list[float]  
+        Range to vary the three values of the A tensor.
+    Q : list[float]  
+        Range to vary the three values of the Q tensor.
+    D : list[float]
+        Range to vary the two values of the D tensor.
+    Hpp : list[float]
+        Range to vary the two values of the peak to peak distance.
+    weight : float
+        Dummy variable by the moment.
+    
+    Example
+    --------
+    
+    >>> import epraya as epr
+    >>> Vary=epr.Eva()
+    >>> Vary.g=[1.5,2.5,1.0,2.0,0.0,1.0]
+    >>> Vary.A=[100,300,200,400,200,250]
+    >>> Vary.Hpp=[0,20,10,15]
+    >>> print(Vary)
+    Eva(g=[1.5, 2.5, 1.0, 2.0, 0.0, 1.0],
+    A=[100, 300, 200, 400, 200, 250],
+    Q=0.0, D=0.0, Hpp=[0, 20, 10, 15],
+    weight=0.0)
+    '''
     g: Union[list[float],float]=0.0
     A: Union[list[float],float]=0.0     # Hyperfine constant
     Q: Union[list[float],float]=0.0     # Quadrupole interaction constant
@@ -159,6 +350,52 @@ class Eva:
 
 @dataclass
 class Muleva:
+    
+    '''
+    **WARNING: Must be use with the function Start(num), not directly.**
+    
+    Container class for range of variation of the hamiltonial parameters of multisystems. Must be initialized with a variable like ``Vary``. For the nth-system, it can be change using `Vary.gN=[2,2.5,3,3.5,2,2.002]`.
+    
+    Parameters
+    ----------
+    g : list[float]
+        Range to vary the three values of the g tensor.
+    A : list[float]  
+        Range to vary the three values of the A tensor.
+    Q : list[float]  
+        Range to vary the three values of the Q tensor.
+    D : list[float]
+        Range to vary the two values of the D tensor.
+    Hpp : list[float]
+        Range to vary the two values of the peak to peak distance.
+    weight : float
+        Dummy variable by the moment.
+    
+    An_m: list[float]
+        Range to vary the three values of the Hipefine tensor interaction between the spin n and nuclear spin m.
+    Xn_m: list[float]
+        Range to vary the three values of the Electron-Electron tensor interaction between the spin n and nuclear spin m.
+    
+    Example
+    --------
+    
+    >>> import epraya as epr
+    >>> _, _ , Vary = epr.Start(2)
+    >>> Vary.g1=[2,2.5,3,4,1.8,1.5]
+    >>> Vary.g2=[3,4.5,1,1.5,1.0,1.2]
+    >>> Vary.g2=[2.003,1.8,1.5]
+    >>> Vary.A1_2=[200,300,200,500,0,50]
+    >>> Vary.X1_2=[500,1000,500,1000,700,800]
+    print(Vary)
+    Muleva(Mvary=[Eva(g=[2, 2.5, 3, 4, 1.8, 1.5], A=0.0, 
+    Q=0.0, D=0.0, Hpp=array([0, 0]), weight=0.0), 
+    Eva(g=[2.003, 1.8, 1.5], A=0.0, Q=0.0, D=0.0, 
+    Hpp=array([0, 0]), weight=0.0)], 
+    Vamix={(0, 1): array([200, 300, 200, 500,   0,  50])}, 
+    Vxmix={(0, 1): array([ 500, 1000,  500, 1000,  700,  800])})
+
+    '''   
+    
     Mvary: List[Eva]=dcfield(default_factory=list)
     Vamix: dict=dcfield(default_factory=dict)
     Vxmix: dict=dcfield(default_factory=dict)
@@ -215,6 +452,62 @@ class Muleva:
 
 @dataclass
 class Mulexco:
+    '''
+    **WARNING: Must be use with the function Start(num), not directly.**
+    
+    Container class for the experimental parameters of the systems. Must be initialized with a variable like ``Exp``. To change one parameter of the nth-system use the sintaxis ``Exp.SampleframeN=[60,50,0]``. 
+    
+    For points, frecuency, temperature and range, it's only necessary to define for the first system, like: ``Exp.Freq1=9.5``
+    
+    Parameters
+    ----------
+    Freq : float
+        Frequency of the microwave in the EPR spectrometer in GHz.
+    Points  : int
+        Number of points used to take the EPR spectrum.
+    Temperature : float
+        Temperature of the sample during the measurement in Kelvin.
+
+    Fdirection : list=[0,0,1]
+        Direction of incidence of the magnetic field in relation with the lab frame. By deafult it's [0,0,1], the Z direction.
+    Mwdirection : list=[1,0,0]
+        Direction of incidence of the microwave radiation in relation with the lab frame. By deafult it's [1,0,0], the X direction.
+    Frange : list=[0,1]
+        Field range used in the EPR spectrum in mT.
+    Sampleframe : list==[0,0,0]
+        Three Euler angles of the orientation of the sample in relation to the lab frame.
+    Molframe : list=[0,0,0]
+        Three Euler angles of the orientation of the  paramagnetic molecule in relation to the sample frame.
+    gframe : list=[0,0,0]
+        Three Euler angles of the orientation of the tensor g in the molecular frame.
+    Aframe : list=[0,0,0]
+        Three Euler angles of the orientation of the tensor A in the molecular frame.    
+    Dframe : list=[0,0,0]
+        Three Euler angles of the orientation of the tensor Q in the molecular frame.    
+    Qframe : list=[0,0,0]
+        Three Euler angles of the orientation of the tensor D in the molecular frame.   
+        
+    Example
+    --------
+    
+    >>> import epraya as epr 
+    >>> >>> _, Exp , _ = epr.Start(2)
+    >>> Exp.Freq1=9.5
+    >>> Exp.Points1=4095
+    >>> Exp.Frange1=[0,500]
+    >>> Exp.Sampleframe2=[10,30,0]
+    >>> print(Exp)
+    Mulexco(Mexp=[Eco(Freq=9.5, Points=4095, Temperature=295.15,
+    Fdirection=[0, 0, 1], Mwdirection=[1, 0, 0], Frange=[0, 500],
+    Sampleframe=[0, 0, 0], Molframe=[0, 0, 0], gframe=[0, 0, 0],
+    Aframe=[0, 0, 0], Dframe=[0, 0, 0], Qframe=[0, 0, 0]),
+    Eco(Freq=9.433, Points=4096, Temperature=295.15, 
+    Fdirection=[0, 0, 1], Mwdirection=[1, 0, 0], Frange=[0, 1],
+    Sampleframe=[10, 30, 0], Molframe=[0, 0, 0], gframe=[0, 0, 0],
+    Aframe=[0, 0, 0], Dframe=[0, 0, 0], Qframe=[0, 0, 0])])
+
+    '''
+
     Mexp: List[Eco]=dcfield(default_factory=list)
     def _parse_attr(self,name):
         match=re.match(r"^(Freq|Points|Temperature|Fdirection|Frange|Sampleframe|Molframe|gframe|Aframe|Dframe|)(\d+)$",name)
@@ -244,6 +537,43 @@ class Mulexco:
         super().__setattr__(name,value)
 
 def Start(num=1):
+    '''
+    Creates the three containers ``Ham``, ``Exp`` and ``Vary`` for num systems.
+    
+    Parameters
+    ----------
+    
+    num : int
+        Number of systems to simulate.
+    Returns
+    -------
+    
+    Ham : Class
+        Container for the hamiltonian parameters.
+    Exp : Class
+        Container for the experimental conditions.
+    Vary : Class
+        Container for the range and parameters to vary.
+    
+    Example
+    -------
+    
+    >>> import epraya as epr
+    >>> Ham, Exp, Vary=epr.Start()
+    >>> print(Ham,Exp,Vary)
+    (Hval(S=0.5, g=2.003, I=0.0, L=0.0, A=array([0, 0, 0]), 
+    Q=array([0, 0, 0]), D=array([0, 0]), Bk2=[0, 0, 0, 0, 0],
+    Bk4=[0, 0, 0, 0, 0, 0, 0, 0, 0], 
+    Bk6=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
+    lc=0.0, Hpp=array([0, 1]), eta=0.5, weight=0.0, Nucl='None'),
+    Eco(Freq=9.433, Points=4096, Temperature=295.15,
+    Fdirection=[0, 0, 1], Mwdirection=[1, 0, 0], 
+    Frange=[0, 1], Sampleframe=[0, 0, 0], Molframe=[0, 0, 0], 
+    gframe=[0, 0, 0], Aframe=[0, 0, 0], Dframe=[0, 0, 0], 
+    Qframe=[0, 0, 0]),
+    Eva(g=0.0, A=0.0, Q=0.0, D=0.0, Hpp=array([0, 0]), weight=0.0))
+
+    '''
     global Exp,Vary,Ham
     ae=0
     if num==1:
