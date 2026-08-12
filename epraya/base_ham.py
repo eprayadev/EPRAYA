@@ -596,9 +596,74 @@ def Start(num=1):
                 Ham.Mulham[ae].S=0
     return Ham,Exp,Vary
 def Kronecker(a0,b0):
+    '''
+    Implementation of the Kronecker delta.
+    
+    Parameters
+    ----------
+    a0 : int
+        First value to compare.
+    b0 : int
+        Second value to compare
+    Returns
+    -------
+    1 : int
+        If the two values are equal
+    0 : int
+        If the two values differ
+
+    Example
+    -------
+
+    >>> import epraya as epr
+    >>> a, b = 2, 3
+    >>> c, d = 2, 4
+    >>> print(epr.Kronecker(a,b))
+    >>> print(epr.Kronecker(a,c))
+    >>> print(epr.Kronecker(b,d))
+    0.0
+    1.0
+    0.0
+    '''
     return np.where(a0==b0,1.0,0.0)
 
 def Pauli(s):
+    '''
+    Defines the Pauli matrices for the spin s.
+
+    Parameters
+    ----------
+
+    s : float
+        Spin value of the system.
+
+    Returns
+    -------
+
+    sx : np.array
+        Pauli matrix of the spin x component.
+    sy : np.array
+        Pauli matrix of the spin y component.
+    sz : np.array
+        Pauli matrix of the spin z component.
+
+     Example
+    -------
+
+    >>> import epraya as epr
+    >>> s = 1
+    >>> sx, sy, sz = epr.Pauli(s)
+    >>> print(sx, sy, sz)
+    [[0.        +0.j 0.70710678+0.j 0.        +0.j]
+     [0.70710678+0.j 0.        +0.j 0.70710678+0.j]
+     [0.        +0.j 0.70710678+0.j 0.        +0.j]]
+    [[ 0.+0.j         -0.-0.70710678j  0.+0.j        ]
+     [ 0.+0.70710678j  0.+0.j         -0.-0.70710678j]
+     [ 0.+0.j          0.+0.70710678j  0.+0.j        ]]
+    [[ 1.  0.  0.]
+     [ 0.  0.  0.]
+     [ 0.  0. -1.]]
+    '''
     #Defines the pauli matrix for all s values:
     ms=np.linspace(s,-s,int(2*s+1))
     z1=0.5j
@@ -616,6 +681,47 @@ def Pauli(s):
 
 #Spin Orbit term
 def Lorbit(sx,sy,sz,lamda,dim,l=0):
+  '''
+  Function for the spin orbit interaction, with an isotropic coupling constant.
+  *It's recommended to use the Stevens Operators instead of this function*
+
+  Parameters
+  ----------
+
+  sx : np.array
+      Pauli matrix of the spin x component.
+  sy : np.array
+      Pauli matrix of the spin y component.
+  sz : np.array
+      Pauli matrix of the spin z component.
+  lamda : float
+      Isotropic coupling constant.
+  dim : int
+      Dimension of the total hamiltonian.
+  l : float
+      Angular momentum operator
+
+  Returns
+  -------
+  orbe : np.array
+      Matrix of the spin orbit interaction with dimension dim.
+
+  Example
+  -------
+
+  >>> import epraya as epr 
+  >>> Ham,_,_=epr.Start()
+  >>> Ham.S=1/2
+  >>> Ham.L=1/2
+  >>> Ham.lc=20
+  >>> sx,sy,sz=epr.Pauli(Ham.S)
+  >>> dim=int((2*Ham.S+1)*(2*Ham.L+1))
+  >>> print(epr.Lorbit(sx,sy,sz,Ham.lc,dim,Ham.L))
+  ([[ 5.+0.j,  0.+0.j,  0.+0.j,  0.+0.j],
+  [ 0.+0.j, -5.+0.j, 10.+0.j,  0.+0.j],
+  [ 0.+0.j, 10.+0.j, -5.+0.j,  0.+0.j],
+  [ 0.+0.j,  0.+0.j,  0.+0.j,  5.+0.j]])
+  '''
   if l !=0:
     lx,ly,lz=Pauli(l)
     orbe=lamda*(np.kron(lx,sx)+np.kron(ly,sy)+np.kron(lz,sz))
@@ -625,22 +731,179 @@ def Lorbit(sx,sy,sz,lamda,dim,l=0):
     return np.zeros(dim)
 
 def Hfi(ssx,ssy,ssz,iix,iiy,iiz,at,dim):
+    '''
+    Function for the hiperfine interaction.
+    
+    Parameters
+    ----------
+    ssx : np.array
+        Pauli matrix of the spin x component.
+    ssy : np.array
+        Pauli matrix of the spin y component.
+    ssz : np.array
+        Pauli matrix of the spin z component.
+    iix : np.array
+        Pauli matrix of the nuclear spin x component.
+    iiy : np.array
+        Pauli matrix of the nuclear spin y component.
+    iiz : np.array
+        Pauli matrix of the nuclear spin z component.
+    at : np.array
+        Array for the hiperfine interaction constant.
+    dim : int
+        Dimension of the total hamiltonian.
+        
+    Returns
+    -------
+    ta : np.array
+        Matrix of the hiperfine interaction with dimension dim.
+
+    Example
+    -------
+
+    >>> import epraya as epr 
+    >>> Ham,Exp,_=epr.Start()
+    >>> Ham.S=1/2
+    >>> Ham.I=1/2
+    >>> Ham.A=[200,300,200]
+    >>> Ham=epr.chaframe(Ham,Exp)
+    >>> sx,sy,sz=epr.Pauli(Ham.S)
+    >>> ix,iy,iz=epr.Pauli(Ham.S)
+    >>> dim=int((2*Ham.S+1)*(2*Ham.I+1))
+    >>> print(epr.Hfi(sx,sy,sz,ix,iy,iz,Ham.A,dim))
+    [[ 50.+0.j   0.+0.j   0.+0.j -25.+0.j]
+    [  0.+0.j -50.+0.j 125.+0.j   0.+0.j]
+    [  0.+0.j 125.+0.j -50.+0.j   0.+0.j]
+    [-25.+0.j   0.+0.j   0.+0.j  50.+0.j]]
+    '''
     ta=(at[0,0]*np.kron(ssx,iix))+(at[0,1]*np.kron(ssx,iiy))+(at[0,2]*np.kron(ssx,iiz))+(at[1,0]*np.kron(ssy,iix))+(at[1,1]*np.kron(ssy,iiy))+(at[1,2]*np.kron(ssy,iiz))+(at[2,0]*np.kron(ssz,iix))+(at[2,1]*np.kron(ssz,iiy))+(at[2,2]*np.kron(ssz,iiz))
     ta=np.kron(ta,np.eye(int(dim/(ta).shape[1])))
     return ta
 
 def Hze(ssx,ssy,ssz,g,biel,dim):
+    '''
+    Function for the Zeeman interaction.
+    
+    Parameters
+    ----------
+    ssx : np.array
+        Pauli matrix of the spin x component.
+    ssy : np.array
+        Pauli matrix of the spin y component.
+    ssz : np.array
+        Pauli matrix of the spin z component.
+    g : np.array
+        Array for the g factor.
+    biel : np.array
+        Direction of incidence of the magnetic field.
+    dim : int
+        Dimension of the total hamiltonian.
+        
+    Returns
+    -------
+    thz : np.array
+        Matrix of the Zeeman interaction with dimension dim.
+
+    Example
+    -------
+
+    >>> import epraya as epr 
+    >>> Ham,Exp,_=epr.Start()
+    >>> Ham.S=1/2
+    >>> Ham.g=[2.003,3.0,2.003]
+    >>> Ham=epr.chaframe(Ham,Exp)
+    >>> sx,sy,sz=epr.Pauli(Ham.S)
+    >>> dim=int((2*Ham.S+1))
+    >>> print(epr.Hze(sx,sy,sz,Ham.g,[0,0,1],dim))
+    [[ 1.0015+0.j  0.    +0.j]
+    [ 0.    +0.j -1.0015+0.j]]
+    '''
     hze=biel[0]*(g[0,0]*ssx+g[0,1]*ssy+g[0,2]*ssz)+biel[1]*(g[1,0]*ssx+g[1,1]*ssy+g[1,2]*ssz)+biel[2]*(g[2,0]*ssx+g[2,1]*ssy+g[2,2]*ssz)
     thz=np.kron(hze,np.eye(int(dim/(hze).shape[1])))
     return thz
 
 def Qii(iix,iiy,iiz,q,dim):
+    '''
+    Function for the nuclear quadrupolar interaction.
+    
+    Parameters
+    ----------
+    iix : np.array
+        Pauli matrix of the nuclear spin x component.
+    iiy : np.array
+        Pauli matrix of the nuclear spin y component.
+    iiz : np.array
+        Pauli matrix of the nuclear spin z component.
+    q : np.array
+        Array for the quadrupolar interaction constant.
+    dim : int
+        Dimension of the total hamiltonian.
+        
+    Returns
+    -------
+    tql : np.array
+        Matrix of the nuclear quadrupolar interaction with dimension dim.
+
+    Example
+    -------
+
+    >>> import epraya as epr 
+    >>> Ham,Exp,_=epr.Start()
+    >>> Ham.I=1
+    >>> Ham.Q=[0.5,10.0,0]
+    >>> Ham=epr.chaframe(Ham,Exp)
+    >>> ix,iy,iz=epr.Pauli(Ham.I)
+    >>> dim=int((2*Ham.I+1))
+    >>> print(epr.Qii(ix,iy,iz,Ham.Q,dim))
+    [[ 0.  +0.j  -4.75+0.5j  0.  +0.j ]
+    [-4.75-0.5j  0.  +0.j  -4.75+0.5j]
+    [ 0.  +0.j  -4.75-0.5j  0.  +0.j ]]
+    '''
     hql=(q[0,0]*iix*iix)+(q[1,1]*iiy*iiy)+(q[2,2]*iiz*iiz)+(q[0,1]*(iix*iiy)-(iiy*iix))+(q[1,2]*(iiy*iiz)-(iiz*iiy))
     +(q[2,0]*(iiz*iix)-(iix*iiz))
     tql=np.kron(hql,np.eye(int(dim/(hql).shape[1])))
     return tql
 
 def Nhze(I,iix,iiy,iiz,dim,Nucl='None',direction=[0,0,1]):
+    '''
+    Function for the Zeeman nuclear interaction.
+    
+    Parameters
+    ----------
+    I : float
+        Nuclear spin value.
+    iix : np.array
+        Pauli matrix of the nuclear spin x component.
+    iiy : np.array
+        Pauli matrix of the nuclear spin y component.
+    iiz : np.array
+        Pauli matrix of the nuclear spin z component.
+    dim : int
+        Dimension of the total hamiltonian.
+    Nucl : str
+        Symbol of the element of the paramagnetic center.
+    direction : np.array
+        Direction of incidence of the magnetic field.
+
+    Returns
+    -------
+    thz : np.array
+        Matrix of the Zeeman nuclear interaction with dimension dim.
+
+    Example
+    -------
+
+    >>> import epraya as epr 
+    >>> Ham,Exp,_=epr.Start()
+    >>> Ham.I=1
+    >>> Ham.Nucl='55Mn'
+    >>> ix,iy,iz=epr.Pauli(Ham.I)
+    >>> dim=int((2*Ham.I+1))
+    >>> print(epr.Nhze(Ham.I,ix,iy,iz,dim,Ham.Nucl,[0,0,1]))
+    [[ 1.38128  0.       0.     ]
+    [ 0.       0.       0.     ]
+    [ 0.       0.      -1.38128]]
+    '''
     if Nucl!='None':
         route=resources.files(__package__).joinpath("nucleardaat.txt")
         krle=read_csv(route,header=0,sep='\t')
@@ -661,24 +924,72 @@ def Nhze(I,iix,iiy,iiz,dim,Nucl='None',direction=[0,0,1]):
     return nhz
 
 def chaframe(Ham,Exp):
-      Ham=Convtarray(Ham)
-      D2s=np.asarray([-Ham.D[0]/3+Ham.D[1],-Ham.D[0]/3-Ham.D[1],2*Ham.D[0]/3])
-      tA=np.eye(3)*Ham.A
-      tQ=np.eye(3)*Ham.Q
-      tg=np.eye(3)*Ham.g
-      tD=np.eye(3)*D2s
-      A1=Rotmatrix(Exp.Aframe[0],Exp.Aframe[1],Exp.Aframe[2]).T@tA@(Rotmatrix(Exp.Aframe[0],Exp.Aframe[1],Exp.Aframe[2]))
-      g1=(Rotmatrix(Exp.gframe[0],Exp.gframe[1],Exp.gframe[2])).T@tg@(Rotmatrix(Exp.gframe[0],Exp.gframe[1],Exp.gframe[2]))
-      D2=(Rotmatrix(Exp.Dframe[0],Exp.Dframe[1],Exp.Dframe[2])).T@tD@(Rotmatrix(Exp.Dframe[0],Exp.Dframe[1],Exp.Dframe[2]))
-      Q1=(Rotmatrix(Exp.Qframe[0],Exp.Qframe[1],Exp.Qframe[2])).T@tQ@(Rotmatrix(Exp.Qframe[0],Exp.Qframe[1],Exp.Qframe[2]))
-      Ham.A,Ham.g,Ham.D,Ham.Q=A1,g1,D2,Q1
-      return Ham
+    '''
+    Adds the rotations for the constants g, A, Q and D, described by the conditions gframe, Aframe, Qframe and D.frame.
+    
+    Parameters
+    ----------
+    
+    Ham : Class
+        Container of the Hamiltonian parameters.
+    Exp : Class
+        Container of the Experimental conditions.
+
+    Returns
+    -------
+    
+    Ham : Class
+        Container of the Hamiltonian parameters, with the corrected values.
+    
+    Example
+    -------
+    >>> import epraya as epr 
+    >>> Ham,Exp,_=epr.Start()
+    >>> Ham.g=[2.0003,2.5,2.5]
+    >>> Ham.Q=[0.5,10.0,0]
+    >>> print(Ham)
+    >>> Ham=epr.chaframe(Ham,Exp)
+    >>> print(Ham)
+    Hval(S=0.5, g=[2.0003, 2.5, 2.5], I=0.0, L=0.0,
+    A=array([0, 0, 0]), Q=[0.5, 10.0, 0], D=array([0, 0]),
+    Bk2=[0, 0, 0, 0, 0], Bk4=[0, 0, 0, 0, 0, 0, 0, 0, 0],
+    Bk6=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], lc=0.0,
+    Hpp=array([0, 1]), eta=0.5, weight=0.0, Nucl='None')
+    Hval(S=0.5, g=array([[2.0003, 0.    , 0.    ],
+       [0.    , 2.5   , 0.    ],
+       [0.    , 0.    , 2.5   ]]), 
+       I=0.0, L=0.0, A=array([[0., 0., 0.],
+       [0., 0., 0.],
+       [0., 0., 0.]]), Q=array([[ 0.5,  0. ,  0. ],
+       [ 0. , 10. ,  0. ],
+       [ 0. ,  0. ,  0. ]]), D=array([[0., 0., 0.],
+       [0., 0., 0.],
+       [0., 0., 0.]]), Bk2=[0, 0, 0, 0, 0],
+       Bk4=[0, 0, 0, 0, 0, 0, 0, 0, 0], 
+       Bk6=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], lc=0.0, 
+       Hpp=array([0, 1]), eta=0.5, weight=0.0, Nucl='None')
+    '''
+    Ham=Convtarray(Ham)
+    D2s=np.asarray([-Ham.D[0]/3+Ham.D[1],-Ham.D[0]/3-Ham.D[1],2*Ham.D[0]/3])
+    tA=np.eye(3)*Ham.A
+    tQ=np.eye(3)*Ham.Q
+    tg=np.eye(3)*Ham.g
+    tD=np.eye(3)*D2s
+    rot=Rotationmat(Exp)
+    
+    A1=rot@(Rotmatrix(Exp.Aframe[0],Exp.Aframe[1],Exp.Aframe[2]).T@tA@(Rotmatrix(Exp.Aframe[0],Exp.Aframe[1],Exp.Aframe[2]))@rot.T
+    g1=rot@(Rotmatrix(Exp.gframe[0],Exp.gframe[1],Exp.gframe[2])).T@tg@(Rotmatrix(Exp.gframe[0],Exp.gframe[1],Exp.gframe[2]))@rot.T
+    D2=rot@(Rotmatrix(Exp.Dframe[0],Exp.Dframe[1],Exp.Dframe[2])).T@tD@(Rotmatrix(Exp.Dframe[0],Exp.Dframe[1],Exp.Dframe[2]))@rot.T
+    Q1=rot@(Rotmatrix(Exp.Qframe[0],Exp.Qframe[1],Exp.Qframe[2])).T@tQ@(Rotmatrix(Exp.Qframe[0],Exp.Qframe[1],Exp.Qframe[2]))@rot.T
+    Ham.A,Ham.g,Ham.D,Ham.Q=A1,g1,D2,Q1
+    return Ham
 
 def Rotationmat(Exp):
+    
     RRmatrix=Rotmatrix(Exp.Sampleframe[0],Exp.Sampleframe[1],Exp.Sampleframe[2])@Rotmatrix(Exp.Molframe[0],Exp.Molframe[1],Exp.Molframe[2])
     return RRmatrix.T
-
 def Rotmatrix(alfa,beta,gamma):
+
   alfa,beta,gamma=np.radians(alfa),np.radians(beta),np.radians(gamma)
   cosg,sing=np.cos(gamma),np.sin(gamma)
   cosa,sina=np.cos(alfa),np.sin(alfa)
