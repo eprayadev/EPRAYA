@@ -564,6 +564,7 @@ class TkinterApp2:
                 self.distancevar.set(vardistancia) 
                 self.ldistancet=vardistancia
                 print(f"Measured distance X: {dist_x:.4f} [mT]")
+                print(f"From x1={x1:.3f} mT to x2={x2:.3f} mT")
                 self.meapoints=[]
                 self.togglemeamode() 
     #Cleaning
