@@ -774,7 +774,7 @@ class BaselineTuner: #For data tuning
         dsframe=ttk.Frame(daframe)
         dsframe.pack(fill='x',pady=(0,2))
         ttk.Label(dsframe,text="Start").pack(side=tk.LEFT)
-        ttk.Label(dsframe,textvariable=self.svar,width=5).pack(side=tk.RIGHT)
+        ttk.Label(dsframe,textvariable=self.ssvar,width=5).pack(side=tk.RIGHT)
         
         #Sliders for data 
         self.dsslider=ttk.Scale(dsframe,from_=0,to=maxidx-1,orient=tk.HORIZONTAL,variable=self.ssvar,command=self.updatep)
@@ -782,7 +782,7 @@ class BaselineTuner: #For data tuning
         deframe=ttk.Frame(daframe)
         deframe.pack(fill='x',pady=(2,0))
         ttk.Label(deframe,text="End").pack(side=tk.LEFT)
-        ttk.Label(deframe,textvariable=self.envar,width=5).pack(side=tk.RIGHT)
+        ttk.Label(deframe,textvariable=self.esnvar,width=5).pack(side=tk.RIGHT)
         self.deslider=ttk.Scale(deframe,from_=1,to=maxidx,orient=tk.HORIZONTAL,variable=self.esnvar,command=self.updatep)
         self.deslider.pack(fill='x')
         #Sliders for baseline
@@ -893,7 +893,10 @@ class BaselineTuner: #For data tuning
             spc=scs.savgol_filter(self.counts,window_length=lt,polyorder=pol)
         else:
             spc=np.copy(self.counts)
-        mx=(spc[eind]-spc[sind])/(self.field[eind]-self.field[sind])
+         if (self.field[eind]-self.field[sind])>0 or (self.field[eind]-self.field[sind])<0:
+            mx=(spc[eind]-spc[sind])/(self.field[eind]-self.field[sind])
+        else: 
+            mx=0
         bx=spc[sind]-mx*self.field[sind]
         basel=bx+(mx*self.field)
         self.spcc=spc-basel
