@@ -893,7 +893,7 @@ class BaselineTuner: #For data tuning
             spc=scs.savgol_filter(self.counts,window_length=lt,polyorder=pol)
         else:
             spc=np.copy(self.counts)
-         if (self.field[eind]-self.field[sind])>0 or (self.field[eind]-self.field[sind])<0:
+        if (self.field[eind]-self.field[sind])>0 or (self.field[eind]-self.field[sind])<0:
             mx=(spc[eind]-spc[sind])/(self.field[eind]-self.field[sind])
         else: 
             mx=0

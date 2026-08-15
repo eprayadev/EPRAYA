@@ -595,18 +595,21 @@ def Start(num=1):
             if ae>0:
                 Ham.Mulham[ae].S=0
     return Ham,Exp,Vary
+    
 def Kronecker(a0,b0):
     '''
     Implementation of the Kronecker delta.
     
     Parameters
     ----------
+    
     a0 : int
         First value to compare.
     b0 : int
         Second value to compare
     Returns
     -------
+    
     1 : int
         If the two values are equal
     0 : int
@@ -624,6 +627,7 @@ def Kronecker(a0,b0):
     0.0
     1.0
     0.0
+    
     '''
     return np.where(a0==b0,1.0,0.0)
 
@@ -681,54 +685,54 @@ def Pauli(s):
 
 #Spin Orbit term
 def Lorbit(sx,sy,sz,lamda,dim,l=0):
-  '''
-  Function for the spin orbit interaction, with an isotropic coupling constant.
-  *It's recommended to use the Stevens Operators instead of this function*
+    '''
+    Function for the spin orbit interaction, with an isotropic coupling constant.
+    *It's recommended to use the Stevens Operators instead of this function*
+    
+    Parameters
+    ----------
 
-  Parameters
-  ----------
+    sx : np.array
+        Pauli matrix of the spin x component.
+    sy : np.array
+        Pauli matrix of the spin y component.
+    sz : np.array
+        Pauli matrix of the spin z component.
+    lamda : float
+        Isotropic coupling constant.
+    dim : int
+        Dimension of the total hamiltonian.
+    l : float
+        Angular momentum operator
 
-  sx : np.array
-      Pauli matrix of the spin x component.
-  sy : np.array
-      Pauli matrix of the spin y component.
-  sz : np.array
-      Pauli matrix of the spin z component.
-  lamda : float
-      Isotropic coupling constant.
-  dim : int
-      Dimension of the total hamiltonian.
-  l : float
-      Angular momentum operator
+    Returns
+    -------
+    orbe : np.array
+        Matrix of the spin orbit interaction with dimension dim.
 
-  Returns
-  -------
-  orbe : np.array
-      Matrix of the spin orbit interaction with dimension dim.
+    Example
+    -------
 
-  Example
-  -------
-
-  >>> import epraya as epr 
-  >>> Ham,_,_=epr.Start()
-  >>> Ham.S=1/2
-  >>> Ham.L=1/2
-  >>> Ham.lc=20
-  >>> sx,sy,sz=epr.Pauli(Ham.S)
-  >>> dim=int((2*Ham.S+1)*(2*Ham.L+1))
-  >>> print(epr.Lorbit(sx,sy,sz,Ham.lc,dim,Ham.L))
-  ([[ 5.+0.j,  0.+0.j,  0.+0.j,  0.+0.j],
-  [ 0.+0.j, -5.+0.j, 10.+0.j,  0.+0.j],
-  [ 0.+0.j, 10.+0.j, -5.+0.j,  0.+0.j],
-  [ 0.+0.j,  0.+0.j,  0.+0.j,  5.+0.j]])
-  '''
-  if l !=0:
-    lx,ly,lz=Pauli(l)
-    orbe=lamda*(np.kron(lx,sx)+np.kron(ly,sy)+np.kron(lz,sz))
-    orbe=np.kron(orbe,np.eye(int(dim/(orbe).shape[1])))
-    return orbe
-  else:
-    return np.zeros(dim)
+      >>> import epraya as epr 
+      >>> Ham,_,_=epr.Start()
+      >>> Ham.S=1/2
+      >>> Ham.L=1/2
+      >>> Ham.lc=20
+      >>> sx,sy,sz=epr.Pauli(Ham.S)
+      >>> dim=int((2*Ham.S+1)*(2*Ham.L+1))
+      >>> print(epr.Lorbit(sx,sy,sz,Ham.lc,dim,Ham.L))
+      ([[ 5.+0.j,  0.+0.j,  0.+0.j,  0.+0.j],
+      [ 0.+0.j, -5.+0.j, 10.+0.j,  0.+0.j],
+      [ 0.+0.j, 10.+0.j, -5.+0.j,  0.+0.j],
+      [ 0.+0.j,  0.+0.j,  0.+0.j,  5.+0.j]])
+    '''
+    if l !=0:
+        lx,ly,lz=Pauli(l)
+        orbe=lamda*(np.kron(lx,sx)+np.kron(ly,sy)+np.kron(lz,sz))
+        orbe=np.kron(orbe,np.eye(int(dim/(orbe).shape[1])))
+        return orbe
+    else:
+        return np.zeros(dim)
 
 def Hfi(ssx,ssy,ssz,iix,iiy,iiz,at,dim):
     '''
@@ -977,10 +981,10 @@ def chaframe(Ham,Exp):
     tD=np.eye(3)*D2s
     rot=Rotationmat(Exp)
     
-    A1=(Rotmatrix(Exp.Aframe[0],Exp.Aframe[1],Exp.Aframe[2]).T@tA@(Rotmatrix(Exp.Aframe[0],Exp.Aframe[1],Exp.Aframe[2]))
-    g1=(Rotmatrix(Exp.gframe[0],Exp.gframe[1],Exp.gframe[2])).T@tg@(Rotmatrix(Exp.gframe[0],Exp.gframe[1],Exp.gframe[2]))
-    D2=(Rotmatrix(Exp.Dframe[0],Exp.Dframe[1],Exp.Dframe[2])).T@tD@(Rotmatrix(Exp.Dframe[0],Exp.Dframe[1],Exp.Dframe[2]))
-    Q1=(Rotmatrix(Exp.Qframe[0],Exp.Qframe[1],Exp.Qframe[2])).T@tQ@(Rotmatrix(Exp.Qframe[0],Exp.Qframe[1],Exp.Qframe[2]))
+    A1=Rotmatrix(Exp.Aframe[0],Exp.Aframe[1],Exp.Aframe[2]).T@tA@(Rotmatrix(Exp.Aframe[0],Exp.Aframe[1],Exp.Aframe[2]))
+    g1=Rotmatrix(Exp.gframe[0],Exp.gframe[1],Exp.gframe[2]).T@tg@(Rotmatrix(Exp.gframe[0],Exp.gframe[1],Exp.gframe[2]))
+    D2=Rotmatrix(Exp.Dframe[0],Exp.Dframe[1],Exp.Dframe[2]).T@tD@(Rotmatrix(Exp.Dframe[0],Exp.Dframe[1],Exp.Dframe[2]))
+    Q1=Rotmatrix(Exp.Qframe[0],Exp.Qframe[1],Exp.Qframe[2]).T@tQ@(Rotmatrix(Exp.Qframe[0],Exp.Qframe[1],Exp.Qframe[2]))
     Ham.A,Ham.g,Ham.D,Ham.Q=A1,g1,D2,Q1
     return Ham
 
@@ -1013,52 +1017,51 @@ def Rotationmat(Exp):
     return RRmatrix.T
     
 def Rotmatrix(alfa,beta,gamma):
+    '''
+    Creates the rotation matrix based in the Euler angles in degrees.
 
- '''
- Creates the rotation matrix based in the Euler angles in degrees.
+    Parameters
+    ----------
 
- Parameters
- ----------
+    alfa : float
+        Euler angle for rotations around the z axis
+    beta : float
+        Euler angle for rotations around the y' axis
+    gamma : float
+        Euler angle for rotations around the z'' axis
 
- alfa : float
-     Euler angle for rotations around the z axis
- beta : float
-     Euler angle for rotations around the y' axis
- gamma : float
-     Euler angle for rotations around the z'' axis
+    Returns
+    -------
 
-Returns
--------
+    Reuler : np.array
+        Rotation matrix
 
-Reuler : np.array
-    Rotation matrix
+    Example
+    -------
 
-Example
--------
-
->>> import epraya as epr
->>> alfa,beta,gamma=20,30,40
->>> print(epr.Rotmatrix(alfa,beta,gamma))
-[[ 0.40355888  0.96394593 -0.38302222]
-[-0.7851017   0.52945382  0.3213938 ]
-[ 0.46984631  0.17101007  0.8660254 ]]
-'''
-
-  alfa,beta,gamma=np.radians(alfa),np.radians(beta),np.radians(gamma)
-  cosg,sing=np.cos(gamma),np.sin(gamma)
-  cosa,sina=np.cos(alfa),np.sin(alfa)
-  cosb,sinb=np.cos(beta),np.sin(beta)
-  eps=10**-9
-  cosg=np.where(np.abs(cosg)<eps,0.0,cosg)
-  sing=np.where(np.abs(sing)<eps,0.0,sing)
-  cosa=np.where(np.abs(cosa)<eps,0.0,cosa)
-  sina=np.where(np.abs(sina)<eps,0.0,sina)
-  cosb=np.where(np.abs(cosb)<eps,0.0,cosb)
-  sinb=np.where(np.abs(sinb)<eps,0.0,sinb)
-  Reuler=np.array([[(cosg*cosa*cosb)-(sing*sina),(cosg*cosa*sinb)+(sing*cosa),-cosg*sinb],
- [-(sing*cosb*cosa)-(cosg*sina),-(sing*cosb*sina)+(cosg*cosa),sing*sinb],
-  [sinb*cosa,sina*sinb,cosb]])
-  return Reuler
+    >>> import epraya as epr
+    >>> alfa,beta,gamma=20,30,40
+    >>> print(epr.Rotmatrix(alfa,beta,gamma))
+    [[ 0.40355888  0.96394593 -0.38302222]
+    [-0.7851017   0.52945382  0.3213938 ]
+    [ 0.46984631  0.17101007  0.8660254 ]]
+    '''
+    
+    alfa,beta,gamma=np.radians(alfa),np.radians(beta),np.radians(gamma)
+    cosg,sing=np.cos(gamma),np.sin(gamma)
+    cosa,sina=np.cos(alfa),np.sin(alfa)
+    cosb,sinb=np.cos(beta),np.sin(beta)
+    eps=10**-9
+    cosg=np.where(np.abs(cosg)<eps,0.0,cosg)
+    sing=np.where(np.abs(sing)<eps,0.0,sing)
+    cosa=np.where(np.abs(cosa)<eps,0.0,cosa)
+    sina=np.where(np.abs(sina)<eps,0.0,sina)
+    cosb=np.where(np.abs(cosb)<eps,0.0,cosb)
+    sinb=np.where(np.abs(sinb)<eps,0.0,sinb)
+    Reuler=np.array([[(cosg*cosa*cosb)-(sing*sina),(cosg*cosa*sinb)+(sing*cosa),-cosg*sinb],
+    [-(sing*cosb*cosa)-(cosg*sina),-(sing*cosb*sina)+(cosg*cosa),sing*sinb],
+    [sinb*cosa,sina*sinb,cosb]])
+    return Reuler
 
 def Convtarray(Ham):
     '''
