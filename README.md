@@ -49,7 +49,7 @@ EPRAYA is a open-code project and contributions are welcome.  If you find an err
 
 ## Authors
 
-EPRAYA is a project of the _Física Aplicada_ group of the _Universidad Nacional de Colombia_. The principal contributors to the project are: Juan Sebastián Castro, Ovidio Almanza and Miguel E. Gámez.
+EPRAYA is a project of the _Física Aplicada_ group of the _Universidad Nacional de Colombia_. The principal contributors to the project are: Juan Sebastián Castro, Ovidio Almanza and [Miguel E. Gámez](https://github.com/MiguelGamezL).
 
 ## License
 [License: MIT](./license/)
