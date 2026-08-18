@@ -870,7 +870,7 @@ def Qii(iix,iiy,iiz,q,dim):
 
 def Nhze(I,iix,iiy,iiz,dim,Nucl='None',direction=[0,0,1]):
     '''
-    Function for the Zeeman nuclear interaction.
+    Function for the nuclear Zeeman interaction.
     
     Parameters
     ----------
@@ -1241,7 +1241,7 @@ def Assingstatestobasis(vectorhf):
 #Rule: k<=2s
 def StevensO(ssx,ssy,ssz,s,Ham,dim):
     '''
-    Stevens expanded operators following the rule k<=2s and the definition by Rudowicz and Chung.
+    Expanded Stevens operators following the rule k<=2s and the definition by Rudowicz and Chung.
 
     Parameters
     ----------
