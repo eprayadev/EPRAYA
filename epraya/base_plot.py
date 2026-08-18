@@ -842,7 +842,6 @@ class BaselineTuner: #For data tuning
             currstart=max(0,currend-1)
         self.ssvar.set(currstart)
         self.esnvar.set(currend)
-
         self.field=self.ffield[currstart:currend]
         self.counts=self.fcounts[currstart:currend]
         curlen=len(self.counts)
@@ -851,6 +850,8 @@ class BaselineTuner: #For data tuning
         self.eslider.config(to=maxidx)
         self.sinslider.config(to=maxidx)
         self.finslider.config(to=maxidx)
+        self.ltvar.set(round(self.ltvar.get()))
+        
         ltval=self.ltvar.get()
         if ltval%2==0:
             ltval+=1
@@ -880,6 +881,7 @@ class BaselineTuner: #For data tuning
         self.envar.set(eind)
         self.sinvar.set(siind)
         self.finvar.set(eiind)
+        self.ltvar.set(round(self.ltvar.get()))
         
         lt=ltval
         polval=self.polvar.get()
@@ -889,6 +891,7 @@ class BaselineTuner: #For data tuning
                 polval=0 
             self.root.after(10,lambda: self.polvar.set(polval))
         pol=polval
+        self.polvar.set(round(self.polvar.get()))
         if curlen>=lt and lt>pol and curlen>0:
             spc=scs.savgol_filter(self.counts,window_length=lt,polyorder=pol)
         else:
@@ -903,7 +906,10 @@ class BaselineTuner: #For data tuning
 
         # Integral Baseline
         integ=scii.cumulative_trapezoid(self.spcc,self.field,initial=0)
-        mxi=(integ[eiind]-integ[siind])/(self.field[eiind]-self.field[siind])
+        if (self.field[eiind]-self.field[siind])<0 or (self.field[eiind]-self.field[siind])>0:
+            mxi=(integ[eiind]-integ[siind])/(self.field[eiind]-self.field[siind])
+        else:
+            mxi=0
         bxi=integ[siind]-mxi*self.field[siind]
         baselini=bxi+(mxi*self.field)
         self.integc=integ-baselini
@@ -1226,8 +1232,8 @@ class TkinterApp3:
         axint=self.ax1[0,1]
         axres=self.ax1[1,0]
         axhpp=self.ax1[1,1]
-        aximax=self.ax2[0,0] 
-        axi2s=self.ax2[0,1] 
+        aximax=self.ax2[0,1] 
+        axi2s=self.ax2[0,0] 
         axiint=self.ax2[1,0] 
         precedent=False
         vax=np.max(dintegc)
@@ -1295,7 +1301,7 @@ class TkinterApp3:
             axint.relim()
             axint.autoscale_view()
             axres.set_title('Resonant Fields')
-            axres.set_ylabel('Magnetic Field [mT]')
+            axres.set_ylabel('Resonant fields [mT]')
             axres.set_xlabel('Temperature [K]')
             axres.plot(reten,tempa,'o',label=latext)
             axres.grid(True)
@@ -1306,7 +1312,7 @@ class TkinterApp3:
             axres.autoscale_view()
             
             axhpp.set_title('Hpp distance')
-            axhpp.set_ylabel('Magnetic Field [mT]')
+            axhpp.set_ylabel('Peak to peak distance [mT]')
             axhpp.set_xlabel('Temperature [K]')
             axhpp.plot(reten,hpp,'o',label=latext)
             if not isinstance(hpp,float):
@@ -1318,14 +1324,7 @@ class TkinterApp3:
             axhpp.relim()
             axhpp.autoscale_view()
 
-            aximax.plot(temm,vax,'o',label=latext)
-            aximax.set_title('Intensity Maximums')
-            aximax.set_xlabel('Temperature [K]')
-            aximax.set_ylabel('Max Counts [A. U.]')
-            aximax.grid(True)
-            aximax.relim()
-            aximax.legend()
-            aximax.autoscale_view()
+
     
             axi2s.plot(fieldss,dintegc,label=latext)
             axi2s.set_title('EPR Intensity')
@@ -1336,6 +1335,14 @@ class TkinterApp3:
             axi2s.relim()
             axi2s.legend()
             axi2s.autoscale_view()
+            aximax.plot(temm,vax,'o',label=latext)
+            aximax.set_title('Intensity Maximums')
+            aximax.set_xlabel('Temperature [K]')
+            aximax.set_ylabel('Max Intensity [A. U.]')
+            aximax.grid(True)
+            aximax.relim()
+            aximax.legend()
+            aximax.autoscale_view()
             self.canvas1.draw()
             self.canvas2.draw()
             self.erasee['values']=list(self.datasets.keys())
@@ -1345,7 +1352,7 @@ class TkinterApp3:
                 axiint.plot(temm,1/vax,'o',label=latext)
                 axiint.set_title('Inverse of Intensity')
                 axiint.set_xlabel('Temperature [K]')
-                axiint.set_ylabel('Max Counts [A. U.]')
+                axiint.set_ylabel('1/I [A. U.]')
                 axiint.grid(True)
                 axiint.relim()
                 axiint.autoscale_view()
