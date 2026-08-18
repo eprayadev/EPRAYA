@@ -21,7 +21,7 @@ from tkinter import ttk, filedialog, messagebox
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, FigureCanvasAgg
 from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
-from matplotlib.ticker import FormatStrFormatter
+from matplotlib.ticker import FormatStrFormatter,EngFormatter
 from pandas import DataFrame, concat, read_csv
 import warnings
 from copy import deepcopy
