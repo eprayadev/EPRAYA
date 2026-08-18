@@ -45,8 +45,52 @@ from .base_ham import *
 from .base_plot import *
 from .base_rotate import *
 
+
 @njit
 def Lorentzp(field,Int,rfield,Hpp):
+    '''
+    Defines the lorentzian profile of the spectrum, using the resonant fields and calculated intensities.
+    
+    Parameters
+    ----------
+    
+    field : np.array
+        Array of the field values of the spectrum.
+    Int : np.array
+        Array of the intensity calculated in the *field* values 
+    rfield : np.array
+        List of the resonant fields of the system
+    Hpp : float
+        Peak to peak distance in mT.
+    
+    Returns
+    -------
+    
+    espec : np.array
+        EPR spectrum
+    
+    Example
+    -------
+    .. plot::
+       :include-source:
+       
+       import matplotlib.pyplot as plt
+       import epraya as epr
+       import numpy as np
+       Ham.Hpp=[0,20]
+       Exp.Frange=[200,500]
+       Exp.Points=2000
+       fieldr=np.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
+       mu=350
+       sigma=50
+       rsonant=[300,350,320]
+       inten=np.random.normal(mu,sigma,len(rsonant))
+       spc=epr.Lorentzp(fieldr,inten,rsonant,Ham.Hpp[1])
+
+       plt.plot(fieldr,spc)
+       plt.grid()
+       plt.show()    
+    '''
     espec=np.zeros(len(field),dtype=float)
     gamma=np.sqrt(3.0)*Hpp
     gamma2=gamma/2.0
@@ -58,6 +102,49 @@ def Lorentzp(field,Int,rfield,Hpp):
 
 @njit
 def Gaussp(field,Int,rfield,Hpp):
+    '''
+    Defines the gaussian profile of the spectrum, using the resonant fields and calculated intensities.
+    
+    Parameters
+    ----------
+    
+    field : np.array
+        Array of the field values of the spectrum.
+    Int : np.array
+        Array of the intensity calculated in the *field* values 
+    rfield : np.array
+        List of the resonant fields of the system
+    Hpp : float
+        Peak to peak distance in mT.
+    
+    Returns
+    -------
+    
+    espec : np.array
+        EPR spectrum
+    
+    Example
+    -------
+    .. plot::
+       :include-source:
+       
+       import matplotlib.pyplot as plt
+       import epraya as epr
+       import numpy as np
+       Ham.Hpp=[20,0]
+       Exp.Frange=[200,500]
+       Exp.Points=2000
+       fieldr=np.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
+       mu=350
+       sigma=50
+       rsonant=[300,350,320]
+       inten=np.random.normal(mu,sigma,len(rsonant))
+       spc=epr.Gaussp(fieldr,inten,rsonant,Ham.Hpp[0])
+
+       plt.plot(fieldr,spc)
+       plt.grid()
+       plt.show()    
+    '''
     espec=np.zeros(len(field),dtype=float)
     gamma=np.sqrt(np.log(2.0)/2.0)*Hpp
     ymax=np.sqrt(np.log(2.0)/np.pi)*(1/gamma)
@@ -69,6 +156,51 @@ def Gaussp(field,Int,rfield,Hpp):
 
 @njit
 def Voigtp(field,Int,rfield,Hpp,eta):
+    '''
+    Determinates the voigtian profile of the spectrum as a lineal combination of gaussian and lorentzian profiles.
+    
+    Parameters
+    ----------
+    
+    field : np.array
+        Array of the field values of the spectrum.
+    Int : np.array
+        Array of the intensity calculated in the *field* values 
+    rfield : np.array
+        List of the resonant fields of the system
+    Hpp : list
+        Peak to peak distance in mT, for gaussian and lorentzian profiles.
+    eta : float
+        Percentage of the voigitan profile that corresponds to a gaussian profile, from 0 to 1.
+    Returns
+    -------
+    
+    espec : np.array
+        EPR spectrum
+    
+    Example
+    -------
+    .. plot::
+       :include-source:
+       
+       import matplotlib.pyplot as plt
+       import epraya as epr
+       import numpy as np
+       Ham.Hpp=[10,20]
+       Ham.eta=0.5
+       Exp.Frange=[200,500]
+       Exp.Points=2000
+       fieldr=np.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
+       mu=350
+       sigma=50
+       rsonant=[300,350,320]
+       inten=np.random.normal(mu,sigma,len(rsonant))
+       spc=epr.Voigtp(fieldr,inten,rsonant,Ham.Hpp)
+
+       plt.plot(fieldr,spc)
+       plt.grid()
+       plt.show()    
+    '''
     if eta==0:
       return Gaussp(field,Int,rfield,Hpp[0])
     elif eta==1:
@@ -95,6 +227,39 @@ def Voigtp(field,Int,rfield,Hpp,eta):
 
 #Find energy values in function of field
 def Padaptarray(espac,h1,hx,hy,hz,nx,ny,nz):
+    '''
+    Constructs the Zeeman hamiltonian, adds it to the complete one and finds the energy values and eigenvectors.
+    
+    Parameters
+    ----------
+    
+    espac : np.array
+        Array with the values of the magnetic field.
+    h1 : np.array
+        Hamiltonian matrix that contains all no Zeeman interactions.
+    hx : np.array
+        Hamiltonian matrix of the Zeeman interaction in the x direction.
+    hy : np.array
+        Hamiltonian matrix of the Zeeman interaction in the y direction.
+    hz : np.array
+        Hamiltonian matrix of the Zeeman interaction in the z direction.
+    nx : float
+        Weight coefficient for the interaction in the x direction.
+    ny : float
+        Weight coefficient for the interaction in the y direction.
+    nz : float
+        Weight coefficient for the interaction in the z direction.
+        
+    Returns
+    -------
+    
+    Elist : np.array
+        Array of the energy values of the hamiltonian.
+    Vlist : np.array
+        Array of the eigenvectors of the hamiltonian.
+    h2 : np.array
+        Total Zeeman interaction matrix.
+    '''
     h2=nx*hx+ny*hy+nz*hz
     h3=h1[np.newaxis,:,:]+h2[np.newaxis,:,:]*espac[:,np.newaxis,np.newaxis]
     Elist,Vlist=np.linalg.eigh(h3)
@@ -103,6 +268,25 @@ def Padaptarray(espac,h1,hx,hy,hz,nx,ny,nz):
 # Takes into account the possibility of crossing in the energies, then makes an approximation with
 # the eigenvectors change, that will be "close" from each other, if the field difference is low
 def Pretrack(Enegria,Vector):
+    '''
+    Organize the eigenvectors and energies to relate them with the quantum numbers of the system, taking as references the values at high field.
+    
+    Parameters
+    ----------
+    
+    Enegria : np.array
+        Array of the energy values of the hamiltonian.
+    Vector : np.array
+        Array of the eigenvectors of the hamiltonian.
+    
+    Returns
+    -------
+    
+    Enegria : np.array
+        Array of the sorted energy values of the hamiltonian.
+    Vector : np.array
+        Array of the sorted eigenvectors of the hamiltonian.
+    '''
     for i in range(Enegria.shape[0]-2,-1,-1):
         oncevals,oncevecs=Enegria[i+1],Vector[i+1]
         actvals,actvecs=Enegria[i],Vector[i]
@@ -112,6 +296,27 @@ def Pretrack(Enegria,Vector):
 
 # Makes the approximation by the assigment problem solution
 def Hungorder(onevals,onevecs,actvals,actvecs):
+    '''
+    Solves the assigment problem with the J-V mehtod implemented in scipy, to organize the eigenvectors and energies of the hamiltonian and relate them with the quantum numbers.
+    
+    Parameters
+    ----------
+    
+    onevlas : np.array 
+        Array of the next point (i+1) energy values of the hamiltonian.
+    onevecs : np.array
+        Array of the next point (i+1) eigenvectors of the hamiltonian.
+    actvals : np.array
+        Array of the point (i) energy values of the hamiltonian.
+    actvecs : np.array
+        Array of the point (i) eigenvectors of the hamiltonian.
+    Returns
+    -------
+    actvals : np.array
+        Array of the sorted energy values of the hamiltonian.
+    actvecs : np.array
+        Array of the sorted eigenvectors of the hamiltonian.
+    '''
     supermatrix=np.abs(np.dot(onevecs.conj().T,actvecs))
     cost=1-supermatrix
     Edif=np.abs(onevals[:,None]-actvals[None,:])
@@ -136,6 +341,28 @@ def Formatfra(val):
     return f"{int(val)}" if val.is_integer() else f"{val:.1f}"
 
 def Getlabel(basisidx,slit,nlit,llit,L,I):
+    '''
+    Creates the state ket for the energy level, using the quantum numbers.
+    
+    Parameters
+    ----------
+    
+    basisidx : float
+        Indicates the quantum number of the system.
+    slit : np.array
+        List of the spin quantum numbers.
+    nlit : np.array
+        List of the nuclear spin quantum numbers.
+    llit : np.array
+        List of the angular momentum quantum numbers.
+        
+    Returns
+    -------
+    
+    output : str
+        Ket with the corresponding quantum numbers
+        
+    '''
     ms=Formatfra(slit[basisidx])
     mi=Formatfra(nlit[basisidx])
     ml=Formatfra(llit[basisidx])
@@ -152,6 +379,27 @@ def Getlabel(basisidx,slit,nlit,llit,L,I):
 
 @njit
 def Boltfactor(Eghz,di,dj,Temp):
+    '''
+    Calculate the Boltzmann distribution for the calculation of the intensity, using states *di* and *dj* and their related energies.
+    
+    Parameters
+    ----------
+    
+    Eghz : float
+        Approximated energy value of hamiltonian.
+    di : float
+        State di of the system.
+    dj : float
+        State dj of the system.
+    Temp : float
+        Temperature of the system.
+    
+    Returns
+    -------
+    popui-popuj : np.array
+        Temperature dependent Boltzmann distribution.
+    
+    '''
     if Temp<=0:
         return 1.0
     h=scc.h
@@ -169,6 +417,35 @@ def Boltfactor(Eghz,di,dj,Temp):
 # Creates a plane where the triangle is created and then expanded to the surface of a
 #1 radius sphere, with a correction parameter of weight (solid angle projection)
 def Delaunay(Exp,M=35):
+    '''
+    Implementation of a modificated version of the SOPHE method, in which all possible orientations of the system are represented as points over the surface of a radius 1 sphere, that can be divided pendending of the symmetries from the system. The points over the surface can be adapted using the Delaunay triangulation to a triangular grid of lenght *M*, with a weight for every triangle that counts for it's contribution in the spectrum.
+    
+    Parameters
+    ----------
+    
+    Exp : Class
+        Container with the experimental conditions of the system.
+    
+    M : int
+        Number of segments that compose the grid.
+        
+    Returns
+    -------
+    uvectors[:,0] : np.array
+        Vectors (points in the grid) to consider in the calculation of the spectrum in the x direction.
+    
+    uvectors[:,1] : np.array
+        Vectors (points in the grid) to consider in the calculation of the spectrum in the y direction.
+        
+    uvectors[:,2] : np.array
+        Vectors (points in the grid) to consider in the calculation of the spectrum in the z direction.
+        
+    uweight : np.array
+        Normalized value of the weight of the points to evaluate it's contribution to the spectrum.
+    
+    hulk : array_like
+        Smaller convex poligon tha contains all the points require for the simulation.
+    '''
     vectors=[]
     weights=[]
     for i in range(M+1):
@@ -212,6 +489,50 @@ def Delaunay(Exp,M=35):
 
 @njit
 def Nresina(Blist,Blist2,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,h2):
+
+    '''
+    Determinates the resonant fields and intensities of the spectrum using the expression for the first order perturbation limit. The intensity is calculated as the product of the transition rate (probability of transition), the Boltzmann factor (Boltzmann distribution) and a frecuency to field conversion factor.
+    
+    Parameters
+    ----------
+    
+    Blist : np.array
+        Magnetic field values that are evaluated to find the resonant fields.
+      
+    Blist2 : np.array
+        Magnetic field values that are interpolate to produce the spectrum.
+    Elist : np.array
+        List of the energies from the hamiltonian.
+    Vlist : np.array
+        List of the eigenvectors of the hamiltonian.
+    dim : float
+        Dimension of the total hamiltonian matrix.
+    Freq : float
+        Frequency of operation of the microwave radiation in GHz.
+    isx : np.array
+        Pauli matrix of the total spin (electronic, nuclear spin and angular momentum) contribution in the x direction.
+    isy : np.array
+        Pauli matrix of the total spin (electronic, nuclear spin and angular momentum) contribution in the y direction.
+    isz : np.array
+        Pauli matrix of the total spin (electronic, nuclear spin and angular momentum) contribution in the z direction.
+    nx : np.array 
+        Vectors (points in the grid) to consider in the calculation of the spectrum in the x direction.
+    ny : np.array 
+        Vectors (points in the grid) to consider in the calculation of the spectrum in the y direction.
+    nz : np.array 
+        Vectors (points in the grid) to consider in the calculation of the spectrum in the z direction.
+    Tem : float
+        Temperature of the system.
+    h2 : np.array
+        Zeeman interaction matrix of the system.
+        
+    Returns
+    -------
+    resfield : list
+        List of the resonant fields of the system.
+    intensy : list
+        List of the intensity of the spectrum, evaluated in the resonant fields.
+    ''' 
     resfield=[]
     intensy=[]
     Bstart=Blist2[0]
@@ -262,7 +583,67 @@ def Nresina(Blist,Blist2,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,h2):
 
 
 def Omegaparal(args):
-    (nx,ny,nz,Blist1,Blist2,h1,hzex,hzey,hzez,dim,Freq,Temp,isx,isy,isz,espac1,eta)=args
+    '''
+    Wrap function for the parallel calculation of the hamiltonian energies and eigenvectors as well as the resonant fields and intensities of the spectrum.
+    
+    Parameters:
+    
+    nx : np.array 
+        Vectors (points in the grid) to consider in the calculation of the spectrum in the x direction.
+    ny : np.array 
+        Vectors (points in the grid) to consider in the calculation of the spectrum in the y direction.
+    nz : np.array 
+        Vectors (points in the grid) to consider in the calculation of the spectrum in the z direction.
+    
+    Blist1 : np.array
+        Magnetic field values that are evaluated to find the resonant fields.
+      
+    Blist2 : np.array
+        Magnetic field values that are interpolate to produce the spectrum.
+    
+    h1 : np.array
+        Matrix of the hamiltonian including all not Zeeman interactions.
+        
+    hzex : np.array
+        Matrix of the x axis Zeeman interaction.
+        
+    hzey : np.array
+        Matrix of the y axis Zeeman interaction.
+        
+    hzez : np.array
+        Matrix of the z axis Zeeman interaction.
+        
+    dim : float
+        Dimension of the total hamiltonian matrix.
+        
+    Freq : float
+        Frequency of operation of the microwave radiation in GHz.
+    
+    Tem : float
+        Temperature of the system.
+        
+    isx : np.array
+        Pauli matrix of the total spin (electronic, nuclear spin and angular momentum) contribution in the x direction.
+        
+    isy : np.array
+        Pauli matrix of the total spin (electronic, nuclear spin and angular momentum) contribution in the y direction.
+        
+    isz : np.array
+        Pauli matrix of the total spin (electronic, nuclear spin and angular momentum) contribution in the z direction.
+    
+    eta : float
+        Percentage of the voigitan profile that corresponds to a gaussian profile, from 0 to 1.
+    
+    Returns
+    -------
+    
+    resfield : np.array
+        List of the resonant fields of the system.
+    allesint : np.array
+        List of the intensity of the spectrum, evaluated in the resonant fields.
+    
+    '''
+    (nx,ny,nz,Blist1,Blist2,h1,hzex,hzey,hzez,dim,Freq,Temp,isx,isy,isz,eta)=args
     Elist1,Vlist1,h2=Padaptarray(Blist1,h1,hzex,hzey,hzez,nx,ny,nz)
     #Elist1,Vlist1=Pretrack(Elist1,Vlist1)
     splines=cubichers(Blist1,Elist1,axis=0)
@@ -278,6 +659,38 @@ def Omegaparal(args):
 
 @njit
 def Caltriangle(sketch,Bmin,dB,allres,allint,transi,hulk,weight):
+    '''
+    Creates a sketch spectrum using a barycentral mesh of triangles to calculate the contribution of the resonant fields and their intensities in the final spectrum. The result of this process is later convolute to generate the corrected EPR spectrum. 
+    
+    Parameters
+    ----------
+    
+    sketch : np.array
+        Array of zeros that will contain the resulting sketch.
+    
+    Bmin : float
+        Minimun value of the magnetic field.
+    
+    dB : float
+        Delta difference between the magnetic field values.
+    
+    allres: list
+        List of the resonant fields of the system.
+        
+    allint : np.array
+        List of the intensity of the spectrum, evaluated in the resonant fields.
+        
+    transi : list
+        List of the possible transitions between the energy levels, related to the resonant fields.
+    
+    hulk : np.array
+        Smaller convex poligon tha contains all the points require for the simulation.
+    
+    weight : np.array
+        Normalized value of the weight of the points to evaluate it's contribution to the spectrum.
+        
+    '''
+    
     #Barycentral mesh of triangles
     numd=15  # Resolution
     tpoints=(numd*(numd+1))/2.0
@@ -307,7 +720,34 @@ def Caltriangle(sketch,Bmin,dB,allres,allint,transi,hulk,weight):
                         if 0<=igdam<len(sketch):
                             sketch[igdam]+=Iint*pointweg
 
+
 def Powder(Hamer,Expe,graph='True'):  #Method ASG
+    '''
+    Wrap function for the simulation of the EPR spectrum for powder samples.
+    
+    Parameters
+    ----------
+    
+    Hamer : Class
+        Container for the hamiltonian parameters of the system.
+    
+    Expe : Class
+        Container for the experimental conditions.
+        
+    graph : Bool
+        Plots the resulting spectrum.
+    
+    Results
+    -------
+    Bfield : np.array
+        Array of the magnetic field.
+    Intensity : np.array
+        Array of the counts of the spectrum.
+    
+    Example
+    -------
+    
+    '''
     iwas,jwas,kwas,weight,hulk=Delaunay(Expe)
     Bfield,Intensity=Calpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk)
     if graph=='True':
@@ -403,7 +843,7 @@ def Calpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk):
         if np.isclose(weight[omega],0):
             continue
         nx,ny,nz=iwas[omega],jwas[omega],kwas[omega]
-        currenttdo=(nx,ny,nz,Blist1,Blist2,h1,hzex,hzey,hzez,dim,Exp.Freq,Exp.Temperature,isx,isy,isz,espac1,eta)
+        currenttdo=(nx,ny,nz,Blist1,Blist2,h1,hzex,hzey,hzez,dim,Exp.Freq,Exp.Temperature,isx,isy,isz,eta)
         ttdo.append(currenttdo)
     with threadpool_limits(limits=1,user_api='blas'):
         partresult=Parallel(n_jobs=-3,backend="loky")(delayed(Omegaparal)(t) for t in ttdo)
@@ -617,7 +1057,7 @@ def Mulpol(Hamer,Expe,graph='True'):
                 if np.isclose(weight[omega],0):
                     continue
                 nx,ny,nz=iwas[omega],jwas[omega],kwas[omega]
-                currenttdo=(nx,ny,nz,Blist1,Blist2,h1,hzex,hzey,hzez,dim,Exp.Mexp[0].Freq,Exp.Mexp[0].Temperature,stodx,stody,stodz,espac1,Ham.Mulham[0].eta)
+                currenttdo=(nx,ny,nz,Blist1,Blist2,h1,hzex,hzey,hzez,dim,Exp.Mexp[0].Freq,Exp.Mexp[0].Temperature,stodx,stody,stodz,Ham.Mulham[0].eta)
                 ttdo.append(currenttdo)
             with threadpool_limits(limits=1,user_api='blas'):
                 partresult=Parallel(n_jobs=-3,backend="loky")(delayed(Betaparal)(t) for t in ttdo)
@@ -668,7 +1108,7 @@ def Mulpol(Hamer,Expe,graph='True'):
     return fild1,sumespct
 
 def Betaparal(args):
-    (nx,ny,nz,Blist1,Blist2,h1,hzex,hzey,hzez,dim,Freq,Temp,isx,isy,isz,espac1,eta)=args
+    (nx,ny,nz,Blist1,Blist2,h1,hzex,hzey,hzez,dim,Freq,Temp,isx,isy,isz,eta)=args
     nBlist=Blist1[:,np.newaxis,np.newaxis]
     h4=nx*hzex+ny*hzey+nz*hzez
     hzet=h4[np.newaxis,:,:]
