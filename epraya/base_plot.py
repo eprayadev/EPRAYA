@@ -60,21 +60,169 @@ def Sload(dat,rows,cols): #Loads counts and field data
 def Splot(field,count):
     plt.figure(figsize=(20,7))
     plt.xlabel('Magnetic Field [mT]')
-    plt.ylabel('Counts [U. A.]')
+    plt.ylabel('Counts [A. U.]')
     plt.title('EPR spectrum')
     plt.plot(field, count)#, color='green')
     plt.show()
 
-def Sfilter(field,count,startl=0,endl=-1,lt=51,pol=3):
+def Sfilter(field,count,lt=51,pol=3,i=0,startl=0,endli=-1,epsilon=(5*10**-6),plot="True"):
     #Applies a Savitzky-Golay to the count data, finds resonant fields and the peak-to-peak width
-    spc=scs.savgol_filter(count,window_length=lt,polyorder=pol)
+    spc=scs.savgol_filter(count, window_length=lt, polyorder=pol)
     # Base line determination
-    mx=(spc[endl]-spc[startl])/(field[endl]-field[startl])
+    mx=(spc[endli]-spc[startl])/(field[endli]-field[startl])
     bx=spc[startl]-mx*field[startl]
     basel=bx+(mx*field)
-    return spc-basel
+    #Determination of the absorption curve
+    integ=scii.cumulative_trapezoid(spc-basel,field,initial=0)
+    indmin=np.argmin(integ)
+    iblx=[field[startl],field[indmin]]
+    ibly=[integ[startl],integ[indmin]]
+    integ=integ-np.interp(field,iblx,ibly)
+    peaks,_=scs.find_peaks(integ)
+    prominences=scs.peak_prominences(integ,peaks)[0]
+    tempa,val=[],[] #tempa= values of the field in the peaks, val= Values of the peaks that follow the epsilon condition
+    for ir in range (0,len(prominences)):
+        if prominences[ir]>epsilon:
+            val.append(peaks[ir])
+            tempa.append(field[peaks[ir]])
+    val=np.asarray(val)
+    tempa=np.asarray(tempa)
+    #Makes another try to find the field by normalizing the spectrum
+    if len(tempa)==0:
+        peaks, _ = scs.find_peaks(integ/np.max(integ),1)
+        prominences = scs.peak_prominences(integ/np.max(integ), peaks)[0]
+        tempa,val=[],[] #tempa= values of the field in the peaks, val= Values of the peaks that follow the epsilon condition
+        for ir in range (0,len(prominences)):
+            if prominences[ir]>epsilon:
+                val.append(peaks[ir])
+                tempa.append(field[peaks[ir]])
+        val=np.asarray(val)
+        tempa=np.asarray(tempa)
+    #Finding the Hpp
+    if len(tempa)==1:
+        tearma=spc[np.where(field<tempa[0])]
+        tearmi=spc[np.where(field>tempa[0])]
+        itmax=field[np.take(np.where(spc==np.nanmax(tearma))[0], np.where(spc==np.nanmax(tearma))[0].size // 2)] #max
+        itmin=(field[np.take(np.where(spc==np.nanmin(tearmi))[0], np.where(spc==np.nanmin(tearmi))[0].size // 2)]) #min
+        itsmax=np.take(np.where(spc==np.nanmax(tearma))[0], np.where(spc==np.nanmax(tearma))[0].size // 2)
+        itsmin=np.take(np.where(spc==np.nanmin(tearmi))[0], np.where(spc==np.nanmin(tearmi))[0].size // 2)
+        hp=itmin-itmax
+        Hpp=hp
+    elif len(tempa)!=0:
+      hp=np.zeros(len(tempa))
+      itsmin=np.zeros(len(tempa))
+      itsmax=np.zeros(len(tempa))
+      for sw in range (0,len(tempa)):
+        if sw == 0:
+          tearma=spc[np.where(field<tempa[sw])]
+          tearmi=spc[np.where((field>tempa[sw]) & (field <tempa[sw+1]))]
+          itmax=(field[np.take(np.where(spc==np.nanmax(tearma))[0], np.where(spc==np.nanmax(tearma))[0].size // 2)]) #max
+          itmin=(field[np.take(np.where(spc==np.nanmin(tearmi))[0], np.where(spc==np.nanmin(tearmi))[0].size // 2)]) #min
+          hp[sw]=itmin-itmax
+          itsmin[sw]=np.take(np.where(spc==np.nanmin(tearmi))[0], np.where(spc==np.nanmin(tearmi))[0].size // 2)
+          itsmax[sw]=np.take(np.where(spc==np.nanmax(tearma))[0], np.where(spc==np.nanmax(tearma))[0].size // 2)
+        elif sw==(len(tempa)-1):
+          tearma=spc[np.where((field<tempa[sw])& (field >tempa[sw-1]))]
+          tearmi=spc[np.where(field>tempa[sw])]
+          itmax=(field[np.take(np.where(spc==np.nanmax(tearma))[0], np.where(spc==np.nanmax(tearma))[0].size // 2)]) #max
+          itmin=(field[np.take(np.where(spc==np.nanmin(tearmi))[0], np.where(spc==np.nanmin(tearmi))[0].size // 2)]) #min
+          hp[sw]=itmin-itmax
+          itsmin[sw]=np.take(np.where(spc==np.nanmin(tearmi))[0], np.where(spc==np.nanmin(tearmi))[0].size // 2)
+          itsmax[sw]=np.take(np.where(spc==np.nanmax(tearma))[0], np.where(spc==np.nanmax(tearma))[0].size // 2)
+        else:
+          tearma=spc[np.where((field<tempa[sw]) & (field >tempa[sw-1]))]
+          tearmi=spc[np.where((field>tempa[sw]) & (field <tempa[sw+1]))]
+          itmax=(field[np.take(np.where(spc==np.nanmax(tearma))[0], np.where(spc==np.nanmax(tearma))[0].size // 2)]) #max
+          itmin=(field[np.take(np.where(spc==np.nanmin(tearmi))[0], np.where(spc==np.nanmin(tearmi))[0].size // 2)]) #min
+          hp[sw]=itmin-itmax
+          itsmin[sw]=np.take(np.where(spc==np.nanmin(tearmi))[0], np.where(spc==np.nanmin(tearmi))[0].size // 2)
+          itsmax[sw]=np.take(np.where(spc==np.nanmax(tearma))[0], np.where(spc==np.nanmax(tearma))[0].size // 2)
+      Hpp=np.mean(hp)
+    # Find the second integral of the spectrum
+    integto = scii.cumulative_trapezoid(integ, field, initial=0)
+    if len(tempa)==1:
+      drr={'Hpp distance [mT]':Hpp,'Resonant fields [mT]':tempa}
+      dfr=DataFrame(data=drr)
+      print(dfr)
+    elif len(tempa)!=1 and len(tempa)!=0:
+      drr={'Hpp distance [mT]':hp,'Resonant fields [mT]':tempa}
+      dfr=DataFrame(data=drr)
+      print(dfr)
+      print(" ")
+      print(f"Mean Hpp distance: {Hpp:.4f}, [mT]")
+      print(" ")
+    # Plotting the results
+    if plot=="True":
+      #Base line of the spectrum
+      plt.figure(figsize=(12,8))
+      plt.subplot(221)
+      plt.xlabel('Magnetic Field [mT]')
+      plt.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
+      plt.ylabel('Counts [A. U.]')
+      plt.title('EPR spectrum')
+      plt.plot(field, spc)
+      plt.grid()
+      plt.plot(field, basel, "--",color = 'green',label='Baseline')
+      plt.plot(field[startl], spc[startl], "o",color = 'blue',label='Line start')
+      plt.plot(field[endli], spc[endli], "o",color = 'blue',label='Line end')
+      if len(tempa)!=0:
+        if len(tempa)==1:
+          plt.axvline(field[itsmin], color='blue', linestyle='--', label='Min. point')
+          plt.axvline(field[itsmax], color='red', linestyle='--', label='Max. point')
+        else:
+          for kls in range(0,len(tempa)):
+            if kls==0:
+              plt.axvline(field[int(itsmin[kls])], color='blue', linestyle='--', label='Min. point')
+              plt.axvline(field[int(itsmax[kls])], color='red', linestyle='--', label='Max. point')
+            else:
+              plt.axvline(field[int(itsmin[kls])], color='blue', linestyle='--')
+              plt.axvline(field[int(itsmax[kls])], color='red', linestyle='--')
+      plt.legend()
+      # Plot spectrum
+      plt.subplot(222)
+      plt.xlabel('Magnetic Field [mT]')
+      plt.ylabel('Counts [A. U.]')
+      plt.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
+      plt.title('EPR spectrum')
+      plt.plot(field, (spc - basel))
+      if len(tempa)!=0:
+        plt.plot(tempa, (spc - basel)[val], "*",color = 'red',label='Resonant field')
+        plt.legend()
+      plt.grid()
+      plt.tight_layout()
+      plt.show()
 
-def Overseer(field,counts,lt=51,pol=3,i=0,startl=0,endli=-1, epsilon=(5*10**-6),plot="True"): # Shows tools for spectrum analysis and creates variable Sdata, with Hpp, resonant fields, filtered spectrum and integral of the spectrum.
+      # Plot integrals of spectrum
+      plt.figure(figsize=(12,8))
+      plt.subplot(223)
+      plt.xlabel('Magnetic Field [mT]')
+      plt.ylabel('[A. U.]')
+      plt.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
+      plt.plot(field, integ)
+      if len(tempa)!=0:
+        plt.plot(tempa, integ[val], "*",color = 'red',label='Resonant field')
+        plt.legend()
+      plt.title('Absorption curve')
+     
+      plt.grid()
+      plt.subplot(224)
+      plt.xlabel('Magnetic Field [mT]')
+      plt.ylabel('[A. U.]')
+      plt.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
+      plt.plot(field, integto)
+      plt.title('EPR Intensity')
+      if len(tempa)!=0:
+        plt.plot(tempa, integto[val], "*",color = 'red',label='Resonant field')
+        plt.legend()
+      plt.tight_layout()
+      plt.grid()
+      plt.show()
+    if len(tempa)==0:
+        return spc, integ
+    else:
+        return Hpp, tempa, spc, integ
+
+def Overseer(field,counts,lt=51,pol=3,i=0,startl=0,endli=-1,epsilon=(5*10**-6),plot="True"): # Shows tools for spectrum analysis and creates variable Sdata, with Hpp, resonant fields, filtered spectrum and integral of the spectrum.
   #Sliders conditions
   hystoria=[]
   maind=len(counts)-1
@@ -108,8 +256,8 @@ def Overseer(field,counts,lt=51,pol=3,i=0,startl=0,endli=-1, epsilon=(5*10**-6),
         Sdata=hystoria[-1]
         print(f"Data saved")
   savev.on_click(on_save_clicked)
-  out=interactive_output(Wrapper,{ 'field': fixed(field),'count': fixed(counts),'startl': sslider,'endli': eslider,'lt': ltslider,'pol': polslider})
-  controls=VBox([sslider, eslider,ltslider,polslider,savev,ouarea])
+  out=interactive_output(Wrapper,{'field': fixed(field),'count': fixed(counts),'startl': sslider,'endli': eslider,'lt': ltslider,'pol': polslider})
+  controls=VBox([sslider,eslider,ltslider,polslider,savev,ouarea])
   #controls.layout=widgets.Layout(width='500px',border='solid 1px #cccccc',padding='10px',margin='20px 0px 0 700px' )
   app_layout=widgets.HBox([controls, out])
   display(controls,out)
@@ -236,7 +384,7 @@ def Spmanipulation(fig,axes,field,count,lt=51,pol=3,startl=0,endli=-1,einmal=0,a
     ax1.plot(field[endli],spc[endli],"o",color='blue',label='Line end')
     ax1.set_title('EPR spectrum')
     ax1.set_xlabel('Magnetic Field [mT]')
-    ax1.set_ylabel('Counts [U. A.]')
+    ax1.set_ylabel('Counts [A. U.]')
     ax1.ticklabel_format(style='sci',axis='y',scilimits=(0,0))
     if len(tempa)!=0:
         if len(tempa)==1:
@@ -259,7 +407,7 @@ def Spmanipulation(fig,axes,field,count,lt=51,pol=3,startl=0,endli=-1,einmal=0,a
     ax2.plot(field,(spc-basel))
     ax2.set_title('EPR spectrum')
     ax2.set_xlabel('Magnetic Field [mT]')
-    ax2.set_ylabel('Counts [U. A.]')
+    ax2.set_ylabel('Counts [A. U.]')
     if len(tempa)!=0:
         ax2.plot(tempa,(spc-basel)[val],"*",color='red',label='Resonant field')
         ax2.legend()
@@ -275,7 +423,7 @@ def Spmanipulation(fig,axes,field,count,lt=51,pol=3,startl=0,endli=-1,einmal=0,a
     ax3.plot(field[aufmal],integ[aufmal],"o",color='blue',label='Line end')
     ax3.set_title('Absorption curve')
     ax3.set_xlabel('Magnetic Field [mT]')
-    ax3.set_ylabel('Counts [U. A.]')
+    ax3.set_ylabel('[A. U.]')
     if len(tempa)!=0:
         ax3.plot(tempa,integ[val],"*",color='red',label='Resonant field')
         ax3.legend()
@@ -289,7 +437,7 @@ def Spmanipulation(fig,axes,field,count,lt=51,pol=3,startl=0,endli=-1,einmal=0,a
         ax4.legend()
     ax4.set_title('EPR Intensity')
     ax4.set_xlabel('Magnetic Field [mT]')
-    ax4.set_ylabel('Counts [U. A.]')
+    ax4.set_ylabel('[A. U.]')
     ax4.ticklabel_format(style='sci',axis='y',scilimits=(0,0))
     ax4.grid(True)
     
@@ -1286,7 +1434,7 @@ class TkinterApp3:
             axint.plot(fieldss,integc,label=latext)
             axspc.set_title('Spectrum')
             axspc.set_xlabel('Magnetic Field [mT]')
-            axspc.set_ylabel('Counts [a.u.]')
+            axspc.set_ylabel('Counts [A.U.]')
             axspc.ticklabel_format(style='sci',axis='y',scilimits=(0,0))
             axspc.grid(True)
             axspc.legend()
@@ -1294,7 +1442,7 @@ class TkinterApp3:
             axspc.autoscale_view()
             axint.set_title('Absorption curve')
             axint.set_xlabel('Magnetic Field [mT]')
-            axint.set_ylabel('Integral [a.u.]')
+            axint.set_ylabel('Integral [A.U.]')
             axint.ticklabel_format(style='sci',axis='y',scilimits=(0,0))
             axint.grid(True)
             axint.legend()
@@ -1329,7 +1477,7 @@ class TkinterApp3:
             axi2s.plot(fieldss,dintegc,label=latext)
             axi2s.set_title('EPR Intensity')
             axi2s.set_xlabel('Magnetic Field [mT]')
-            axi2s.set_ylabel('Counts [U. A.]')
+            axi2s.set_ylabel('EPR Intensity [A. U.]')
             axi2s.ticklabel_format(style='sci',axis='y',scilimits=(0,0))
             axi2s.grid(True)
             axi2s.relim()
