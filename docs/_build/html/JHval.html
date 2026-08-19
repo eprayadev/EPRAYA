@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>epraya.JHval &#8212; EPRAYA V. 0.2.0 documentation</title>
+    <title>epraya.JHval &#8212; EPRAYA-User guide</title>
   
   
   
@@ -31,6 +31,7 @@
 <link href="_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/plot_directive.css?v=7f9a90b1" />
   
   <!-- So that users can add custom icons -->
   <script defer src="_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
@@ -43,6 +44,7 @@
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'JHval';</script>
     <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="icon" href="_static/logo2.ico"/>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="epraya.JEco" href="JEco.html" />
@@ -116,8 +118,16 @@
   
   
   
+    
+    
+      
+    
+    
+    <img src="_static/logo_.png" class="logo__image only-light" alt=""/>
+    <img src="_static/logo_.png" class="logo__image only-dark pst-js-only" alt=""/>
   
-    <p class="title logo__title">EPRAYA V. 0.2.0 documentation</p>
+  
+    <p class="title logo__title">EPRAYA</p>
   
 </a></div>
     
@@ -298,7 +308,56 @@
 <li class="toctree-l2"><a class="reference internal" href="Jmstart.html">epraya.Jmstart</a></li>
 </ul>
 </details></li>
-<li class="toctree-l1"><a class="reference internal" href="hamfunct.html">Hamiltonian’s functions</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="hamfunct.html">Hamiltonian’s functions</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="Hze.html">epraya.Hze</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Nhze.html">epraya.Nhze</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Hfi.html">epraya.Hfi</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Qii.html">epraya.Qii</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Iee.html">epraya.Iee</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Lorbit.html">epraya.Lorbit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="StevensO.html">epraya.StevensO</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Kronecker.html">epraya.Kronecker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Pauli.html">epraya.Pauli</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chaframe.html">epraya.chaframe</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Rotationmat.html">epraya.Rotationmat</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Rotmatrix.html">epraya.Rotmatrix</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Convtarray.html">epraya.Convtarray</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Msmi.html">epraya.Msmi</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Assingstatestobasis.html">epraya.Assingstatestobasis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PMsmi.html">epraya.PMsmi</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MMsmi.html">epraya.MMsmi</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="cwpowder.html">Powder samples</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="Delaunay.html">epraya.Delaunay</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Powder.html">epraya.Powder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Calpowder.html">epraya.Calpowder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Mulpol.html">epraya.Mulpol</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Omegaparal.html">epraya.Omegaparal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Betaparal.html">epraya.Betaparal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Nresina.html">epraya.Nresina</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Boltfactor.html">epraya.Boltfactor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Caltriangle.html">epraya.Caltriangle</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Lorentzp.html">epraya.Lorentzp</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Gaussp.html">epraya.Gaussp</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Voigtp.html">epraya.Voigtp</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Padaptarray.html">epraya.Padaptarray</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Hungorder.html">epraya.Hungorder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Pretrack.html">epraya.Pretrack</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Getlabel.html">epraya.Getlabel</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="cwcrystal.html">Monocristal samples</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="Eresonant.html">epraya.Eresonant</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Plotsim.html">epraya.Plotsim</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Cristalfm.html">epraya.Cristalfm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Music.html">epraya.Music</a></li>
+<li class="toctree-l2"><a class="reference internal" href="EAdaptarray.html">epraya.EAdaptarray</a></li>
+<li class="toctree-l2"><a class="reference internal" href="EHungorder.html">epraya.EHungorder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ERetrack.html">epraya.ERetrack</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Mulgetlabel.html">epraya.Mulgetlabel</a></li>
+</ul>
+</details></li>
 </ul>
 </div>
 </nav></div>

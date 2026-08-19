@@ -8,9 +8,8 @@ Welcome to the EPRAYA user guide. Here you will find a description of the differ
 
    initialization
    hamfunct
-   cw_powder
-   cw_crystal
-   multisystem
+   cwpowder
+   cwcrystal
    data_load
    fitting
    jax_impl
