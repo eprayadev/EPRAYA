@@ -33,7 +33,7 @@ jobs:
 
       - name: Build docs (HTML)
         run: |
-
+          cd docs
           make html
 
       - name: Prepare to GitHub Pages
