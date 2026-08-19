@@ -1423,3 +1423,130 @@ def PMsmi(I,S,L=0):
     posl=np.linspace(L,-L,int(2*L+1))
     ll,sl,il=np.meshgrid(posl,poss,posi,indexing='ij')
     return sl.flatten(),il.flatten(),ll.flatten()
+    
+def Iee(ssx1,ssy1,ssz1,ssx2,ssy2,ssz2,X,dim):
+    '''
+    
+    Function for the electron-electron interaction.
+    
+    Parameters
+    ----------
+    
+    ssx1 : np.array
+        Pauli matrix of the first spin x component.
+
+    ssy1 : np.array
+        Pauli matrix of the first spin y component.
+        
+    ssz1 : np.array
+
+        Pauli matrix of the first spin z component.
+    ssx2 : np.array
+        Pauli matrix of the second spin x component.
+        
+    ssy2 : np.array
+        Pauli matrix of the second spin y component.
+        
+    ssz2 : np.array
+        Pauli matrix of the second spin z component.
+    
+    X : np.array
+        Electron-electron interaction constant.
+        
+    dim : int
+        Dimension of the total hamiltonian.
+    
+    Example
+    -------
+    >>> import epraya as epr
+    >>> import numpy as np
+    >>> Ham,_,_=epr.Start(2)
+    >>> Ham.S1=1
+    >>> Ham.S2=1/2
+    >>> sx1,sy1,sz1=Pauli(Ham.S1)
+    >>> sx2,sy2,sz2=Pauli(Ham.S2)
+    >>> Ham.X1_2=[200,500,200]
+    >>> Ham.X1_2=(Ham.X1_2)*np.eye(3)
+    >>> dim=int((2*Ham.S1+1)*(2*Ham.S2+1))
+    >>> print(epr.Iee(sx1,sy1,sz1,sx2,sy2,sz2,Ham.X1_2,dim))
+    [[ 100.        +0.j    0.        +0.j    0.        +0.j -106.06601718+0.j
+    0.        +0.j    0.        +0.j]
+    [   0.        +0.j -100.        +0.j  247.48737342+0.j    0.        +0.j
+    0.        +0.j    0.        +0.j]
+    [   0.        +0.j  247.48737342+0.j    0.        +0.j    0.        +0.j
+    0.        +0.j -106.06601718+0.j]
+    [-106.06601718+0.j    0.        +0.j    0.        +0.j    0.        +0.j
+    247.48737342+0.j    0.        +0.j]
+    [   0.        +0.j    0.        +0.j    0.        +0.j  247.48737342+0.j
+    -100.        +0.j    0.        +0.j]
+    [   0.        +0.j    0.        +0.j -106.06601718+0.j    0.        +0.j
+    0.        +0.j  100.        +0.j]]
+
+    '''
+    eet=(X[0,0]*np.kron(ssx1,ssx2))+(X[0,1]*np.kron(ssx1,ssy2))+(X[0,2]*np.kron(ssx1,ssz2))+(X[1,0]*np.kron(ssy1,ssx2))+(X[1,1]*np.kron(ssy1,ssy2))+    (X[1,2]*np.kron(ssy1,ssz2))+(X[2,0]*np.kron(ssz1,ssx2))+(X[2,1]*np.kron(ssz1,ssy2))+(X[2,2]*np.kron(ssz1,ssz2))
+    eet=np.kron(eet,np.eye(int(dim/(eet).shape[1])))
+    return eet
+def MMsmi(Sval,Ival):
+    '''
+    Determinates the quantum numbers of the operators and classify the transitions between energy levels for multisystems.
+    
+    Parameters
+    ----------
+    
+    Sval : list
+        All electronic spins of the system.
+    Ival : list
+        All nuclear spins of the system.
+    
+    Returns
+    -------
+    slit : np.array
+        Quantum numbers of the spin operator.
+    nlit : np.array
+        Quantum numbers of the nuclear spin operator.
+
+    transitions: dictionary
+        Possible transitions of the system, cataloged by type.
+        
+    '''
+    if any(s<0 for s in Sval) or any(i<0 for i in Ival):
+        raise ValueError('Spin values cannot be negative')
+    poss=[np.linspace(s,-s,int(2*s+1)) for s in Sval]
+    posi=[np.linspace(i,-i,int(2*i+1)) for i in Ival]
+    alles=np.array(list(iterproduct(*(poss+posi))))
+    num=len(Sval)
+    dim=alles.shape[0]
+    # Separete into nuclear and electron contribution
+    slit=alles[:,:num]
+    nlit=alles[:,num:]
+    transitions={
+        "allowed":[],      #One electron change
+        "for Dms2":[],     #One electron change two levels
+        "for nuclear":[],  #One electron and at least one nucleus change
+        "cross spin":[]    #Two or more electron change
+    }
+    for idx1 in range(dim):
+        for idx2 in range(idx1+1,dim):
+            dms=np.abs(slit[idx1]-slit[idx2])
+            dmi=np.abs(nlit[idx1]-nlit[idx2])
+            sumdms=np.sum(dms)
+
+            maxdms=np.max(dms) if num> 0 else 0
+            sumdmi=np.sum(dmi)
+            if np.isclose(sumdms,1.0) and np.isclose(sumdmi,0.0):
+
+                transitions["allowed"].append([idx1,idx2])
+                continue
+            if np.isclose(sumdms,1.0) and sumdmi>0:
+                transitions["for nuclear"].append([idx1,idx2])
+                continue
+            if np.isclose(maxdms,2.0) and np.isclose(sumdmi,0.0):
+                transitions["for Dms2"].append([idx1,idx2])
+                continue
+            if sumdms>1.0 and np.isclose(maxdms,1.0) and np.isclose(sumdmi,0.0):
+                transitions["cross spin"].append([idx1,idx2])
+                continue
+    for key in transitions:
+        transitions[key]=np.array(transitions[key])
+    return slit,nlit,transitions
+

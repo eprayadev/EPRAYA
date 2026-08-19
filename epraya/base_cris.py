@@ -45,10 +45,31 @@ from itertools import product as iterproduct
 from .base_ham import *
 from .base_plot import *
 from .base_rotate import *
+from .base_powd import *
 
 
 #Find energy values in function of field
 def EAdaptarray(espac,h1,iser):
+    '''
+    Constructs the Zeeman hamiltonian, adds it to the complete one and finds the energy values and eigenvectors.
+    
+    Parameters
+    ----------
+    espac : np.array
+        Array with the values of the magnetic field.
+    h1 : np.array
+        Hamiltonian matrix that contains all no Zeeman interactions.
+    iser : np.array
+        Hamiltonian matrix of the Zeeman interaction.
+    Returns
+    -------
+
+    Elist : np.array
+        Array of the energy values of the hamiltonian.
+
+    Vlist : np.array
+        Array of the eigenvectors of the hamiltonian.
+    '''
     Blist=espac
     h2=iser
     Elist=np.zeros((len(Blist),h1.shape[0]),dtype=np.float64)
@@ -62,6 +83,31 @@ def EAdaptarray(espac,h1,iser):
 # Takes into account the possibility of crossing in the energies, then makes an approximation with
 # the eigenvectors change, that will be "close" from each other, if the field difference is low
 def ERetrack(field,energy,einvector):
+    '''
+
+    Organize the eigenvectors and energies to relate them with the quantum numbers of the system, taking as references the values at high field.
+    
+    Parameters
+    ----------
+    
+    field : np.array
+        Array with the values of the magnetic field.
+        
+    energy : np.array
+        Array of the energy values of the hamiltonian.
+        
+    einvector : np.array
+        Array of the eigenvectors of the hamiltonian.
+    
+    Returns
+    -------
+    
+    Enegria : np.array
+        Array of the sorted energy values of the hamiltonian.
+    Vector : np.array
+        Array of the sorted eigenvectors of the hamiltonian.
+
+    '''
     Enegria=np.array(energy,copy=True)
     Vector=np.array(einvector,copy=True)
     for i in range(len(field)-2,-1,-1):
@@ -73,6 +119,31 @@ def ERetrack(field,energy,einvector):
 
 # Makes the approximation by the assigment problem solution
 def EHungorder(onevals,onevecs,actvals,actvecs):
+    '''
+    Solves the assigment problem with the J-V method implemented in scipy, to organize the eigenvectors and energies of the hamiltonian and relate them with the quantum numbers.
+    
+
+    Parameters
+    ----------
+    
+    onevlas : np.array 
+        Array of the next point (i+1) energy values of the hamiltonian.
+    onevecs : np.array
+        Array of the next point (i+1) eigenvectors of the hamiltonian.
+
+    actvals : np.array
+        Array of the point (i) energy values of the hamiltonian.
+    actvecs : np.array
+
+        Array of the point (i) eigenvectors of the hamiltonian.
+    Returns
+    -------
+    actvals[novo] : np.array
+        Sorted energy value of the hamiltonian.
+    actvecs[:,novo] : np.array
+        Sorted eigenvectors of the hamiltonian.
+
+    '''
     supermatrix=np.abs(np.dot(onevecs.conj().T,actvecs))
     cost=1-supermatrix
     Edif=np.abs(onevals[:,None]-actvals[None,:])
@@ -87,31 +158,34 @@ def EHungorder(onevals,onevecs,actvals,actvecs):
     novo=colidx[np.argsort(rowidx)]
     return actvals[novo],actvecs[:,novo]
 
-def EFormatfra(val):
-    #Change format for fractions
-    if np.isclose(val,0.0):
-        return "0"
-    if np.isclose(abs(val%1),0.5):
-        num=int(2*val)
-        return f"{num}/2"
-    return f"{int(val)}" if val.is_integer() else f"{val:.1f}"
-
-def EGetlabel(basisidx,slit,nlit,llit,L,I):
-    ms=EFormatfra(slit[basisidx])
-    mi=EFormatfra(nlit[basisidx])
-    ml=EFormatfra(llit[basisidx])
-    if L!=0:
-        if I!=0:
-            return f"|{ms}, {mi}, {ml}⟩"
-        else:
-            return f"|{ms}, {ml}⟩"
-    else:
-        if I!=0:
-            return f"|{ms}, {mi}⟩"
-        else:
-            return f"|{ms}⟩"
 @njit
 def EBoltfactor(Eghz,di,dj,Temp):
+    '''
+    Calculates the Boltzmann distribution for the intensity, using states *di* and *dj* and their related energies.
+    
+
+    Parameters
+    ----------
+    
+    Eghz : float
+
+        Approximated energy value of hamiltonian.
+    di : float
+        State di of the system.
+
+    dj : float
+        State dj of the system.
+    Temp : float
+        Temperature of the system.
+
+    
+    Returns
+    -------
+
+    popui-popuj : np.array
+        Temperature dependent Boltzmann distribution.
+    
+    '''
     if Temp<=0:
         return 1.0
     h=scc.h
@@ -127,6 +201,63 @@ def EBoltfactor(Eghz,di,dj,Temp):
     return np.abs(popui-popuj)
 
 def Eresonant(Hamer,Exp,graph='True',table='True'):  #Function for finding the resonant fields and energies
+    '''
+    Function for the simulation of the EPR spectrum for monocrystal samples, creating the energy diagrams and a table of the resonant fields.
+    
+    Parameters
+    ----------
+    
+    Hamer : Class
+
+        Container for the hamiltonian parameters of the system.
+    
+    Expe : Class
+
+        Container for the experimental conditions.
+        
+    graph : Bool
+        Plots the resulting spectrum and energy diagrams.
+        
+    table : Bool
+        Generates the resonant fields and transitions table.
+    
+    Returns
+    -------
+    
+    espac1 : np.array
+        Array of the magnetic field.
+    inten1 : np.array
+        Array of the counts of the spectrum.
+    
+    Example
+    -------
+    .. code-block:: python
+
+       import matplotlib.pyplot as plt
+       import epraya as epr
+       import numpy as np
+       Ham,Exp,_=epr.Start()
+       Ham.S=1
+       Ham.I=1/2
+       Ham.g=np.array([2.003, 2, 2])
+       Ham.A=np.array([200, 200, 200])
+       Ham.Hpp=[0, 20]
+       Exp.Freq=9.4
+       Exp.Points=4096
+       Exp.Temperature=300
+       Exp.Frange=[0,800]
+       epr.Eresonant(Ham,Exp)
+    .. image:: /_static/tabla.PNG
+       :alt: Table of the resonant fields and transitions
+       :align: center
+    .. image:: /_static/cristal.PNG
+       :alt: Plot of the spectrum of the Eresonant function
+       :align: center
+    .. image:: /_static/diagra.PNG
+       :alt: Energy diagram produced with the Eresonant function
+       :align: center
+
+    '''
     Ham=deepcopy(Hamer)
     if Exp.Freq<=0:
         raise ValueError("Frequency can't be a negative or zero value")
@@ -276,6 +407,30 @@ def Eresonant(Hamer,Exp,graph='True',table='True'):  #Function for finding the r
     return espac1,inten1
 
 def Plotsim(espac1,inten1,resfield,espac2,enegria,curvebasis,splines,resonants):
+    '''
+    Function to produce the graph of the spectrum and the energy diagram.
+    
+    Parameters
+    ----------
+    
+    espac1 : np.array
+        Array of the magnetic field values.
+    inten1 : np.array
+        Array of the intensities calculated in the resonant fields.
+    resfield : np.array 
+        Array of the resonant fields.
+    espac2 : np.array
+        Array of the magnetic field values to calculate the energy diagram.
+    enegria : np.array
+        Array of the energy values.
+    curvebasis : np.array
+        Base of the quantum state.
+    splines : Scipy class
+        Third order polinomium that is use to find the resonant fields.
+    resonants : dictionary
+        Contains transition type and resonant fields information.
+
+    '''
     slit,nlit,llit,transitions=Msmi(Ham.I,Ham.S,Ham.L)
     if resfield!=[]:
       import plotly.graph_objects as pgo
@@ -376,45 +531,6 @@ def Plotsim(espac1,inten1,resfield,espac2,enegria,curvebasis,splines,resonants):
       )
       graphe.show()
 
-def MMsmi(Sval,Ival):
-    if any(s<0 for s in Sval) or any(i<0 for i in Ival):
-        raise ValueError('Spin values cannot be negative')
-    poss=[np.linspace(s,-s,int(2*s+1)) for s in Sval]
-    posi=[np.linspace(i,-i,int(2*i+1)) for i in Ival]
-    alles=np.array(list(iterproduct(*(poss+posi))))
-    num=len(Sval)
-    dim=alles.shape[0]
-    # Separete into nuclear and electron contribution
-    slit=alles[:,:num]
-    nlit=alles[:,num:]
-    transitions={
-        "allowed":[],      #One electron change
-        "for Dms2":[],     #One electron change two levels
-        "for nuclear":[],  #One electron and at least one nucleus change
-        "cross spin":[]    #Two or more electron change
-    }
-    for idx1 in range(dim):
-        for idx2 in range(idx1+1,dim):
-            dms=np.abs(slit[idx1]-slit[idx2])
-            dmi=np.abs(nlit[idx1]-nlit[idx2])
-            sumdms=np.sum(dms)
-            maxdms=np.max(dms) if num> 0 else 0
-            sumdmi=np.sum(dmi)
-            if np.isclose(sumdms,1.0) and np.isclose(sumdmi,0.0):
-                transitions["allowed"].append([idx1,idx2])
-                continue
-            if np.isclose(sumdms,1.0) and sumdmi>0:
-                transitions["for nuclear"].append([idx1,idx2])
-                continue
-            if np.isclose(maxdms,2.0) and np.isclose(sumdmi,0.0):
-                transitions["for Dms2"].append([idx1,idx2])
-                continue
-            if sumdms>1.0 and np.isclose(maxdms,1.0) and np.isclose(sumdmi,0.0):
-                transitions["cross spin"].append([idx1,idx2])
-                continue
-    for key in transitions:
-        transitions[key]=np.array(transitions[key])
-    return slit,nlit,transitions
 
 def DFormatfra(val):
     #Change format for fractions
@@ -427,6 +543,25 @@ def DFormatfra(val):
     return f"{int(val)}" if val.is_integer() else f"{val:.1f}"
 
 def Mulgetlabel(basisidx,slit,nlit):
+    '''
+    Creates the state ket for the energy level, using the quantum numbers.
+    
+    Parameters
+    ----------
+    
+    basisidx : float
+        Indicates the quantum number of the system.
+    slit : np.array
+        List of the spin quantum numbers.
+    nlit : np.array
+        List of the nuclear spin quantum numbers.
+        
+    Returns
+    -------
+    output : str
+        Ket with the corresponding quantum numbers.
+    
+    '''
     ams=slit[basisidx]
     ami=nlit[basisidx]
     msf=[DFormatfra(s) for s in ams]
@@ -439,6 +574,62 @@ def Mulgetlabel(basisidx,slit,nlit):
         return f"|Ms:{msf}⟩"
 
 def Cristalfm(Hamer,Exp):  #Function for finding the resonant fields and energies
+    '''
+    Function for the calculation of the spectrum of monocristals without producing the graphs.
+    
+    Parameters 
+    ----------
+    
+    Hamer : Class
+        Container for the hamiltonian parameters of the system.
+    
+    Exp : Class
+        Container for the experimental conditions.
+        
+    Returns
+    -------
+    espac1 : np.array
+        Array of the magnetic field.
+    inten1 : np.array
+        Array of the counts of the spectrum.
+    Elist : np.array 
+        Array of the energy values of the hamiltonian
+    dfdis : pandas.Dataframe
+        Table of the kets and transitions of the system.
+    
+    Example
+    -------
+    
+    >>> import epraya as epr
+    >>> Ham,Exp,_=epr.Start()
+    >>> Ham.S=1
+    >>> Ham.I=1/2
+    >>> Ham.g=np.array([2.003, 2, 2])
+    >>> Ham.A=np.array([200, 200, 200])
+    >>> Ham.Hpp=[0, 20]
+    >>> Exp.Freq=9.4
+    >>> Exp.Points=4096
+    >>> Exp.Temperature=300
+    >>> Exp.Frange=[0,800]
+    >>> print(epr.Cristalfm(Ham,Exp))
+    (array([0.00000000e+00, 1.95360195e-01, 3.90720391e-01, ...,
+    7.99609280e+02, 7.99804640e+02, 8.00000000e+02], shape=(4096,)),
+    array([ 4.08051359e-12,  4.08762234e-12,  4.09474760e-12, ...,
+    -1.55121819e-12, -1.54926300e-12, -1.54731109e-12], shape=(4096,)), 
+    array([[-2.00000000e-01,  1.00000000e-01, -2.00000000e-01,
+         1.00000000e-01,  1.00000000e-01,  1.00000000e-01],...,
+       [-2.24948810e+01, -2.22939919e+01, -8.97066590e-04,
+         8.89091169e-04,  2.22948889e+01,  2.24939919e+01]]), 
+    Field (mT)             Transition     Type  Field (mT)  \
+    0     332.234    |-1,1/2⟩<-> |0,1/2⟩  Allowed     164.254   
+    1     339.302  |-1,-1/2⟩<-> |0,-1/2⟩  Allowed     171.399   
+    2     332.154     |0,1/2⟩<-> |1,1/2⟩  Allowed     339.375   
+    Transition           Type  
+    0    |-1,1/2⟩<-> |1,1/2⟩  Forbidden (2) 
+    1  |-1,-1/2⟩<-> |1,-1/2⟩  Forbidden (2) 
+    2   |0,-1/2⟩<-> |1,-1/2⟩        Allowed  )
+
+    '''
     Ham=deepcopy(Hamer)
     if Exp.Freq<=0:
         raise ValueError("Frequency can't be a negative or zero value")
@@ -577,6 +768,61 @@ def Cristalfm(Hamer,Exp):  #Function for finding the resonant fields and energie
     return espac1,inten1,Elist,dfdis
 
 def Music(Hamer,Exper,graph='True',table='True'):
+    '''
+    Wrap function that calculates the spectrum and table of transitions of multisystems. If there is an interaction between the systems (electron-eletron or hiperfine), solves the total hamiltonian. Otherwise, use the function Cristalfm and sums the contributions to the total spectrum.
+    
+    Parameters
+    ----------
+    
+    Hamer : Class
+        Container for the hamiltonian parameters of the system.
+    
+    Expe : Class
+        Container for the experimental conditions.
+        
+    graph : Bool
+        Plots the resulting spectrum and energy diagrams.
+        
+    table : Bool
+        Generates the resonant fields and transitions table.
+    
+    Returns
+    -------
+    
+    fild1 : np.array
+        Array of the magnetic field.
+    sumespct : np.array
+        Array of the counts of the spectrum.
+        
+    Example
+    -------
+    
+    .. code-block:: python
+    
+       import matplotlib.pyplot as plt
+       import epraya as epr
+       import numpy as np
+       Ham,Exp,_=epr.Start(2)
+       Ham.S2=1
+       Ham.S1=1
+       Ham.I1=1/2
+       Ham.g1=np.array([2.003, 2, 2])
+       Ham.A1=np.array([200, 200, 200])
+       Ham.Hpp1=[0, 20]
+       Ham.I2=1/2
+       Ham.g2=np.array([3.003, 3, 3])
+       Ham.A2=np.array([100, 100, 100])
+       Exp.Freq1=9.4
+       Exp.Points1=4096
+       Exp.Temperature1=300
+       Exp.Frange1=[0,800]
+       B,spc=epr.Music(Ham,Exp)
+    .. image:: /_static/tabla2.PNG
+       :alt: Table of the Music function    
+    .. image:: /_static/music.PNG
+       :alt: Plot of the Music function
+       :align: center
+    '''
     Ham=deepcopy(Hamer)
     numberes=len(Ham.Mulham)
     for inka in range(0,numberes):
