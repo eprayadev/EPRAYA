@@ -19,8 +19,6 @@ autodoc_mock_imports=["numpy","scipy","matplotlib","ipywidgets","IPython","tkint
 autodoc_typehints = "none"
 add_module_names = False
 autodoc_preserve_defaults = True
-# -- Options for HTML output -------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "pydata_sphinx_theme"
 html_title = 'EPRAYA-User guide'
