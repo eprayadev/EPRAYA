@@ -3,8 +3,8 @@ import sys
 sys.path.insert(0, os.path.abspath('..'))
 
 project = 'EPRAYA'
-copyright = '2026, Juan S. Castro, Ovidio Almanza, Miguel E. Gámez'
-author = 'Juan S. Castro, Ovidio Almanza, Miguel E. Gámez'
+copyright = '2026, Juan S. Castro, Miguel E. Gámez, Ovidio Almanza'
+author = 'Juan S. Castro, Miguel E. Gámez, Ovidio Almanza'
 release = 'V. 0.2.0'
 
 
