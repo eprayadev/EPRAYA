@@ -24,7 +24,7 @@ pip install epraya
 > [!TIP]
 >We recommend to use code editors that support tkinter and plotly (VS Code, Jupyter) to take full advantage of the functions in the package. However, it's possible to use the package in any other code editors.
 
-For further instructions on installation and common question, see the [documentation]([./docs/](https://eprayadev.github.io/EPRAYA/installation.html)).
+For further instructions on installation and common question, see the [documentation]((https://eprayadev.github.io/EPRAYA/installation.html)).
 
 ## Features
 
@@ -37,7 +37,7 @@ For further instructions on installation and common question, see the [documenta
 
 ## Documentation
 
-Functions description, tutorials and more specific information, can be access in the [documentation]([./docs/](https://eprayadev.github.io/EPRAYA/index.html)).
+Functions description, tutorials and more specific information, can be access in the [documentation]((https://eprayadev.github.io/EPRAYA/index.html)).
 
 ## Limitations
 - Current version of EPRAYA only supports _cw EPR_. We are working in implementing _ENDOR_ and _pulse EPR_.
