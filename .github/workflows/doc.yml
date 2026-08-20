@@ -40,7 +40,7 @@ jobs:
       - name: Prepare to GitHub Pages
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '_build/html'
+          path: 'docs/_build/html'
 
       - name: Deploy
         id: deployment
