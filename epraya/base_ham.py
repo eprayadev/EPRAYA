@@ -43,6 +43,18 @@ import re
 from itertools import product as iterproduct
 from importlib import resources
 
+#Finds the shell for the programm
+def is_notebook():
+    try:
+        shell=get_ipython().__class__.__name__
+        if shell=='ZMQInteractiveShell':
+            return True
+        else:
+            return False
+    except NameError:
+        return False
+
+
 @dataclass
 class Hval:
     '''
