@@ -734,7 +734,7 @@ def Caltriangle(sketch,Bmin,dB,allres,allint,transi,hulk,weight):
                             sketch[igdam]+=Iint*pointweg
 
 
-def Powder(Hamer,Expe,graph='True'):  #Method ASG
+def Powder(Hamer,Expe,graph=True):  #Method ASG
     '''
     Wrap function for the simulation of the EPR spectrum for powder samples.
     
@@ -786,7 +786,7 @@ def Powder(Hamer,Expe,graph='True'):  #Method ASG
     '''
     iwas,jwas,kwas,weight,hulk=Delaunay(Expe)
     Bfield,Intensity=Calpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk)
-    if graph=='True':
+    if graph:
         import plotly.graph_objects as pgo
         import plotly.colors as pc
         graphp=pgo.Figure(data=pgo.Scatter(x=Bfield,y=Intensity, mode='lines',name="Spectrum",line=dict(color='navy')))
@@ -802,7 +802,7 @@ def Powder(Hamer,Expe,graph='True'):  #Method ASG
             showlegend=True)
         graphp.add_hline(y=0,line_color="black",line_width=1)
         graphp.add_vline(x=0,line_color="black",line_width=1)
-        display(graphp)
+        graphp.show()
         return Bfield,Intensity
     else:
         return Bfield,Intensity
@@ -976,7 +976,7 @@ def Calpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk):
 
 
 
-def Mulpol(Hamer,Expe,graph='True'):
+def Mulpol(Hamer,Expe,graph=True):
     '''
     Function for the simulation the EPR spectrum for powder samples of multiple interactive or non interactive systems (from 2 to 4 systems). If there is an interaction between the systems (electron-eletron or hiperfine), solves the total hamiltonian. Otherwise, use the function Calpowder and sums the contributions to the total spectrum.
     
@@ -1227,7 +1227,7 @@ def Mulpol(Hamer,Expe,graph='True'):
             espectotal=scs.fftconvolve(sketch,kvoigt,mode='same')
             sumespct+=espectotal
             fild1=espac1
-    if graph=='True':
+    if graph:
         import plotly.graph_objects as pgo
         import plotly.colors as pc
         graphp=pgo.Figure(data=pgo.Scatter(x=fild1,y=sumespct,mode='lines',name="Spectrum",line=dict(color='navy')))
@@ -1243,7 +1243,7 @@ def Mulpol(Hamer,Expe,graph='True'):
             showlegend=True)
         graphp.add_hline(y=0,line_color="black",line_width=1)
         graphp.add_vline(x=0,line_color="black",line_width=1)
-        display(graphp)
+        graphp.show()
     return fild1,sumespct
 
 def Betaparal(args):

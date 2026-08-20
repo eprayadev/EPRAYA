@@ -200,7 +200,7 @@ def EBoltfactor(Eghz,di,dj,Temp):
     popuj=boltz[dj]/Z
     return np.abs(popui-popuj)
 
-def Eresonant(Hamer,Exp,graph='True',table='True'):  #Function for finding the resonant fields and energies
+def Eresonant(Hamer,Exp,graph=True,table=True):  #Function for finding the resonant fields and energies
     '''
     Function for the simulation of the EPR spectrum for monocrystal samples, creating the energy diagrams and a table of the resonant fields.
     
@@ -383,7 +383,7 @@ def Eresonant(Hamer,Exp,graph='True',table='True'):  #Function for finding the r
                     pass
     inten1=Voigtp(espac1,intensy,resfield,Ham.Hpp,Ham.eta)
     if len(resfield)>0:
-        if table=='True':
+        if table:
             df=DataFrame(data=resonants)
             dfdis=df[['field', 'transition', 'type']].copy()
             dfl=dfdis.iloc[::2].reset_index(drop=True)
@@ -401,7 +401,7 @@ def Eresonant(Hamer,Exp,graph='True',table='True'):  #Function for finding the r
     if type(inten1)==int:
         print("No transition probability in range")
     else:
-        if graph=='True':
+        if graph:
             Plotsim(espac1,inten1,resfield,Blist,Elist,curvebasis,splines,resonants)
 
     return espac1,inten1
@@ -767,7 +767,7 @@ def Cristalfm(Hamer,Exp):  #Function for finding the resonant fields and energie
 
     return espac1,inten1,Elist,dfdis
 
-def Music(Hamer,Exper,graph='True',table='True'):
+def Music(Hamer,Exper,graph=True,table=True):
     '''
     Wrap function that calculates the spectrum and table of transitions of multisystems. If there is an interaction between the systems (electron-eletron or hiperfine), solves the total hamiltonian. Otherwise, use the function Cristalfm and sums the contributions to the total spectrum.
     
@@ -1085,13 +1085,13 @@ def Music(Hamer,Exper,graph='True',table='True'):
             if 'dfdis' in locals() and not dfdis.empty:
                 padata.append(dfdis)
     dfdis=concat(padata,ignore_index=True)
-    if table=='True':
+    if table:
         if is_notebook():
             from IPython.display import display
             display(dfdis)
         else:
             print(dfdis)
-    if graph=='True':
+    if graph:
         import plotly.graph_objects as pgo
         import plotly.colors as pc
         graphp=pgo.Figure(data=pgo.Scatter(x=fild1,y=sumespct,mode='lines',name="Spectrum",line=dict(color='navy')))
