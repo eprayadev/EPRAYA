@@ -402,11 +402,11 @@ def Eresonant(Hamer,Exp,graph=True,table=True):  #Function for finding the reson
         print("No transition probability in range")
     else:
         if graph:
-            Plotsim(espac1,inten1,resfield,Blist,Elist,curvebasis,splines,resonants)
+            Plotsim(espac1,inten1,resfield,Blist,Elist,curvebasis,splines,resonants,Ham,Exp)
 
     return espac1,inten1
 
-def Plotsim(espac1,inten1,resfield,espac2,enegria,curvebasis,splines,resonants):
+def Plotsim(espac1,inten1,resfield,espac2,enegria,curvebasis,splines,resonants,Ham,Exp):
     '''
     Function to produce the graph of the spectrum and the energy diagram.
     
@@ -429,7 +429,10 @@ def Plotsim(espac1,inten1,resfield,espac2,enegria,curvebasis,splines,resonants):
         Third order polinomium that is use to find the resonant fields.
     resonants : dictionary
         Contains transition type and resonant fields information.
-
+    Ham : Class
+        Container for the hamiltonian parameters of the system.
+    Exp : Class
+        Container for the experimental conditions.
     '''
     slit,nlit,llit,transitions=Msmi(Ham.I,Ham.S,Ham.L)
     if resfield!=[]:
