@@ -10,7 +10,6 @@ Welcome to the EPRAYA user guide. Here you will find a description of the differ
    hamfunct
    cwpowder
    cwcrystal
-   data_load
    fitting
    jax_impl
    other

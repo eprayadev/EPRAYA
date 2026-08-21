@@ -43,6 +43,42 @@ import re
 from itertools import product as iterproduct
 from importlib import resources
 def Sload(dat,rows,cols): #Loads counts and field data
+    '''
+    Basic function for data load of counts and fields, using the np.loadtxt function.
+    
+    Parameters
+    ----------
+    dat : str
+        Name of the data field.
+    rows : int
+        Number of rows to load
+    cols : list
+        List of two values with the field and count data [field, count].
+    
+    Returns
+    -------
+    field : np.array
+        Array of the magnetic field values.
+    rcount : np.array
+        Array of the counts values.
+        
+    Example
+    -------
+    .. code-block:: python
+    
+       import epraya as epr
+       import matplotlib.pyplot as plt
+
+       B,spc=epr.Sload('STRONG PITCH.dat',2046,[2,3])
+       plt.plot(B,spc)
+       plt.xlabel('Magnetic field [mT]')
+       plt.ylabel('Counts [A. U.]')
+       plt.grid()
+       plt.show()
+    .. image:: /_static/sload.png
+       :alt: Plot of the Sload function.
+       :align: center
+    '''
     dt=np.loadtxt(dat,usecols=(cols))
     sh=np.shape(dt)
     if rows<0 or rows>sh[0]:
@@ -58,6 +94,28 @@ def Sload(dat,rows,cols): #Loads counts and field data
     return field,rcount
 
 def Splot(field,count):
+    '''
+    Plotting function for field and count data.
+    
+    Parameters
+    ----------
+    
+    field: np.array
+        Array of the magnetic field values.
+    rcount : np.array
+        Array of the counts values.
+    
+    Example
+    -------
+    .. code-block:: python     
+       import epraya as epr
+       import matplotlib.pyplot as plt
+       B,spc=epr.Sload('STRONG PITCH.dat',2046,[2,3])
+       epr.Splot(B,spc)
+    .. image:: /_static/splot.png
+       :alt: Plot of the Sload function.
+       :align: center
+    '''
     plt.figure(figsize=(20,7))
     plt.xlabel('Magnetic Field [mT]')
     plt.ylabel('Counts [A. U.]')
@@ -65,7 +123,49 @@ def Splot(field,count):
     plt.plot(field, count)#, color='green')
     plt.show()
 
-def Sfilter(field,count,lt=51,pol=3,i=0,startl=0,endli=-1,epsilon=(5*10**-6),plot="True"):
+def Sfilter(field,count,lt=51,pol=3,startl=0,endli=-1,epsilon=(5*10**-6),plot=True):
+    '''
+    Applys a Savitzky-Golay filter to the count data, finds the resonant fields and peak to peak width, and generates the plots of the filtered data, its first and second integrals.
+    
+    Parameters
+    ----------
+    
+    field : np.array
+        Array of the magnetic field values.
+    count : np.array
+        Array of the counts values.
+    lt : int
+        Window length for the Savitzky-Golay filter.
+    pol : int
+        Polynomial order for the Savitzky-Golay filter.
+    start : int
+        Index of the first point to draw the base line.
+    endli : int
+        Index of the last point to draw the base line.
+    epsilon : float
+        Prominence value to mark the peaks in the plot.
+    plot : Bool
+        If true, plots the graphs of the spectrum, filtred data and first and second integrals.
+        
+    Returns
+    -------
+    If does not found any resonant field:
+    spc : np.array
+        Filtred spectrum.
+    integ : np.array
+        First integral of the spectrum.
+    Otherwise:
+    
+    Hpp : list
+        List of the peak to peak width finded.
+    tempa : list
+        Resonant fields list.
+    spc : np.array
+        Filtred spectrum.
+    integ : np.array
+        First integral of the spectrum.
+    '''
+    
     #Applies a Savitzky-Golay to the count data, finds resonant fields and the peak-to-peak width
     spc=scs.savgol_filter(count, window_length=lt, polyorder=pol)
     # Base line determination
@@ -152,7 +252,7 @@ def Sfilter(field,count,lt=51,pol=3,i=0,startl=0,endli=-1,epsilon=(5*10**-6),plo
       print(f"Mean Hpp distance: {Hpp:.4f}, [mT]")
       print(" ")
     # Plotting the results
-    if plot=="True":
+    if plot:
       #Base line of the spectrum
       plt.figure(figsize=(12,8))
       plt.subplot(221)
@@ -222,7 +322,35 @@ def Sfilter(field,count,lt=51,pol=3,i=0,startl=0,endli=-1,epsilon=(5*10**-6),plo
     else:
         return Hpp, tempa, spc, integ
 
-def Overseer(field,counts,lt=51,pol=3,i=0,startl=0,endli=-1,epsilon=(5*10**-6),plot="True"): # Shows tools for spectrum analysis and creates variable Sdata, with Hpp, resonant fields, filtered spectrum and integral of the spectrum.
+def Overseer(field,counts,lt=51,pol=3,i=0,startl=0,endli=-1,epsilon=(5*10**-6),plot=True): # Shows tools for spectrum analysis and creates variable Sdata, with Hpp, resonant fields, filtered spectrum and integral of the spectrum.
+  '''
+  Interactive function for spectrum analysis of the experimental data, applying Savitzky-Golay filter to the data, finding it's resonant fields, peak to peak distance and first and second integral.
+    
+  Parameters
+  ----------
+    
+  field : np.array
+    Array of the magnetic field values.
+  count : np.array
+    Array of the counts values.
+  lt : int
+    Window length for the Savitzky-Golay filter.
+  pol : int
+    Polynomial order for the Savitzky-Golay filter.
+  start : int
+    Index of the first point to draw the base line.
+  endli : int
+    Index of the last point to draw the base line.
+  epsilon : float
+    Prominence value to mark the peaks in the plot.
+  plot : Bool
+    If true, plots the graphs of the spectrum, filtred data and first and second integrals.
+        
+  Returns
+  -------
+  
+  Sdata : 
+  '''
   #Sliders conditions
   hystoria=[]
   maind=len(counts)-1
@@ -240,7 +368,7 @@ def Overseer(field,counts,lt=51,pol=3,i=0,startl=0,endli=-1,epsilon=(5*10**-6),p
     if sslider.value>sslider.max:
       sslider.value=sslider.max
   def Wrapper(field,count,startl,endli,lt,pol):
-    devul=Sfilter(field,counts,startl=startl,endli=endli,lt=lt,pol=pol)
+    devul=Sfilter(field,counts,startl=startl,endli=endli,lt=lt,pol=pol,plot)
     if devul is not None:
       hystoria.append(devul)
   sslider.observe(fschange,names='value')
@@ -261,7 +389,8 @@ def Overseer(field,counts,lt=51,pol=3,i=0,startl=0,endli=-1,epsilon=(5*10**-6),p
   #controls.layout=widgets.Layout(width='500px',border='solid 1px #cccccc',padding='10px',margin='20px 0px 0 700px' )
   app_layout=widgets.HBox([controls, out])
   display(controls,out)
-
+  return Sdata
+  
 #For tkinter 
 def Sload1(dat,rows,cols): #Loads counts and field data
     dt=np.loadtxt(dat,usecols=(cols))
@@ -279,7 +408,7 @@ def Sload1(dat,rows,cols): #Loads counts and field data
     return field,rcount
 
 
-def Spmanipulation(fig,axes,field,count,lt=51,pol=3,startl=0,endli=-1,einmal=0,aufmal=-1,epsilon=(5*10**-6),plot="True"):
+def Spmanipulation(fig,axes,field,count,lt=51,pol=3,startl=0,endli=-1,einmal=0,aufmal=-1,epsilon=(5*10**-6)):
     for ax in axes.flat:
         ax.clear()
     if endli<0: 
