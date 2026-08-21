@@ -154,6 +154,7 @@ def Sfilter(field,count,lt=51,pol=3,startl=0,endli=-1,epsilon=(5*10**-6),plot=Tr
         Filtred spectrum.
     integ : np.array
         First integral of the spectrum.
+        
         Otherwise:
     
     Hpp : list
@@ -512,7 +513,8 @@ def Spmanipulation(fig,axes,field,count,lt=51,pol=3,startl=0,endli=-1,einmal=0,a
     spc-basel : np.array
         Filtred spectrum.
     integ : np.array
-        First integral of the spectrum.    
+        First integral of the spectrum.   
+        
         Otherwise:
     dfr : pandas.Dataframe
         Table of the peak to peak widht with it's corresponding resonant field.
