@@ -1967,7 +1967,7 @@ def Termal():
     '''
     Function to analyze the change in peak to peak distance, resonant field position, first and second integral of EPR spectrum data with the temperature. It can also be use to find the Curie or Neel temperature.
     
-    In the example, a spectrum of ZnO doped with Fe and measure at different temperatures. The experimental data was provided by M. Acosta-Humáñez and are available in `here`__ https://repositorio.unal.edu.co/handle/unal/83694 
+    In the example, a spectrum of ZnO doped with Fe and measure at different temperatures. The experimental data was provided by M. Acosta-Humáñez and are available in __ https://repositorio.unal.edu.co/handle/unal/83694.
     
     Plots can be zoom in by doing double-click in the graph.
     
