@@ -321,6 +321,9 @@ def Sfilter(field,count,lt=51,pol=3,startl=0,endli=-1,epsilon=(5*10**-6),plot=Tr
         return spc, integ
     else:
         return Hpp, tempa, spc, integ
+class Resultsover:
+    def __init__(self):
+        self.values=None
 
 def Overseer(field,counts,lt=51,pol=3,i=0,startl=0,endli=-1,epsilon=(5*10**-6),plot=True): # Shows tools for spectrum analysis and creates variable Sdata, with Hpp, resonant fields, filtered spectrum and integral of the spectrum.
   '''
@@ -363,7 +366,7 @@ def Overseer(field,counts,lt=51,pol=3,i=0,startl=0,endli=-1,epsilon=(5*10**-6),p
 
   
   '''
-  Sdata=[]
+  Sdata=Resultsover()
   #Sliders conditions
   hystoria=[]
   maind=len(counts)-1
@@ -393,9 +396,7 @@ def Overseer(field,counts,lt=51,pol=3,i=0,startl=0,endli=-1,epsilon=(5*10**-6),p
       ouarea.clear_output(wait=True)
       if hystoria:
         # Save results
-        Sdata.clear()
-        Sdata.append(hystoria[-1])
-        Sdata=hystoria[-1]
+        Sdata.values=hystoria[-1]
         print(f"Data saved")
   savev.on_click(on_save_clicked)
   out=interactive_output(Wrapper,{'field': fixed(field),'count': fixed(counts),'startl': sslider,'endli': eslider,'lt': ltslider,'pol': polslider})
@@ -403,7 +404,7 @@ def Overseer(field,counts,lt=51,pol=3,i=0,startl=0,endli=-1,epsilon=(5*10**-6),p
   #controls.layout=widgets.Layout(width='500px',border='solid 1px #cccccc',padding='10px',margin='20px 0px 0 700px' )
   app_layout=widgets.HBox([controls, out])
   display(controls,out)
-  return Sdata[0]
+  return Sdata
   
 #For tkinter 
 def Sload1(dat,rows,cols): #Loads counts and field data
