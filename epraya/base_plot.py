@@ -351,7 +351,7 @@ def Overseer(field,counts,lt=51,pol=3,i=0,startl=0,endli=-1,epsilon=(5*10**-6),p
   
   Sdata : 
   '''
-  Sdata=[]
+  Sdata={}
   #Sliders conditions
   hystoria=[]
   maind=len(counts)-1
@@ -382,7 +382,7 @@ def Overseer(field,counts,lt=51,pol=3,i=0,startl=0,endli=-1,epsilon=(5*10**-6),p
       ouarea.clear_output(wait=True)
       if hystoria:
         # Save results
-        Sdata=hystoria[-1]
+        Sdata['one']=hystoria[-1]
         print(f"Data saved")
   savev.on_click(on_save_clicked)
   out=interactive_output(Wrapper,{'field': fixed(field),'count': fixed(counts),'startl': sslider,'endli': eslider,'lt': ltslider,'pol': polslider})
