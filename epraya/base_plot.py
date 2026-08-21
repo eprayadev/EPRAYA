@@ -1980,6 +1980,7 @@ def Termal():
     Example
     -------
     .. code-block:: python
+    
        import epraya as epr
        epr.Termal()
        
