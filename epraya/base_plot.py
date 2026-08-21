@@ -349,7 +349,8 @@ def Overseer(field,counts,lt=51,pol=3,i=0,startl=0,endli=-1,epsilon=(5*10**-6),p
   Returns
   -------
   
-  Sdata : 
+  Sdata : list 
+    List of the saved values of peak to peak widths, Resonant fields, filtred spectrum and the first integral.
   '''
   Sdata={}
   #Sliders conditions
@@ -377,7 +378,6 @@ def Overseer(field,counts,lt=51,pol=3,i=0,startl=0,endli=-1,epsilon=(5*10**-6),p
   savev=widgets.Button(description="Save configuration", button_style='success')
   ouarea=widgets.Output()
   def on_save_clicked(b):
-    global Sdata
     with ouarea:
       ouarea.clear_output(wait=True)
       if hystoria:
@@ -390,7 +390,7 @@ def Overseer(field,counts,lt=51,pol=3,i=0,startl=0,endli=-1,epsilon=(5*10**-6),p
   #controls.layout=widgets.Layout(width='500px',border='solid 1px #cccccc',padding='10px',margin='20px 0px 0 700px' )
   app_layout=widgets.HBox([controls, out])
   display(controls,out)
-  return Sdata
+  return Sdata.values()
   
 #For tkinter 
 def Sload1(dat,rows,cols): #Loads counts and field data
