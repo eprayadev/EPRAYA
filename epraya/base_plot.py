@@ -323,7 +323,10 @@ def Sfilter(field,count,lt=51,pol=3,startl=0,endli=-1,epsilon=(5*10**-6),plot=Tr
         return Hpp, tempa, spc, integ
 class Resultsover:
     def __init__(self):
-        self.values=None
+        self.Hpp=None
+        self.Rfields=None
+        self.spc=None
+        self.fintegral=None
 
 def Overseer(field,counts,lt=51,pol=3,i=0,startl=0,endli=-1,epsilon=(5*10**-6),plot=True): # Shows tools for spectrum analysis and creates variable Sdata, with Hpp, resonant fields, filtered spectrum and integral of the spectrum.
   '''
@@ -396,7 +399,14 @@ def Overseer(field,counts,lt=51,pol=3,i=0,startl=0,endli=-1,epsilon=(5*10**-6),p
       ouarea.clear_output(wait=True)
       if hystoria:
         # Save results
-        Sdata.values=hystoria[-1]
+        if len(hystoria[-1])==2:
+            Sdata.spc=hystoria[-1][0]
+            Sdata.fintegral=hystoria[-1][1]
+        if len(hystoria[-1])==4:
+            Sdata.spc=hystoria[-1][2]
+            Sdata.fintegral=hystoria[-1][3]
+            Sdata.Hpp=hystoria[-1][0]
+            Sdata.Rfields=hystoria[-1][1]
         print(f"Data saved")
   savev.on_click(on_save_clicked)
   out=interactive_output(Wrapper,{'field': fixed(field),'count': fixed(counts),'startl': sslider,'endli': eslider,'lt': ltslider,'pol': polslider})
