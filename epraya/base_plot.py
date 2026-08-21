@@ -436,7 +436,6 @@ def Sload1(dat,rows,cols): #Loads counts and field data
     Function to load data with the Seek function.
     
     Parameters
-
     ----------
     dat : str
         Name of the data field.
@@ -475,7 +474,6 @@ def Spmanipulation(fig,axes,field,count,lt=51,pol=3,startl=0,endli=-1,einmal=0,a
     Applys a Savitzky-Golay filter to the count data, finds the resonant fields and peak to peak width, and generates the plots of the filtered data, its first and second integrals, using the values of the sliders.
     
     Parameters
-
     ----------
     fig : matplotlib.figure.Figure
         Defines the ploting area for the four graphs.
