@@ -368,7 +368,7 @@ def Overseer(field,counts,lt=51,pol=3,i=0,startl=0,endli=-1,epsilon=(5*10**-6),p
     if sslider.value>sslider.max:
       sslider.value=sslider.max
   def Wrapper(field,count,startl,endli,lt,pol):
-    devul=Sfilter(field,counts,startl=startl,endli=endli,lt=lt,pol=pol,plot)
+    devul=Sfilter(field,counts,startl=startl,endli=endli,lt=lt,pol=pol)
     if devul is not None:
       hystoria.append(devul)
   sslider.observe(fschange,names='value')
