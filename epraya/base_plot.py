@@ -149,13 +149,6 @@ def Sfilter(field,count,lt=51,pol=3,startl=0,endli=-1,epsilon=(5*10**-6),plot=Tr
         
     Returns
     -------
-        If does not found any resonant field:
-    spc : np.array
-        Filtred spectrum.
-    integ : np.array
-        First integral of the spectrum.
-        
-        Otherwise:
     
     Hpp : list
         List of the peak to peak width finded.
@@ -319,7 +312,7 @@ def Sfilter(field,count,lt=51,pol=3,startl=0,endli=-1,epsilon=(5*10**-6),plot=Tr
       plt.grid()
       plt.show()
     if len(tempa)==0:
-        return spc, integ
+        return [], [], spc, integ
     else:
         return Hpp, tempa, spc, integ
 class Resultsover:
@@ -503,19 +496,6 @@ def Spmanipulation(fig,axes,field,count,lt=51,pol=3,startl=0,endli=-1,einmal=0,a
         
     Returns
     -------
-
-        If does not found any resonant field:
-    
-    dfr : pandas.Dataframe
-        Empty table of the peak to peak widht with it's corresponding resonant field.
-    field : np.array
-        Array with the magnetic field values.
-    spc-basel : np.array
-        Filtred spectrum.
-    integ : np.array
-        First integral of the spectrum.   
-        
-        Otherwise:
     dfr : pandas.Dataframe
         Table of the peak to peak widht with it's corresponding resonant field.
     field : np.array
@@ -693,7 +673,7 @@ def Spmanipulation(fig,axes,field,count,lt=51,pol=3,startl=0,endli=-1,einmal=0,a
     fig.tight_layout()
     
     if len(tempa)==0:
-        return (dfr,field,spc-basel,integ)
+        return (dfr,field,spc-basel,[],[],integ)
     else:
         return (dfr,field,spc-basel,Hpp,tempa,integ)
 
