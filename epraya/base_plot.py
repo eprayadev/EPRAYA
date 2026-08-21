@@ -149,12 +149,12 @@ def Sfilter(field,count,lt=51,pol=3,startl=0,endli=-1,epsilon=(5*10**-6),plot=Tr
         
     Returns
     -------
-    If does not found any resonant field:
+        If does not found any resonant field:
     spc : np.array
         Filtred spectrum.
     integ : np.array
         First integral of the spectrum.
-    Otherwise:
+        Otherwise:
     
     Hpp : list
         List of the peak to peak width finded.
@@ -500,13 +500,12 @@ def Spmanipulation(fig,axes,field,count,lt=51,pol=3,startl=0,endli=-1,einmal=0,a
     epsilon : float
         Prominence value to mark the peaks in the plot.
     plot : Bool
-
         If true, plots the graphs of the spectrum, filtred data and first and second integrals.
         
     Returns
     -------
 
-    If does not found any resonant field:
+        If does not found any resonant field:
     
     dfr : pandas.Dataframe
         Empty table of the peak to peak widht with it's corresponding resonant field.
@@ -516,7 +515,7 @@ def Spmanipulation(fig,axes,field,count,lt=51,pol=3,startl=0,endli=-1,einmal=0,a
         Filtred spectrum.
     integ : np.array
         First integral of the spectrum.    
-    Otherwise:
+        Otherwise:
     dfr : pandas.Dataframe
         Table of the peak to peak widht with it's corresponding resonant field.
     field : np.array
