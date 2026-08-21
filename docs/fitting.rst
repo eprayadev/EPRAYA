@@ -12,38 +12,15 @@ EPRAYA has different forms of loading data, based in the *np.load* function. The
 .. toctree::
    :caption: Data load functions
    :hidden:
-   
-   Eresonant
 
-   
-.. list-table::
-   :widths: 25 75
-   :header-rows: 1
-
-   * - Name
-     - Description
-   * - :doc:`epraya.Eresonant <Eresonant>`
-     - Function for the simulation of the EPR spectrum for monocrystal samples.
-   * - :doc:`epraya.Plotsim <Plotsim>`
-     - Function to produce the graph of the spectrum and the energy diagram for monocrystal samples.  
-   * - :doc:`epraya.Cristalfm <Cristalfm>`
-     - Function for the calculation of the spectrum of monocristals without producing the graphs. 
-   * - :doc:`epraya.Music <Music>`
-     - Wrap function that calculates the spectrum and table of transitions of multisystems.     
-     
-Eigen values and vectors functions
-----------------------------------
-
-.. currentmodule:: base_powd
-
-.. toctree::
-   :caption: Eigen values and vectors functions
-   :hidden:
-   
-   EAdaptarray
-   EHungorder
-   ERetrack
-   Mulgetlabel
+   Sload
+   Splot
+   Sfilter
+   Overseer
+   Sload1
+   Spmanipulation
+   Seek
+   Termal
 
 .. list-table::
    :widths: 25 75
@@ -51,13 +28,19 @@ Eigen values and vectors functions
 
    * - Name
      - Description
-   * - :doc:`epraya.EAdaptarray <EAdaptarray>`
-     - Finds the energy values and eigenvectors of the total hamiltonian.
-   * - :doc:`epraya.EHungorder <EHungorder>`
-     - Solves the assigment problem with the J-V method implemented in Scipy for the eigenvectors and energy values.    
-   * - :doc:`epraya.ERetrack <ERetrack>`
-     - Relates the energy values and eigenvectors to the quantum numbers of the system.
-   * - :doc:`epraya.Mulgetlabel <Mulgetlabel>`
-     - Creates the state ket for the energy level, using the quantum numbers.
-     
-
+   * - :doc:`epraya.Sload <Sload>`
+     - Basic function for data load of counts and fields.
+   * - :doc:`epraya.Splot <Splot>`
+     - Plotting function for field and count data.    
+   * - :doc:`epraya.Sfilter <Sfilter>`
+     - Applys a Savitzky-Golay filter to the count data, finds the resonant fields and peak to peak width, and generates the plots of the filtered data, its first and second integrals.
+   * - :doc:`epraya.Overseer <Overseer>`
+     - Interactive function for spectrum analysis of the experimental data, applying Savitzky-Golay filter to the data, finding it's resonant fields, peak to peak distance and first and second integral.
+   * - :doc:`epraya.Sload1 <Sload1>`
+     - Basic function for data load of counts and fields in Seek.     
+   * - :doc:`epraya.Spmanipulation <Spmanipulation>`
+     -  Applys a Savitzky-Golay filter to the count data, finds the resonant fields and peak to peak width, and generates the plots of the filtered data, its first and second integrals, using the values of the sliders.
+   * - :doc:`epraya.Seek <Seek>`
+     -  Function for data loading and initial analysis, based on tkinter.
+   * - :doc:`epraya.Termal <Termal>`
+     -  Function to analyze the change in peak to peak distance, resonant field position, first and second integral of EPR spectrum data with the temperature.
