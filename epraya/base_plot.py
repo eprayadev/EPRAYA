@@ -120,7 +120,8 @@ def Splot(field,count):
     plt.xlabel('Magnetic Field [mT]')
     plt.ylabel('Counts [A. U.]')
     plt.title('EPR spectrum')
-    plt.plot(field, count)#, color='green')
+    plt.grid()
+    plt.plot(field, count, color='green')
     plt.show()
 
 def Sfilter(field,count,lt=51,pol=3,startl=0,endli=-1,epsilon=(5*10**-6),plot=True):
@@ -1967,7 +1968,7 @@ def Termal():
     '''
     Function to analyze the change in peak to peak distance, resonant field position, first and second integral of EPR spectrum data with the temperature. It can also be use to find the Curie or Neel temperature.
     
-    In the example, a spectrum of ZnO doped with Fe and measure at different temperatures. The experimental data was provided by M. Acosta-Humáñez and are available in __ https://repositorio.unal.edu.co/handle/unal/83694.
+    In the example, a spectrum of ZnO doped with Fe and measure at different temperatures. The experimental data was provided by M. Acosta-Humáñez and are available in https://repositorio.unal.edu.co/handle/unal/83694.
     
     Plots can be zoom in by doing double-click in the graph.
     
@@ -1981,6 +1982,7 @@ def Termal():
     .. code-block:: python
        import epraya as epr
        epr.Termal()
+       
     .. image:: /_static/Ter1.png
        :alt: Plot of Termal function 1.
        :align: center
