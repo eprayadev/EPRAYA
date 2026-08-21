@@ -351,6 +351,7 @@ def Overseer(field,counts,lt=51,pol=3,i=0,startl=0,endli=-1,epsilon=(5*10**-6),p
   
   Sdata : 
   '''
+  Sdata=[]
   #Sliders conditions
   hystoria=[]
   maind=len(counts)-1
