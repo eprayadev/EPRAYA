@@ -354,8 +354,8 @@ def Overseer(field,counts,lt=51,pol=3,i=0,startl=0,endli=-1,epsilon=(5*10**-6),p
         
   Returns
   -------
-  Sdata : list 
-    List of the saved values of peak to peak widths, Resonant fields, filtred spectrum and the first integral.
+  Sdata : Class
+    Container of the saved values of peak to peak widths, resonant fields, filtred spectrum and the first integral.
     
   Example
   -------
@@ -363,11 +363,25 @@ def Overseer(field,counts,lt=51,pol=3,i=0,startl=0,endli=-1,epsilon=(5*10**-6),p
      import epraya as epr
      B,spc=epr.Sload('STRONG PITCH.dat',2046,[2,3])
      Sdata=epr.Overseer(B,spc)
-    .. image:: /_static/splot.png
-       :alt: Plot of the Sload function.
+     print(Sdata.Hpp)
+     print(Sdata.Rfields)
+     print(Sdata.spc)
+     print(Sdata.fintegral)
+     3.9560599999999795
+     [3359.67032]
+     [1.25966455e-05 1.25890390e-05 1.25820698e-05 ... 1.16215339e-05
+     1.16253103e-05 1.16295710e-05]
+     [0.00000000e+00 2.13932742e-09 3.77939041e-09 ... 2.12170265e-05
+     2.12165240e-05 2.12163506e-05]
+    .. image:: /_static/controles.png
+       :alt: Plot of sliders of Overseer.
        :align: center
-
-  
+    .. image:: /_static/over1.png
+       :alt: Plot of spectrum of Overseer.
+       :align: center
+    .. image:: /_static/over2.png
+       :alt: Plot of integrals of Overseer.
+       :align: center  
   '''
   Sdata=Resultsover()
   #Sliders conditions
@@ -418,6 +432,29 @@ def Overseer(field,counts,lt=51,pol=3,i=0,startl=0,endli=-1,epsilon=(5*10**-6),p
   
 #For tkinter 
 def Sload1(dat,rows,cols): #Loads counts and field data
+    '''
+    Function to load data with the Seek function.
+    
+    Parameters
+
+    ----------
+    dat : str
+        Name of the data field.
+    rows : int
+        Number of rows to load
+    cols : list
+        List of two values with the field and count data [field, count].
+
+    
+    Returns
+    -------
+    field : np.array
+
+        Array of the magnetic field values.
+    rcount : np.array
+        Array of the counts values.
+        
+    '''
     dt=np.loadtxt(dat,usecols=(cols))
     sh=np.shape(dt)
     if rows<0 or rows>sh[0]:
@@ -434,6 +471,65 @@ def Sload1(dat,rows,cols): #Loads counts and field data
 
 
 def Spmanipulation(fig,axes,field,count,lt=51,pol=3,startl=0,endli=-1,einmal=0,aufmal=-1,epsilon=(5*10**-6)):
+    '''
+    Applys a Savitzky-Golay filter to the count data, finds the resonant fields and peak to peak width, and generates the plots of the filtered data, its first and second integrals, using the values of the sliders.
+    
+    Parameters
+
+    ----------
+    fig : matplotlib.figure.Figure
+        Defines the ploting area for the four graphs.
+    axes : subplots
+        Defines the subplotss for the plots.
+    field : np.array
+        Array of the magnetic field values.
+    count : np.array
+        Array of the counts values.
+    lt : int
+        Window length for the Savitzky-Golay filter.
+    pol : int
+        Polynomial order for the Savitzky-Golay filter.
+    start : int
+        Index of the first point to draw the base line.
+    endli : int
+        Index of the last point to draw the base line.
+    einmal : int
+        Index of the first point to draw the base line of the first integral.
+    aufmal : int
+        Index of the last point to draw the base line of the first integral.
+    epsilon : float
+        Prominence value to mark the peaks in the plot.
+    plot : Bool
+
+        If true, plots the graphs of the spectrum, filtred data and first and second integrals.
+        
+    Returns
+    -------
+
+    If does not found any resonant field:
+    
+    dfr : pandas.Dataframe
+        Empty table of the peak to peak widht with it's corresponding resonant field.
+    field : np.array
+        Array with the magnetic field values.
+    spc-basel : np.array
+        Filtred spectrum.
+    integ : np.array
+        First integral of the spectrum.    
+    Otherwise:
+    dfr : pandas.Dataframe
+        Table of the peak to peak widht with it's corresponding resonant field.
+    field : np.array
+        Array with the magnetic field values.
+    spc-basel : np.array
+        Filtred spectrum.
+    Hpp : list
+        List of the peak to peak width finded.
+    tempa : list
+        Resonant fields list.
+    integ : np.array
+        First integral of the spectrum.
+    '''
     for ax in axes.flat:
         ax.clear()
     if endli<0: 
@@ -603,6 +699,10 @@ def Spmanipulation(fig,axes,field,count,lt=51,pol=3,startl=0,endli=-1,einmal=0,a
         return (dfr,field,spc-basel,Hpp,tempa,integ)
 
 class TkinterApp2:
+    '''
+    Class to create the window of the function Seek.
+    
+    '''
     def __init__(self,root,field,counts):
         self.root=root
         self.root.title("Spectrum analysis")
@@ -1001,6 +1101,43 @@ class TkinterApp2:
             self.canvas.draw()
             self.toolbar.update()
 def Seek(field=None,counts=None):
+    '''
+    Function for data loading and initial analysis, based on tkinter. Can be use as Seek() or adding the field and counts values.
+    
+    Includes sliders to changes the magnetic field values, its baseline and the integral baseline. The number of rows, the columns where the data is stored and the filter parameters (window lenght and polynomial order) can also be change, seeing it's effect directly on the plots. 
+    
+    Plots can be zoom in by doing double-click in the graph.
+    
+    Parameters
+    ----------
+    
+    field : np.araray
+        Array of the magnetic field values.
+    counts: np.array
+        Array of the spectrum values.
+        
+    Returns
+    -------
+    Sdat : list
+        List that includes the array of the magnetic field values and the filtred spectrum.
+        
+    Example
+    -------
+    .. code-block:: python   
+     
+       import epraya as epr
+       Dat=epr.Seek()
+       print(Dat)
+       (array([327.498168, 327.505494, 327.51282 , ..., 342.457876, 342.465202,
+       342.472528], shape=(2045,)),
+       array([ 3.38813179e-21, -7.13359522e-09, -1.36298719e-08, ...,
+       -8.12513956e-09, -4.26787101e-09,  3.38813179e-21], shape=(2045,)))
+    .. image:: /_static/Seek.png
+       :alt: Plot of the seek function.
+       :align: center
+    
+        
+    '''
     if field is None or counts is None:
         findpath=resources.files(__package__).joinpath('STRONG PITCH.dat')
         dfield,dcounts=Sload(findpath,2046,[2,3])
@@ -1015,8 +1152,14 @@ def Seek(field=None,counts=None):
         return app.Sdat[1:3]
     else:
         print('Exit application without saving')
+        
+        
+        
 
 class BaselineTuner: #For data tuning
+    '''
+    Class for the data tuner window of the function Termal.
+    '''
     def __init__(self,root,field,counts):
         self.root=root
         self.top=tk.Toplevel(root)
@@ -1373,6 +1516,9 @@ class BaselineTuner: #For data tuning
             self.canvas.draw()
 
 class TkinterApp3:
+    '''
+    Class for the definition of the Termal function window.
+    '''
     def __init__(self,root):
         self.root=root
         self.root.title("Spectrum Analysis")
@@ -1839,6 +1985,30 @@ class TkinterApp3:
         self.canvas2.draw()
             
 def Termal():
+    '''
+    Function to analyze the change in peak to peak distance, resonant field position, first and second integral of EPR spectrum data with the temperature. It can also be use to find the Curie or Neel temperature.
+    
+    In the example, a spectrum of ZnO doped with Fe and measure at different temperatures. The experimental data was provided by M. Acosta-Humáñez and are available in `here`__ https://repositorio.unal.edu.co/handle/unal/83694 
+    
+    Plots can be zoom in by doing double-click in the graph.
+    
+    Returns
+    -------
+    Sdat : dictionary
+        Dictionary of the spectrum values where the keys are the temperature values.
+    
+    Example
+    -------
+    .. code-block:: python
+       import epraya as epr
+       epr.Termal()
+    .. image:: /_static/Ter1.png
+       :alt: Plot of Termal function 1.
+       :align: center
+    .. image:: /_static/Ter2.png
+       :alt: Plot of the Termal function 2.
+       :align: center
+    '''
     root=tk.Tk()
     app=TkinterApp3(root)
     root.option_add('*TCombobox*Listbox.font',('Helvetica',11))
