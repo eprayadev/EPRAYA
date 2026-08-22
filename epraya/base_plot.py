@@ -116,12 +116,12 @@ def Splot(field,count):
        :alt: Plot of the Sload function.
        :align: center
     '''
-    plt.figure(figsize=(20,7))
+    plt.figure(figsize=(12,8))
     plt.xlabel('Magnetic Field [mT]')
     plt.ylabel('Counts [A. U.]')
     plt.title('EPR spectrum')
-    plt.grid()
     plt.plot(field, count, color='green')
+    plt.grid(True)
     plt.show()
 
 def Sfilter(field,count,lt=51,pol=3,startl=0,endli=-1,epsilon=(5*10**-6),plot=True):
