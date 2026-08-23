@@ -1929,14 +1929,14 @@ def Fitting(Hamer,Exper,Vara,datexp):
             import sys
         
             class OutputRedirector:
-            def __init__(self, output_widget):
-                self.output_widget=output_widget
-            def write(self, string):
-                self.output_widget.append_stdout(string)
-            def flush(self):
-                pass
+                def __init__(self, output_widget):
+                    self.output_widget=output_widget
+                def write(self, string):
+                    self.output_widget.append_stdout(string)
+                def flush(self):
+                    pass
             
-            old_stdout=sys.stdout
+            oldout=sys.stdout
             sys.stdout=OutputRedirector(outside)
             partoeval.start()
 
