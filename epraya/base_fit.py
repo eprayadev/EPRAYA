@@ -1892,36 +1892,40 @@ def Fitting(Hamer,Exper,Vara,datexp):
             print(f'Starting process: {Chmet}...')
             def functiontorun():
                 try:
-                    with outside:
-                        resultexper=None
-                        if Chmet=='Nelder-Mead':
+                    resultexper=None
+                    if Chmet=='Nelder-Mead':
+                        with outside:
                             resultexper=Nelder(Hamer,Exper,Vara,datexp,eps=erroreps,maximal=numtr,dtype=cdtype,mode=csample)
-                        elif Chmet=='Genetic algorithm':
+                    elif Chmet=='Genetic algorithm':
+                        with outside:
                             resultexper=Genio(Hamer,Exper,Vara,datexp,eps=erroreps,maximal=numtr,dtype=cdtype,mode=csample)
-                        elif Chmet=='Metropolis':
+                    elif Chmet=='Metropolis':
+                        with outside:
                             resultexper=Metro(Hamer,Exper,Vara,datexp,maximal=numtr,dtype=cdtype,mode=csample)
-                        elif Chmet=='Least squares':
+                    elif Chmet=='Least squares':
+                        with outside:
                             resultexper=LSquare(Hamer,Exper,Vara,datexp,maximal=numtr,mode=csample)
-                        #To show the graph
-                        fig=Figure(figsize=(8,10))
-                        canvas=FigureCanvasAgg(fig)
-                        ax=fig.add_subplot(211)
-                        if hasattr(Exper,'Mexp'):
-                            Bla=np.linspace(Exper.Mexp[0].Frange[0],Exper.Mexp[0].Frange[1],Exper.Mexp[0].Points)
-                        else:
-                            Bla=np.linspace(Exper.Frange[0],Exper.Frange[1],Exper.Points)
-                        ax.plot(Bla,datexp,color='blue',label='Data')
-                        if resultexper is not None:
-                            ax.plot(Bla,resultexper/np.max(resultexper)*np.max(datexp),color='red',label='Fit')
-                        ax.legend()
-                        ax.grid()
-                        buf=io.BytesIO()
-                        fig.savefig(buf,format='png',bbox_inches='tight')
-                        buf.seek(0)
-                        img=Image(data=buf.getvalue(),format='png')
-                        outside.append_display_data(img)
-                        buf.close()
-                        fig.clf()
+                    #To show the graph
+                    fig=Figure(figsize=(8,10))
+                    canvas=FigureCanvasAgg(fig)
+                    ax=fig.add_subplot(211)
+                    if hasattr(Exper,'Mexp'):
+                        Bla=np.linspace(Exper.Mexp[0].Frange[0],Exper.Mexp[0].Frange[1],Exper.Mexp[0].Points)
+                    else:
+                        Bla=np.linspace(Exper.Frange[0],Exper.Frange[1],Exper.Points)
+                    ax.plot(Bla,datexp,color='blue',label='Data')
+                    if resultexper is not None:
+                        ax.plot(Bla,resultexper/np.max(resultexper)*np.max(datexp),color='red',label='Fit')
+                    ax.legend()
+                    ax.grid()
+                    buf=io.BytesIO()
+                    fig.savefig(buf,format='png',bbox_inches='tight')
+                    buf.seek(0)
+                    img=Image(data=buf.getvalue(),format='png')
+                    with outside:
+                        display(img)
+                    buf.close()
+                    fig.clf()
                 except Exception as e:
                     with outside:
                         print(f"\n[X] Error in function: {e}")
