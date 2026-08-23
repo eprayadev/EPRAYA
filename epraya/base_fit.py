@@ -48,7 +48,7 @@ from .base_plot import *
 from .base_powd import *
 from .base_rotate import *
 
-stopvar=False
+stopvar=threading.Event()
 result={}
 def CostfNM(exper,intens,metric='rmse'):
     norm=np.sum(intens*intens)
@@ -70,11 +70,10 @@ def CostfNM(exper,intens,metric='rmse'):
         return 1-pearson
 
 def Nelder1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,dtype='data',mode='p'):
-    #global stopvar
     #Based on the code by Hadrien Crassous
     def Fincost(points,funcname):
-        if stopvar:
-            raise KeyboardInterrupt("Stopped by user")
+        if stopvar.is_set():
+            return 1e6
         jl=0
         if Var.g!=0.0:
             gt=points[jl:jl+3]
@@ -183,11 +182,14 @@ def Nelder1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,dtype='data',mode='p'):
         npoint[la]+=change*stp[la]
         simplex[la+1]=npoint
         price[la+1]=Fincost(npoint,funcname)
-    iter=0
+    itera=0
     restarts=0
     mrestarts=5
     try:
-        while iter<maximal:
+        while itera<maximal:
+            if stopvar.is_set():
+                print("Process stopped by user.")
+                break
             simplex=simplex[np.argsort(price)]
             price=price[np.argsort(price)]
             center=np.mean(simplex[:-1],axis=0)
@@ -210,8 +212,8 @@ def Nelder1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,dtype='data',mode='p'):
                 else:
                     print("Data converged.")
                     break
-            if iter%10==0:
-                print(f"Iteration: {iter} | Best cost: {cmelhor:.5e}")
+            if itera%10==0:
+                print(f"Iteration: {itera} | Best cost: {cmelhor:.5e}")
                 if Var.g!=0.0:
                     print(f'gx={Ham.g[0]} | gy={Ham.g[1]} | gz={Ham.g[2]}')
                 if Var.A!=0.0:
@@ -257,13 +259,11 @@ def Nelder1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,dtype='data',mode='p'):
                     for ila in range(1,len(simplex)):
                         simplex[ila]=melhor+sigma*(simplex[ila]-melhor)
                         price[ila]=Fincost(simplex[ila],funcname)
-            iter+=1
-            if stopvar:
-                break
+            itera+=1
     except KeyboardInterrupt:
         _=Fincost(melhor,funcname)
         print("\n"+"="*50)
-        print(f"Process stopped at iteration:{iter} with best cost: {cmelhor:.5e}")
+        print(f"Process stopped at iteration:{itera} with best cost: {cmelhor:.5e}")
         print("="*50)
         if Var.g!=0.0:
             print(f'gx={Ham.g[0]} | gy={Ham.g[1]} | gz={Ham.g[2]}')
@@ -281,7 +281,7 @@ def Nelder1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,dtype='data',mode='p'):
             return funtiona(Ham,Exp,graph='False',table='False')[1]
     _=Fincost(melhor,funcname)
     print("\n"+"="*50)
-    print(f"Process stopped at iteration:{iter} with best cost: {cmelhor:.5e}")
+    print(f"Process stopped at iteration:{itera} with best cost: {cmelhor:.5e}")
     print("="*50)
     if Var.g!=0.0:
         print(f'gx={Ham.g[0]} | gy={Ham.g[1]} | gz={Ham.g[2]}')
@@ -299,11 +299,10 @@ def Nelder1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,dtype='data',mode='p'):
         return funtiona(Ham,Exp,graph='False',table='False')[1]
 
 def Nelder2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,dtype='data',mode='p'):
-    #global stopvar
     #Based on the code by Hadrien Crassous
     def Fincost(points,funcname):
-        if stopvar:
-            raise KeyboardInterrupt("Stopped by user")
+        if stopvar.is_set():
+            return 1e6
         jl=0
         for i in range(len(Ham.Mulham)):
             if Var.Mvary[i].g!=0.0:
@@ -416,11 +415,14 @@ def Nelder2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,dtype='data',mode='p'):
         npoint[la]+=change*stp[la]
         simplex[la+1]=npoint
         price[la+1]=Fincost(npoint,funcname)
-    iter=0
+    itera=0
     restarts=0
     mrestarts=5
     try:
-        while iter<maximal:
+        while itera<maximal:
+            if stopvar.is_set():
+                print("Process stopped by user.")
+                break    
             simplex=simplex[np.argsort(price)]
             price=price[np.argsort(price)]
             center=np.mean(simplex[:-1],axis=0)
@@ -443,8 +445,8 @@ def Nelder2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,dtype='data',mode='p'):
                 else:
                     print("Data converged.")
                     break
-            if iter%10==0:
-                print(f"Iteration: {iter} | Best cost: {cmelhor:.5e}")
+            if itera%10==0:
+                print(f"Iteration: {itera} | Best cost: {cmelhor:.5e}")
                 for i in range(len(Ham.Mulham)):
                     print(f"--- System {i+1} ---")
                     if Var.Mvary[i].g!=0.0:
@@ -492,13 +494,11 @@ def Nelder2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,dtype='data',mode='p'):
                     for ila in range(1,len(simplex)):
                         simplex[ila]=melhor+sigma*(simplex[ila]-melhor)
                         price[ila]=Fincost(simplex[ila],funcname)
-            iter+=1
-            if stopvar:
-                break
+            itera+=1
     except KeyboardInterrupt:
         _=Fincost(melhor,funcname)
         print("\n"+"="*50)
-        print(f"Process stopped at iteration:{iter} with best cost: {cmelhor:.5e}")
+        print(f"Process stopped at iteration:{itera} with best cost: {cmelhor:.5e}")
         print("="*50)
         for i in range(len(Ham.Mulham)):
             print(f"--- System {i+1} ---")
@@ -518,7 +518,7 @@ def Nelder2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,dtype='data',mode='p'):
             return funtiona(Ham,Exp,graph='False',table='False')[1]
     _=Fincost(melhor,funcname)
     print("\n"+"="*50)
-    print(f"Process stopped at iteration:{iter} with best cost: {cmelhor:.5e}")
+    print(f"Process stopped at iteration:{itera} with best cost: {cmelhor:.5e}")
     print("="*50)
     for i in range(len(Ham.Mulham)):
         print(f"--- System {i+1} ---")
@@ -599,8 +599,8 @@ def Mutategauss(fela,lowfron,hifron,proba=0.1,desv=0.05):
 
 def Genio1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,dtype='data',mode='p'):
     def Fincost(points,funcname):
-        if stopvar:
-            raise KeyboardInterrupt("Stopped by user")
+        if stopvar.is_set():
+            return 1e6
         jl=0
         if Var.g!=0.0:
             gt=points[jl:jl+3]
@@ -640,7 +640,6 @@ def Genio1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,dtype='data',mode='p'):
             spect=Eresonant(Ham,Exp,graph='False',table='False')[1]
         wcost=CostfG(exper,spect)
         return wcost
-    #global stopvar
     Ham=deepcopy(Hamer)
     Exp=deepcopy(Expe)
     Var=deepcopy(Vara)
@@ -692,6 +691,9 @@ def Genio1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,dtype='data',mode='p'):
     itea=0
     try:
         while itea<maximal:
+            if stopvar.is_set():
+                print("Process stopped by user.")
+                break
             orden=np.argsort(fitprice)
             population=population[orden]
             fitprice=fitprice[orden]
@@ -726,8 +728,6 @@ def Genio1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,dtype='data',mode='p'):
                 else:
                     fitprice[jae]=Fincost(population[jae],funcname)
             itea+=1
-            if stopvar:
-                break
     except KeyboardInterrupt:
         print("\n"+"="*50)
         print(f"Process stopped at iteration:{itea}")
@@ -766,8 +766,8 @@ def Genio1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,dtype='data',mode='p'):
 
 def Genio2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,dtype='data',mode='p'):
     def Fincost(points,funcname):
-        if stopvar:
-            raise KeyboardInterrupt("Stopped by user")
+        if stopvar.is_set():
+            return 1e6
         jl=0
         for i in range(len(Ham.Mulham)):
             if Var.Mvary[i].g!=0.0:
@@ -809,7 +809,6 @@ def Genio2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,dtype='data',mode='p'):
             return wcost
         except Exception:
             return 1e6
-    #global stopvar
     Ham=deepcopy(Hamer)
     Exp=deepcopy(Expe)
     Var=deepcopy(Vara)
@@ -872,6 +871,9 @@ def Genio2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,dtype='data',mode='p'):
     itea=0
     try:
         while itea<maximal:
+            if stopvar.is_set():
+                print("Process stopped by user.")
+                break
             orden=np.argsort(fitprice)
             population=population[orden]
             fitprice=fitprice[orden]
@@ -906,8 +908,6 @@ def Genio2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,dtype='data',mode='p'):
                 else:
                     fitprice[jae]=Fincost(population[jae],funcname)
             itea+=1
-            if stopvar:
-                break
     except KeyboardInterrupt:
         print("\n"+"="*50)
         print(f"Process stopped at iteration:{itea}")
@@ -1041,7 +1041,6 @@ def Metrostair(Hamer,Exp,Var,date,stepsize,ocos,para,variable,funcname,dtype='da
             return Hamer,ocos,False
 
 def Metro1(Hamer,Exp,Var,dat,maximal,dtype='data',mode='p'):
-    #global stopvar
     Ham1=deepcopy(Hamer)
     iwas,jwas,kwas,weight,hulk=Delaunay(Exp)
     if mode=='p':
@@ -1113,8 +1112,8 @@ def Metro1(Hamer,Exp,Var,dat,maximal,dtype='data',mode='p'):
     bestHam=deepcopy(Ham1)
     try:
         for gama in range(0,maximal):
-            if stopvar:
-                raise KeyboardInterrupt("Stopped by user")
+            if stopvar.is_set():
+                break
             acepv=0
             tries=0
             if Var.g!=0.0:
@@ -1355,7 +1354,6 @@ def Metrostair2(Hamer,Exp,Var,date,stepsize,ocos,para,variable,aktsys,funcname,d
             return Hamer,ocos,False
 
 def Metro2(Hamer,Exp,Var,dat,maximal,dtype='data',mode='p'):
-    #global stopvar
     Ham1=deepcopy(Hamer)
     if mode=='p':
         funtiona=Mulpol#(Ham,Exp,graph='False')
@@ -1413,8 +1411,8 @@ def Metro2(Hamer,Exp,Var,dat,maximal,dtype='data',mode='p'):
     bestHam=deepcopy(Ham1)
     try:
         for gama in range(0,maximal):
-            if stopvar:
-                raise KeyboardInterrupt("Stopped by user")
+            if stopvar.is_set():
+                break
             acepv=0
             tries=0
             for ira in range(len(Ham.Mulham)):
@@ -1667,11 +1665,13 @@ def UnpackHam(point,Hamer,Var):
     if np.any(Var.Hpp):
         Ham.Hpp=point[idx:idx+2]
     return Ham
+class Stopall(Exception):
+    pass
 
 def Residuals(point,Hame,Exp,exper,Vary,fname):
-    #global stopvar
-    if stopvar:
-        raise KeyboardInterrupt("Stopped by user")
+
+    if stopvar.is_set():
+        raise Stopall()
     Ham1=UnpackHam(point,Hame,Vary)
     if fname in ['Powder']:
         fielda,intena=Powder(Ham1,Exp,graph='False')
@@ -1698,9 +1698,11 @@ def LSquare1(Ham1,Expe,Vary,exper,maximal=1000,mode='p'):
     eps=1e-6
     pointx=np.clip(pointx,lowfron+eps,hifron-eps)
     leasts
-    result=leasts(fun=Residuals,args=(Ham1,Expe,exper,Vary,funcname),x0=pointx,bounds=frontier,method='trf',max_nfev=maximal,verbose=2,diff_step=1e-3,
-                  xtol=1e-10,ftol=1e-10,gtol=1e-10)
-    bestone=result.x
+    try:
+        result=leasts(fun=Residuals,args=(Ham1,Expe,exper,Vary,funcname),x0=pointx,bounds=frontier,method='trf',max_nfev=maximal,verbose=2,diff_step=1e-3,xtol=1e-10,ftol=1e-10,gtol=1e-10)
+        bestone=result.x
+    except Stopall:
+        bestone=pointx
     bHam=UnpackHam(bestone,Ham1,Vary)
 
     print(f"Final cost: {result.cost:.5f}")
@@ -1776,9 +1778,8 @@ def UnpackHam2(point,Hamer,Var):
     return Ham
 
 def Residuals2(point,Hame,Exp,exper,Vary,fname):
-    #global stopvar
-    if stopvar:
-        raise KeyboardInterrupt("Stopped by user")
+    if stopvar.is_set():
+        raise Stopall()
     Ham1=UnpackHam2(point,Hame,Vary)
     try:
         if fname in ['Mulpol']:
@@ -1808,9 +1809,11 @@ def LSquare2(Ham1,Expe,Vary,exper,maximal=1000,mode='p'):
     eps=1e-6
     pointx=np.clip(pointx,lowfron+eps,hifron-eps)
     leasts
-    result=leasts(fun=Residuals2,args=(Ham1,Expe,exper,Vary,funcname),x0=pointx,bounds=frontier,method='trf',max_nfev=maximal,verbose=2,diff_step=1e-3,
-                  xtol=1e-10,ftol=1e-10,gtol=1e-10)
-    bestone=result.x
+    try:
+        result=leasts(fun=Residuals,args=(Ham1,Expe,exper,Vary,funcname),x0=pointx,bounds=frontier,method='trf',max_nfev=maximal,verbose=2,diff_step=1e-3,xtol=1e-10,ftol=1e-10,gtol=1e-10)
+        bestone=result.x
+    except Stopall:
+        bestone=pointx
     bHam=UnpackHam2(bestone,Ham1,Vary)
 
     print(f"Final cost: {result.cost:.5f}")
@@ -1844,9 +1847,11 @@ def LSquare(Ham1,Expe,Vary,exper,maximal=1000,mode='p'):
     return scpe
 
 def Fitting(Hamer,Exper,Vara,datexp):
-    global stopvar
+    '''
+    
+    '''
+    stopvar.clear()
     global result
-    stopvar=False
     result={}
     lbl1=Label('Method:')
     wdg1=Dropdown(options=['Nelder-Mead','Genetic algorithm','Metropolis','Least squares'],index=2)
@@ -1868,8 +1873,7 @@ def Fitting(Hamer,Exper,Vara,datexp):
     tapts=HBox([frvar6,frvar7])
     outside=Output()
     def Evalfunc(b):
-        global stopvar
-        stopvar=False
+        stopvar.clear()
         with outside:
             outside.clear_output()
             Chmet=wdg1.value
@@ -1902,7 +1906,7 @@ def Fitting(Hamer,Exper,Vara,datexp):
                         fig=Figure(figsize=(8,10))
                         canvas=FigureCanvasAgg(fig)
                         ax=fig.add_subplot(211)
-                        if hasatrr(Exper,'Mexp'):
+                        if hasattr(Exper,'Mexp'):
                             Bla=np.linspace(Exper.Mexp[0].Frange[0],Exper.Mexp[0].Frange[1],Exper.Mexp[0].Points)
                         else:
                             Bla=np.linspace(Exper.Frange[0],Exper.Frange[1],Exper.Points)
@@ -1926,8 +1930,7 @@ def Fitting(Hamer,Exper,Vara,datexp):
             partoeval.start()
 
     def Stopfunc(b):
-        global stopvar
-        stopvar=True
+        stopvar.set()
         with outside:
             print("\n[!] Stopping the process.")
 
