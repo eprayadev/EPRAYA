@@ -1894,17 +1894,13 @@ def Fitting(Hamer,Exper,Vara,datexp):
                 try:
                     resultexper=None
                     if Chmet=='Nelder-Mead':
-                        with outside:
-                            resultexper=Nelder(Hamer,Exper,Vara,datexp,eps=erroreps,maximal=numtr,dtype=cdtype,mode=csample)
+                        resultexper=Nelder(Hamer,Exper,Vara,datexp,eps=erroreps,maximal=numtr,dtype=cdtype,mode=csample)
                     elif Chmet=='Genetic algorithm':
-                        with outside:
-                            resultexper=Genio(Hamer,Exper,Vara,datexp,eps=erroreps,maximal=numtr,dtype=cdtype,mode=csample)
+                        resultexper=Genio(Hamer,Exper,Vara,datexp,eps=erroreps,maximal=numtr,dtype=cdtype,mode=csample)
                     elif Chmet=='Metropolis':
-                        with outside:
-                            resultexper=Metro(Hamer,Exper,Vara,datexp,maximal=numtr,dtype=cdtype,mode=csample)
+                        resultexper=Metro(Hamer,Exper,Vara,datexp,maximal=numtr,dtype=cdtype,mode=csample)
                     elif Chmet=='Least squares':
-                        with outside:
-                            resultexper=LSquare(Hamer,Exper,Vara,datexp,maximal=numtr,mode=csample)
+                        resultexper=LSquare(Hamer,Exper,Vara,datexp,maximal=numtr,mode=csample)
                     #To show the graph
                     fig=Figure(figsize=(8,10))
                     canvas=FigureCanvasAgg(fig)
@@ -1922,8 +1918,7 @@ def Fitting(Hamer,Exper,Vara,datexp):
                     fig.savefig(buf,format='png',bbox_inches='tight')
                     buf.seek(0)
                     img=Image(data=buf.getvalue(),format='png')
-                    with outside:
-                        display(img)
+                    outside.append_display_data(img)
                     buf.close()
                     fig.clf()
                 except Exception as e:
@@ -1931,6 +1926,18 @@ def Fitting(Hamer,Exper,Vara,datexp):
                         print(f"\n[X] Error in function: {e}")
 
             partoeval=threading.Thread(target=functiontorun)
+            import sys
+        
+            class OutputRedirector:
+            def __init__(self, output_widget):
+                self.output_widget=output_widget
+            def write(self, string):
+                self.output_widget.append_stdout(string)
+            def flush(self):
+                pass
+            
+            old_stdout=sys.stdout
+            sys.stdout=OutputRedirector(outside)
             partoeval.start()
 
     def Stopfunc(b):
