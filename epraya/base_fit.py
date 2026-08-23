@@ -1052,9 +1052,9 @@ def Metro1(Hamer,Exp,Var,dat,maximal,dtype='data',mode='p'):
     funcname=funtiona.__name__
     #First iteration
     if funcname in ['Calpowder']:
-        fielda,intena=funtiona(Ham,Exp,iwas,jwas,kwas,weight,hulk)
+        fielda,intena=funtiona(Ham1,Exp,iwas,jwas,kwas,weight,hulk)
     elif funcname in ['Eresonant']:
-        fielda,intena=funtiona(Ham,Exp,graph='False',table='False')
+        fielda,intena=funtiona(Ham1,Exp,graph='False',table='False')
     if dtype=='data':
         ct1=Costf(dat,intena)
     if dtype=='integral':
@@ -1067,34 +1067,34 @@ def Metro1(Hamer,Exp,Var,dat,maximal,dtype='data',mode='p'):
     hifron=[]
     pg,pa,pq,pdr,php=20,50,50,50,50
     if Var.g!=0.0:
-        pointx.extend(Ham.g)
+        pointx.extend(Ham1.g)
         stp['gx']=(Var.g[1]-Var.g[0])/pg
         stp['gy']=(Var.g[3]-Var.g[2])/pg
         stp['gz']=(Var.g[5]-Var.g[4])/pg
         lowfron.extend([Var.g[0],Var.g[2],Var.g[4]])
         hifron.extend([Var.g[1],Var.g[3],Var.g[5]])
     if Var.A!=0.0:
-        pointx.extend(Ham.A)
+        pointx.extend(Ham1.A)
         stp['Ax']=(Var.A[1]-Var.A[0])/pa
         stp['Ay']=(Var.A[3]-Var.A[2])/pa
         stp['Az']=(Var.A[5]-Var.A[4])/pa
         lowfron.extend([Var.A[0],Var.A[2],Var.A[4]])
         hifron.extend([Var.A[1],Var.A[3],Var.A[5]])
     if Var.Q!=0.0:
-        pointx.extend(Ham.Q)
+        pointx.extend(Ham1.Q)
         stp['Qx']=(Var.Q[1]-Var.Q[0])/pq
         stp['Qy']=(Var.Q[3]-Var.Q[2])/pq
         stp['Qz']=(Var.Q[5]-Var.Q[4])/pq
         lowfron.extend([Var.Q[0],Var.Q[2],Var.Q[4]])
         hifron.extend([Var.Q[1],Var.Q[3],Var.Q[5]])
     if Var.D!=0.0:
-        pointx.extend(Ham.D)
+        pointx.extend(Ham1.D)
         stp['D']=(Var.D[1]-Var.D[0])/pdr
         stp['E']=(Var.D[3]-Var.D[2])/pdr
         lowfron.extend([Var.D[0],Var.D[2]])
         hifron.extend([Var.D[1],Var.D[3]])
     if np.any(Var.Hpp):
-        pointx.extend(Ham.Hpp)
+        pointx.extend(Ham1.Hpp)
         stp['Hpp1']=(Var.Hpp[1]-Var.Hpp[0])/php
         stp['Hpp2']=(Var.Hpp[3]-Var.Hpp[2])/php
         lowfron.extend([Var.Hpp[0],Var.Hpp[2]])
@@ -1364,9 +1364,9 @@ def Metro2(Hamer,Exp,Var,dat,maximal,dtype='data',mode='p'):
     funcname=funtiona.__name__
     #First iteration
     if funcname in ['Mulpol']:
-        fielda,intena=Mulpol(Ham,Exp,graph='False')
+        fielda,intena=Mulpol(Ham1,Exp,graph='False')
     elif funcname in ['Music']:
-        fielda,intena=Music(Ham,Exp,graph='False',table='False')
+        fielda,intena=Music(Ham1,Exp,graph='False',table='False')
     if dtype=='data':
         ct1=Costf(dat,intena)
     if dtype=='integral':
@@ -1378,9 +1378,9 @@ def Metro2(Hamer,Exp,Var,dat,maximal,dtype='data',mode='p'):
     lowfron=[]
     hifron=[]
     pg,pa,pq,pdr,php=20,50,50,50,50
-    for ier in range(len(Ham.Mulham)):
+    for ier in range(len(Ham1.Mulham)):
         vma=Var.Mvary[ier]
-        hma=Ham.Mulham[ier]
+        hma=Ham1.Mulham[ier]
         if isinstance(vma.g,(list,np.ndarray)) or vma.g!=0.0:
             stp[f'gx_{ier}']=(vma.g[1]-vma.g[0])/pg
             stp[f'gy_{ier}']=(vma.g[3]-vma.g[2])/pg
@@ -1415,7 +1415,7 @@ def Metro2(Hamer,Exp,Var,dat,maximal,dtype='data',mode='p'):
                 break
             acepv=0
             tries=0
-            for ira in range(len(Ham.Mulham)):
+            for ira in range(len(Ham1.Mulham)):
                 if Var.Mvary[ira].g!=0.0:
                     hemetro=metropa
                     opa=0
@@ -1496,7 +1496,7 @@ def Metro2(Hamer,Exp,Var,dat,maximal,dtype='data',mode='p'):
             hemetro=metropa*1.5
             opa=0
             while opa<30:
-                for ira in range(len(Ham.Mulham)):
+                for ira in range(len(Ham1.Mulham)):
                     varact=[]
                     if Var.Mvary[ira].g!=0.0:
                         varact.append('g')
@@ -1552,7 +1552,7 @@ def Metro2(Hamer,Exp,Var,dat,maximal,dtype='data',mode='p'):
                 Ham1=deepcopy(bestHam)
                 print(f"|---Process heated up---|")
             print(f"Step {gama} | Error: {ct1:.5e} | Best one: {besterror:.5e} | Rate: {arate:.1f}% | T: {metropa:.4e}")
-            for i in range(len(Ham.Mulham)):
+            for i in range(len(Ham1.Mulham)):
                 print(f"--- System {i+1} ---")
                 if Var.Mvary[i].g!=0.0:
                     print(f'gx={bestHam.Mulham[i].g[0]:.4f} | gy={bestHam.Mulham[i].g[1]:.4f} | gz={bestHam.Mulham[i].g[2]:.4f}')
@@ -1568,7 +1568,7 @@ def Metro2(Hamer,Exp,Var,dat,maximal,dtype='data',mode='p'):
         print("\n"+"="*50)
         print(f"Process stopped at iteration:{gama}")
         print("="*50)
-        for i in range(len(Ham.Mulham)):
+        for i in range(len(Ham1.Mulham)):
             print(f"--- System {i+1} ---")
             if Var.Mvary[i].g!=0.0:
                 print(f'gx={bestHam.Mulham[i].g[0]:.4f} | gy={bestHam.Mulham[i].g[1]:.4f} | gz={bestHam.Mulham[i].g[2]:.4f}')
@@ -1587,7 +1587,7 @@ def Metro2(Hamer,Exp,Var,dat,maximal,dtype='data',mode='p'):
     print("\n"+"="*50)
     print(f"Process stopped at iteration:{gama}")
     print("="*50)
-    for i in range(len(Ham.Mulham)):
+    for i in range(len(Ham1.Mulham)):
         print(f"--- System {i+1} ---")
         if Var.Mvary[i].g!=0.0:
             print(f'gx={bestHam.Mulham[i].g[0]:.4f} | gy={bestHam.Mulham[i].g[1]:.4f} | gz={bestHam.Mulham[i].g[2]:.4f}')
