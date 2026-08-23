@@ -1892,16 +1892,16 @@ def Fitting(Hamer,Exper,Vara,datexp):
             print(f'Starting process: {Chmet}...')
             def functiontorun():
                 try:
-                    resultexper=None
-                    if Chmet=='Nelder-Mead':
-                        resultexper=Nelder(Hamer,Exper,Vara,datexp,eps=erroreps,maximal=numtr,dtype=cdtype,mode=csample)
-                    elif Chmet=='Genetic algorithm':
-                        resultexper=Genio(Hamer,Exper,Vara,datexp,eps=erroreps,maximal=numtr,dtype=cdtype,mode=csample)
-                    elif Chmet=='Metropolis':
-                        resultexper=Metro(Hamer,Exper,Vara,datexp,maximal=numtr,dtype=cdtype,mode=csample)
-                    elif Chmet=='Least squares':
-                        resultexper=LSquare(Hamer,Exper,Vara,datexp,maximal=numtr,mode=csample)
                     with outside:
+                        resultexper=None
+                        if Chmet=='Nelder-Mead':
+                            resultexper=Nelder(Hamer,Exper,Vara,datexp,eps=erroreps,maximal=numtr,dtype=cdtype,mode=csample)
+                        elif Chmet=='Genetic algorithm':
+                            resultexper=Genio(Hamer,Exper,Vara,datexp,eps=erroreps,maximal=numtr,dtype=cdtype,mode=csample)
+                        elif Chmet=='Metropolis':
+                            resultexper=Metro(Hamer,Exper,Vara,datexp,maximal=numtr,dtype=cdtype,mode=csample)
+                        elif Chmet=='Least squares':
+                            resultexper=LSquare(Hamer,Exper,Vara,datexp,maximal=numtr,mode=csample)
                         #To show the graph
                         fig=Figure(figsize=(8,10))
                         canvas=FigureCanvasAgg(fig)
