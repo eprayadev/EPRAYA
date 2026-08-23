@@ -76,7 +76,7 @@ def Lorentzp(field,Int,rfield,Hpp):
        import matplotlib.pyplot as plt
        import epraya as epr
        import numpy as np
-       Ham.Hpp=[0,20]
+       Ham.Hpp=[0,2]
        Exp.Frange=[200,500]
        Exp.Points=2000
        fieldr=np.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
@@ -133,7 +133,7 @@ def Gaussp(field,Int,rfield,Hpp):
        import matplotlib.pyplot as plt
        import epraya as epr
        import numpy as np
-       Ham.Hpp=[20,0]
+       Ham.Hpp=[2,0]
        Exp.Frange=[200,500]
        Exp.Points=2000
        fieldr=np.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
@@ -194,7 +194,7 @@ def Voigtp(field,Int,rfield,Hpp,eta):
        import numpy as np
 
        Ham,Exp,_=epr.Start()
-       Ham.Hpp=np.array([10,20])
+       Ham.Hpp=np.array([1,2])
        Ham.eta=0.5
        Exp.Frange=[200,500]
        Exp.Points=2000
@@ -772,7 +772,7 @@ def Powder(Hamer,Expe,graph=True):  #Method ASG
        Ham.g=np.array([2.003, 2, 2])
        Ham.A=np.array([200, 200, 200])  #Hyperfine constant
        Ham.D=np.array([800,200])      #Zero field D and E
-       Ham.Hpp=[0, 10]
+       Ham.Hpp=[0, 1]
        Ham.Nucl='Cr'
        Exp.Freq=9.4
        Exp.Points=4096
@@ -793,7 +793,7 @@ def Powder(Hamer,Expe,graph=True):  #Method ASG
         graphp.update_layout(
             title={'text':'EPR spectrum','xanchor':'center','yanchor':'auto','x':0.45, 'y':0.95,
                    'font': dict(family='Georgia', size=24,color='black')},
-            xaxis=dict(title='Field [mT]',showline=True,linecolor='black',mirror=True,linewidth=2,showgrid=True,gridcolor='black',range=[Bfield[0],Bfield[-1]+10])
+            xaxis=dict(title='Field [mT]',showline=True,linecolor='black',mirror=True,linewidth=2,showgrid=True,gridcolor='black',range=[Bfield[0],Bfield[-1]+2])
             ,yaxis=dict(title='Counts [U. A.]',showline=True,linecolor='black',mirror=True,linewidth=2,showgrid=True,gridcolor='black'),
             plot_bgcolor='white',
             width=1000,
@@ -857,7 +857,7 @@ def Calpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk):
     >>> Ham.g=np.array([2.003, 2, 2])
     >>> Ham.A=np.array([200, 200, 200])  #Hyperfine constant00
     >>> Ham.D=np.array([800,200])      #Zero field D and E
-    >>> Ham.Hpp=[0, 10]
+    >>> Ham.Hpp=[0, 1]
     >>> Ham.Nucl='Cr'
     >>> Exp.Freq=9.4
     >>> Exp.Points=4096
@@ -890,7 +890,7 @@ def Calpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk):
     Ham.Bk2=Ham.Bk2/1000
     Ham.Bk4=Ham.Bk4/1000
     Ham.Bk6=Ham.Bk6/1000
-    Ham.Hpp[0],Ham.Hpp[1]=Ham.Hpp[0]/1.0,Ham.Hpp[1]/1.0
+    Ham.Hpp[0],Ham.Hpp[1]=Ham.Hpp[0]/10.0,Ham.Hpp[1]/10.0
     if Ham.Hpp[0]==0.0 and Ham.Hpp[1]!=0.0:
         eta=1.0
     elif Ham.Hpp[0]!=0.0 and Ham.Hpp[1]==0.0:
@@ -1063,7 +1063,8 @@ def Mulpol(Hamer,Expe,graph=True):
     sumespct=np.zeros(Exp.Mexp[0].Points)
     for elka in numboint:
         if len(elka)==1:
-            Ham.Mulham[elka[0]].Hpp=Ham.Mulham[0].Hpp
+            Ham.Mulham[elka[0]].Hpp[0]=Ham.Mulham[0].Hpp[0]/10
+            Ham.Mulham[elka[0]].Hpp[1]=Ham.Mulham[0].Hpp[1]/10
             Ham.Mulham[elka[0]].eta=Ham.Mulham[0].eta
             fild1,fild2=Calpowder(Ham.Mulham[elka[0]],Exp.Mexp[elka[0]],iwas,jwas,kwas,weight,hulk)
             sumespct+=fild2

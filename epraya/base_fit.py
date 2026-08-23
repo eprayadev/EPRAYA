@@ -263,7 +263,7 @@ def Nelder1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,dtype='data',mode='p'):
     except KeyboardInterrupt:
         _=Fincost(melhor,funcname)
         print("\n"+"="*50)
-        print(f"Process stopped at iteration:{itera} with best cost: {cmelhor:.5e}")
+        print(f"Process stopped at iteration: {itera} with best cost: {cmelhor:.5e}")
         print("="*50)
         if Var.g!=0.0:
             print(f'gx={Ham.g[0]} | gy={Ham.g[1]} | gz={Ham.g[2]}')
@@ -281,7 +281,7 @@ def Nelder1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,dtype='data',mode='p'):
             return funtiona(Ham,Exp,graph='False',table='False')[1]
     _=Fincost(melhor,funcname)
     print("\n"+"="*50)
-    print(f"Process stopped at iteration:{itera} with best cost: {cmelhor:.5e}")
+    print(f"Process stopped at iteration: {itera} with best cost: {cmelhor:.5e}")
     print("="*50)
     if Var.g!=0.0:
         print(f'gx={Ham.g[0]} | gy={Ham.g[1]} | gz={Ham.g[2]}')
@@ -498,7 +498,7 @@ def Nelder2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,dtype='data',mode='p'):
     except KeyboardInterrupt:
         _=Fincost(melhor,funcname)
         print("\n"+"="*50)
-        print(f"Process stopped at iteration:{itera} with best cost: {cmelhor:.5e}")
+        print(f"Process stopped at iteration: {itera} with best cost: {cmelhor:.5e}")
         print("="*50)
         for i in range(len(Ham.Mulham)):
             print(f"--- System {i+1} ---")
@@ -518,7 +518,7 @@ def Nelder2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,dtype='data',mode='p'):
             return funtiona(Ham,Exp,graph='False',table='False')[1]
     _=Fincost(melhor,funcname)
     print("\n"+"="*50)
-    print(f"Process stopped at iteration:{itera} with best cost: {cmelhor:.5e}")
+    print(f"Process stopped at iteration: {itera} with best cost: {cmelhor:.5e}")
     print("="*50)
     for i in range(len(Ham.Mulham)):
         print(f"--- System {i+1} ---")
@@ -730,7 +730,7 @@ def Genio1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,dtype='data',mode='p'):
             itea+=1
     except KeyboardInterrupt:
         print("\n"+"="*50)
-        print(f"Process stopped at iteration:{itea}")
+        print(f"Process stopped at iteration: {itea}, with best cost: {bcost:.5e}")
         print("="*50)
         if Var.g!=0.0:
             print(f'gx={Ham.g[0]} | gy={Ham.g[1]} | gz={Ham.g[2]}')
@@ -747,7 +747,7 @@ def Genio1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,dtype='data',mode='p'):
         elif funcname in ['Eresonant']:
             return funtiona(Ham,Exp,graph='False',table='False')[1]
     print("\n"+"="*50)
-    print(f"Process stopped at iteration:{itea}")
+    print(f"Process stopped at iteration: {itea}, with best cost: {bcost:.5e}")
     print("="*50)
     if Var.g!=0.0:
         print(f'gx={Ham.g[0]} | gy={Ham.g[1]} | gz={Ham.g[2]}')
@@ -910,7 +910,7 @@ def Genio2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,dtype='data',mode='p'):
             itea+=1
     except KeyboardInterrupt:
         print("\n"+"="*50)
-        print(f"Process stopped at iteration:{itea}")
+        print(f"Process stopped at iteration: {itea}, with best cost: {bcost:.5e}")
         print("="*50)
         _=Fincost(bplayer, funcname)
         for i in range(len(Ham.Mulham)):
@@ -930,7 +930,7 @@ def Genio2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,dtype='data',mode='p'):
         elif funcname in ['Music']:
             return funtiona(Ham,Exp,graph='False',table='False')[1]
     print("\n"+"="*50)
-    print(f"Process stopped at iteration:{itea}")
+    print(f"Process stopped at iteration: {itea}, with best cost: {bcost:.5e}")
     print("="*50)
     _=Fincost(bplayer,funcname)
     for i in range(len(Ham.Mulham)):
@@ -1259,7 +1259,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,dtype='data',mode='p'):
                 print(f'Hppg={bestHam.Hpp[0]},Hppl={bestHam.Hpp[1]}')
     except KeyboardInterrupt:
         print("\n"+"="*50)
-        print(f"Process stopped at iteration:{gama}")
+        print(f"Process stopped at iteration: {gama}, with best cost {besterror:.5e}")
         print("="*50)
         if Var.g!=0.0:
             print(f'gx={bestHam.g[0]} | gy={bestHam.g[1]} | gz={bestHam.g[2]}')
@@ -1276,7 +1276,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,dtype='data',mode='p'):
         elif funcname in ['Eresonant']:
             return funtiona(bestHam,Exp,graph='False',table='False')[1]
     print("\n"+"="*50)
-    print(f"Process stopped at iteration:{gama}")
+    print(f"Process stopped at iteration: {gama}, with best cost {besterror:.5e}")
     print("="*50)
     if Var.g!=0.0:
         print(f'gx={bestHam.g[0]} | gy={bestHam.g[1]} | gz={bestHam.g[2]}')
@@ -1566,7 +1566,7 @@ def Metro2(Hamer,Exp,Var,dat,maximal,dtype='data',mode='p'):
                     print(f'Hppg={Ham.Mulham[i].Hpp[0]:.4f} | Hppl={Ham.Mulham[i].Hpp[1]:.4f}')
     except KeyboardInterrupt:
         print("\n"+"="*50)
-        print(f"Process stopped at iteration:{gama}")
+        print(f"Process stopped at iteration: {gama}, with best cost {besterror:.5e}")
         print("="*50)
         for i in range(len(Ham1.Mulham)):
             print(f"--- System {i+1} ---")
@@ -1585,7 +1585,7 @@ def Metro2(Hamer,Exp,Var,dat,maximal,dtype='data',mode='p'):
         elif funcname in ['Music']:
             return funtiona(bestHam,Exp,graph='False',table='False')[1]
     print("\n"+"="*50)
-    print(f"Process stopped at iteration:{gama}")
+    print(f"Process stopped at iteration: {gama}, with best cost {besterror:.5e}")
     print("="*50)
     for i in range(len(Ham1.Mulham)):
         print(f"--- System {i+1} ---")
@@ -1718,9 +1718,9 @@ def LSquare1(Ham1,Expe,Vary,exper,maximal=1000,mode='p'):
     if np.any(Vary.Hpp):
         print(f'Hppg={bHam.Hpp[0]} | Hppl={bHam.Hpp[1]}')
     if funcname in ['Powder']:
-        return Powder(bHam,Exp,graph='False')[1]
+        return Powder(bHam,Expe,graph='False')[1]
     elif funcname in ['Eresonant']:
-        return Eresonant(bHam,Exp,graph='False',table='False')[1]
+        return Eresonant(bHam,Expe,graph='False',table='False')[1]
 
 def Packtoscipy2(Ham,Var):
     pointx=[]
@@ -1831,9 +1831,9 @@ def LSquare2(Ham1,Expe,Vary,exper,maximal=1000,mode='p'):
         if np.any(Vary.Mvary[i].Hpp):
             print(f'Hppg={bHam.Mulham[i].Hpp[0]:.4f} | Hppl={bHam.Mulham[i].Hpp[1]:.4f}')
     if funcname in ['Mulpol']:
-        return Mulpol(bHam,Exp,graph='False')[1]
+        return Mulpol(bHam,Expe,graph='False')[1]
     elif funcname in ['Music']:
-        return Music(bHam,Exp,graph='False',table='False')[1]
+        return Music(bHam,Expe,graph='False',table='False')[1]
 
 def LSquare(Ham1,Expe,Vary,exper,maximal=1000,mode='p'):
     if type(Ham1)==Multham:
@@ -1848,7 +1848,39 @@ def LSquare(Ham1,Expe,Vary,exper,maximal=1000,mode='p'):
 
 def Fitting(Hamer,Exper,Vara,datexp):
     '''
+    Wrap function for the data fitting process. Creates a interactive display where the user can select the fitting method, data and sample type, max. number of iterations and reference error.
     
+    Parameters
+    ----------
+    
+    Hamer : Class
+        Container for the hamiltonian parameters.
+    Exper : Class
+        Container for the experimental conditions.
+    Vara : Class
+        Container for the range and parameters to vary.
+    datexp : np.array
+        Experimental data to fit.
+        
+    Example
+    -------
+    
+    .. code-block:: python
+    
+       import epraya as epr
+       B,spc=epr.Sload('STRONG PITCH.dat',2046,[2,3])
+       Ham,Exp,Vary=epr.Start()
+       Ham.S=1
+       Ham.g=[2.2,2.4,2.6]
+       Exp.Points=2046
+       Exp.Frange=[0,800]
+       Vary.g=[1.5,2.5,1.5,2.5,1.5,2.5]
+       epr.Fitting(Ham,Exp,Vary,spc)
+       
+    .. image:: /_static/sload.png
+
+       :alt: Plot of the Sload function.
+       :align: center
     '''
     stopvar.clear()
     global result
@@ -1911,6 +1943,9 @@ def Fitting(Hamer,Exper,Vara,datexp):
                         Bla=np.linspace(Exper.Frange[0],Exper.Frange[1],Exper.Points)
                     ax.plot(Bla,datexp,color='blue',label='Data')
                     if resultexper is not None:
+                        maximo=np.max(resultexper)
+                        if maximo==0:
+                            maximo=1
                         ax.plot(Bla,resultexper/np.max(resultexper)*np.max(datexp),color='red',label='Fit')
                     ax.legend()
                     ax.grid()
