@@ -1884,7 +1884,7 @@ def Fitting(Hamer,Exper,Vara,datexp):
        :alt: Plot of the Fit1 function.
        :align: center
     
-    .. image:: /_static/fit2.PNG
+    .. image:: /_static/fit2.png
        :alt: Plot of the Fit2 function.
        :align: center
     '''        
