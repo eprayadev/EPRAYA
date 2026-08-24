@@ -905,7 +905,7 @@ def Nhze(I,iix,iiy,iiz,dim,Nucl='None',direction=[0,0,1]):
 
     Returns
     -------
-    thz : np.array
+    nhz : np.array
         Matrix of the Zeeman nuclear interaction with dimension dim.
 
     Example

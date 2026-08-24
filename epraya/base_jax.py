@@ -596,15 +596,16 @@ def JQii(iix,iiy,iiz,q,dim):
     -------
 
     >>> import epraya as epr 
-
-    >>> Ham,Exp,_=epr.Start()
+    >>> Ham,Exp,_=epr.Jstart()
     >>> Ham.I=1
     >>> Ham.Q=[0.5,10.0,0]
-    >>> Ham=epr.chaframe(Ham,Exp)
-    >>> ix,iy,iz=epr.Pauli(Ham.I)
+    >>> Ham=epr.Jchaframe(Ham,Exp)
+    >>> ix,iy,iz=epr.JPauli(Ham.I)
     >>> dim=int((2*Ham.I+1))
-    >>> print(epr.Qii(ix,iy,iz,Ham.Q,dim))
-
+    >>> print(epr.JQii(ix,iy,iz,Ham.Q,dim))
+    [[ 0.  +0.j         -4.75+0.49999997j  0.  +0.j        ]
+    [-4.75-0.49999997j  0.  +0.j         -4.75+0.49999997j]
+    [ 0.  +0.j         -4.75-0.49999997j  0.  +0.j        ]]
     '''
     hql=(q[0,0]*iix*iix)+(q[1,1]*iiy*iiy)+(q[2,2]*iiz*iiz)+(q[0,1]*(iix*iiy)-(iiy*iix))+(q[1,2]*(iiy*iiz)-(iiz*iiy))
     +(q[2,0]*(iiz*iix)-(iix*iiz))
@@ -613,7 +614,48 @@ def JQii(iix,iiy,iiz,q,dim):
 
 
 def JNhze(I,iix,iiy,iiz,dim,gn,direction=[0,0,1]):
-    direct=direction[0]*iix+direction[0]*iiy+direction[0]*iiz
+    '''
+    Function for the nuclear Zeeman interaction.
+    
+    Parameters
+    ----------
+    
+    I : float
+        Nuclear spin value.
+    iix : jax.np.array
+        Pauli matrix of the nuclear spin x component.
+    iiy : jax.np.array
+        Pauli matrix of the nuclear spin y component.
+    iiz : jax.np.array
+        Pauli matrix of the nuclear spin z component.
+    dim : int
+        Dimension of the total hamiltonian.
+    gn : float
+        Nuclear g factor of the element of the paramagnetic center.
+    direction : jax.np.array
+        Direction of incidence of the magnetic field.
+
+    Returns
+    -------
+    
+    nhz : jax.np.array
+        Matrix of the Zeeman nuclear interaction with dimension dim.
+
+    Example
+    -------
+
+    >>> import epraya as epr 
+    >>> Ham,Exp,_=epr.Start()
+    >>> Ham.I=1
+    >>> Ham.Nucl='55Mn'
+    >>> ix,iy,iz=epr.Pauli(Ham.I)
+    >>> dim=int((2*Ham.I+1))
+    >>> print(epr.Nhze(Ham.I,ix,iy,iz,dim,Ham.Nucl,[0,0,1]))
+    [[ 1.38128  0.       0.     ]
+    [ 0.       0.       0.     ]
+    [ 0.       0.      -1.38128]]
+    '''
+    direct=direction[0]*iix+direction[1]*iiy+direction[2]*iiz
     nhz=gn*direct
     nhz=jxn.kron(nhz,jxn.eye(int(dim/(nhz).shape[1])))
     return nhz
