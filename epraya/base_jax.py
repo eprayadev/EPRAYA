@@ -262,11 +262,84 @@ def Jstart():
     '''
     global Exp,Vary,Ham
     Ham,Exp,Vary=JHval(),JEco(),JEva()
+    return Ham,Exp,Vary
 
 def JKronecker(a0,b0):
+    '''
+    Implementation of the Kronecker delta.
+    
+    Parameters
+    ----------
+
+    
+    a0 : int
+        First value to compare.
+    b0 : int
+        Second value to compare
+    Returns
+    -------
+    
+    1 : int
+        If the two values are equal
+    0 : int
+        If the two values differ
+        
+    Example
+    -------
+    
+    >>> import epraya as epr
+    >>> a, b = 2, 3
+    >>> c, d = 2, 4
+    >>> print(epr.JKronecker(a,b))
+    >>> print(epr.JKronecker(a,c))
+    >>> print(epr.JKronecker(b,d))
+    0.0
+    1.0
+    0.0
+    '''
     return jxn.where(a0==b0,1.0,0.0)
 
 def JPauli(s):
+    '''
+    Defines the Pauli matrices for the spin s.
+
+    Parameters
+    ----------
+
+    s : float
+
+        Spin operator value of the system.
+
+    Returns
+    -------
+
+    sx : jax.numpy.array
+        Pauli matrix of the spin x component.
+
+    sy : jax.numpy.array
+        Pauli matrix of the spin y component.
+    sz : jax.numpy.array
+        Pauli matrix of the spin z component.
+
+
+     Example
+    -------
+
+
+    >>> import epraya as epr
+    >>> s = 1
+    >>> sx, sy, sz = epr.JPauli(s)
+    >>> print(sx, sy, sz)
+    [[0.        +0.j 0.70710677+0.j 0.        +0.j]
+    [0.70710677+0.j 0.        +0.j 0.70710677+0.j]
+    [0.        +0.j 0.70710677+0.j 0.        +0.j]] 
+    [ 0.+0.j         -0.-0.70710677j  0.+0.j        ]
+    [ 0.+0.70710677j  0.+0.j         -0.-0.70710677j]
+    [ 0.+0.j          0.+0.70710677j  0.+0.j        ]] 
+    [ 1.  0.  0.]
+    [ 0.  0.  0.]
+    [ 0.  0. -1.]]
+    '''
     #Defines the pauli matrix for all s values:
     ms=jxn.linspace(s,-s,int(2*s+1))
     z1=0.5j
@@ -284,13 +357,52 @@ def JPauli(s):
 
 #Spin Orbit term
 def JLorbit(sx,sy,sz,lamda,dim,l=0):
-  if l!=0:
-    lx,ly,lz=JPauli(l)
-    orbe=lamda*(jxn.kron(lx,sx)+jxn.kron(ly,sy)+jxn.kron(lz,sz))
-    orbe=jxn.kron(orbe,jxn.eye(int(dim/(orbe).shape[1])))
-    return orbe
-  else:
-    return np.zeros(dim)
+    '''
+    Function for the spin orbit interaction, with an isotropic coupling constant.
+    *It's recommended to use the Stevens Operators instead of this function*
+
+    
+    Parameters
+    ----------
+
+    sx : jax.np.array
+        Pauli matrix of the spin x component.
+    sy : jax.np.array
+        Pauli matrix of the spin y component.
+    sz : jax.np.array
+        Pauli matrix of the spin z component.
+    lamda : float
+        Isotropic coupling constant.
+    dim : int
+        Dimension of the total hamiltonian.
+    l : float
+        Angular momentum operator
+
+    Returns
+    -------
+    
+    orbe : jax.np.array
+        Matrix of the spin orbit interaction with dimension dim.
+
+    Example
+    -------
+    
+    >>> import epraya as epr 
+    >>> Ham,_,_=epr.Start()
+    >>> Ham.S=1/2
+    >>> Ham.L=1/2
+    >>> Ham.lc=20
+    >>> sx,sy,sz=epr.Pauli(Ham.S)
+    >>> dim=int((2*Ham.S+1)*(2*Ham.L+1))
+    >>> print(epr.Lorbit(sx,sy,sz,Ham.lc,dim,Ham.L))
+    '''
+    if l!=0:
+        lx,ly,lz=JPauli(l)
+        orbe=lamda*(jxn.kron(lx,sx)+jxn.kron(ly,sy)+jxn.kron(lz,sz))
+        orbe=jxn.kron(orbe,jxn.eye(int(dim/(orbe).shape[1])))
+        return orbe
+    else:
+        return np.zeros(dim)
 
 def JHfi(ssx,ssy,ssz,iix,iiy,iiz,at,dim):
     ta=(at[0,0]*jxn.kron(ssx,iix))+(at[0,1]*jxn.kron(ssx,iiy))+(at[0,2]*jxn.kron(ssx,iiz))+(at[1,0]*jxn.kron(ssy,iix))+(at[1,1]*jxn.kron(ssy,iiy))+(at[1,2]*jxn.kron(ssy,iiz))+(at[2,0]*jxn.kron(ssz,iix))+(at[2,1]*jxn.kron(ssz,iiy))+(at[2,2]*jxn.kron(ssz,iiz))
