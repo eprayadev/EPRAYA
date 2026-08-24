@@ -1470,6 +1470,12 @@ def Iee(ssx1,ssy1,ssz1,ssx2,ssy2,ssz2,X,dim):
     dim : int
         Dimension of the total hamiltonian.
     
+    Returns
+    -------
+
+    eet : np.array
+        Matrix of the Electron-Electron interaction with dimension dim.
+        
     Example
     -------
     >>> import epraya as epr
@@ -1477,8 +1483,8 @@ def Iee(ssx1,ssy1,ssz1,ssx2,ssy2,ssz2,X,dim):
     >>> Ham,_,_=epr.Start(2)
     >>> Ham.S1=1
     >>> Ham.S2=1/2
-    >>> sx1,sy1,sz1=Pauli(Ham.S1)
-    >>> sx2,sy2,sz2=Pauli(Ham.S2)
+    >>> sx1,sy1,sz1=epr.Pauli(Ham.S1)
+    >>> sx2,sy2,sz2=epr.Pauli(Ham.S2)
     >>> Ham.X1_2=[200,500,200]
     >>> Ham.X1_2=(Ham.X1_2)*np.eye(3)
     >>> dim=int((2*Ham.S1+1)*(2*Ham.S2+1))

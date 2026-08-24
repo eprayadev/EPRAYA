@@ -307,7 +307,6 @@ def JPauli(s):
     ----------
 
     s : float
-
         Spin operator value of the system.
 
     Returns
@@ -324,7 +323,6 @@ def JPauli(s):
 
      Example
     -------
-
 
     >>> import epraya as epr
     >>> s = 1
@@ -361,7 +359,6 @@ def JLorbit(sx,sy,sz,lamda,dim,l=0):
     Function for the spin orbit interaction, with an isotropic coupling constant.
     *It's recommended to use the Stevens Operators instead of this function*
 
-    
     Parameters
     ----------
 
@@ -388,13 +385,17 @@ def JLorbit(sx,sy,sz,lamda,dim,l=0):
     -------
     
     >>> import epraya as epr 
-    >>> Ham,_,_=epr.Start()
+    >>> Ham, Exp, Vary=epr.Jstart()
     >>> Ham.S=1/2
     >>> Ham.L=1/2
     >>> Ham.lc=20
-    >>> sx,sy,sz=epr.Pauli(Ham.S)
+    >>> sx,sy,sz=epr.JPauli(Ham.S)
     >>> dim=int((2*Ham.S+1)*(2*Ham.L+1))
-    >>> print(epr.Lorbit(sx,sy,sz,Ham.lc,dim,Ham.L))
+    >>> print(epr.JLorbit(sx,sy,sz,Ham.lc,dim,Ham.L))
+    [[ 5.+0.j  0.+0.j  0.+0.j  0.+0.j]
+    [ 0.+0.j -5.+0.j 10.+0.j  0.+0.j]
+    [ 0.+0.j 10.+0.j -5.+0.j  0.+0.j]
+    [ 0.+0.j  0.+0.j  0.+0.j  5.+0.j]]
     '''
     if l!=0:
         lx,ly,lz=JPauli(l)
@@ -405,21 +406,206 @@ def JLorbit(sx,sy,sz,lamda,dim,l=0):
         return np.zeros(dim)
 
 def JHfi(ssx,ssy,ssz,iix,iiy,iiz,at,dim):
+    '''
+    Function for the hiperfine interaction.
+    
+    Parameters
+    ----------
+    ssx : jax.np.array
+        Pauli matrix of the spin x component.
+    ssy : jax.np.array
+        Pauli matrix of the spin y component.
+    ssz : jax.np.array
+        Pauli matrix of the spin z component.
+    iix : jax.np.array
+        Pauli matrix of the nuclear spin x component.
+    iiy : jax.np.array
+        Pauli matrix of the nuclear spin y component.
+    iiz : jax.np.array
+        Pauli matrix of the nuclear spin z component.
+    at : jax.np.array
+        Array for the hiperfine interaction constant.
+    dim : int
+        Dimension of the total hamiltonian.
+        
+    Returns
+    -------
+    
+    ta : jax.np.array
+        Matrix of the hiperfine interaction with dimension dim.
+
+
+    Example
+    -------
+
+    >>> import epraya as epr
+    >>> Ham,Exp,_=epr.Jstart()
+    >>> Ham.S=1/2
+    >>> Ham.I=1/2
+    >>> Ham.A=[200,300,200]
+    >>> Ham=epr.Jchaframe(Ham,Exp)
+    >>> sx,sy,sz=epr.JPauli(Ham.S)
+    >>> ix,iy,iz=epr.JPauli(Ham.S)
+    >>> dim=int((2*Ham.S+1)*(2*Ham.I+1))
+    >>> print(epr.JHfi(sx,sy,sz,ix,iy,iz,Ham.A,dim))
+    [[ 50.+0.j   0.+0.j   0.+0.j -25.+0.j]
+    [  0.+0.j -50.+0.j 125.+0.j   0.+0.j]
+    [  0.+0.j 125.+0.j -50.+0.j   0.+0.j]
+    [-25.+0.j   0.+0.j   0.+0.j  50.+0.j]]
+    '''
     ta=(at[0,0]*jxn.kron(ssx,iix))+(at[0,1]*jxn.kron(ssx,iiy))+(at[0,2]*jxn.kron(ssx,iiz))+(at[1,0]*jxn.kron(ssy,iix))+(at[1,1]*jxn.kron(ssy,iiy))+(at[1,2]*jxn.kron(ssy,iiz))+(at[2,0]*jxn.kron(ssz,iix))+(at[2,1]*jxn.kron(ssz,iiy))+(at[2,2]*jxn.kron(ssz,iiz))
     ta=jxn.kron(ta,jxn.eye(int(dim/(ta).shape[1])))
     return ta
 
 def JHze(ssx,ssy,ssz,g,biel,dim):
+    '''
+
+    Function for the Zeeman interaction.
+    
+    Parameters
+    ----------
+    
+    ssx : jax.np.array
+        Pauli matrix of the spin x component.
+    ssy : np.array
+        Pauli matrix of the spin y component.
+    ssz : jax.np.array
+        Pauli matrix of the spin z component.
+    g : jax.np.array
+        Array for the g factor.
+    biel : jax.np.array
+        Direction of incidence of the magnetic field.
+
+    dim : int
+        Dimension of the total hamiltonian.
+        
+    Returns
+
+    -------
+    thz : jax.np.array
+        Matrix of the Zeeman interaction with dimension dim.
+
+    Example
+    -------
+
+    >>> import epraya as epr
+    >>> Ham,Exp,_=epr.Jstart()
+    >>> Ham.S=1/2
+    >>> Ham.g=[2.003,3.0,2.003]
+    >>> Ham=epr.Jchaframe(Ham,Exp)
+    >>> sx,sy,sz=epr.JPauli(Ham.S)
+    >>> dim=int((2*Ham.S+1))
+    >>> print(epr.JHze(sx,sy,sz,Ham.g,[0,0,1],dim))
+    [[ 1.0015+0.j  0.    +0.j]
+    [ 0.    +0.j -1.0015+0.j]]
+
+    '''
     hze=biel[0]*(g[0,0]*ssx+g[0,1]*ssy+g[0,2]*ssz)+biel[1]*(g[1,0]*ssx+g[1,1]*ssy+g[1,2]*ssz)+biel[2]*(g[2,0]*ssx+g[2,1]*ssy+g[2,2]*ssz)
     thz=jxn.kron(hze,jxn.eye(int(dim/(hze).shape[1])))
     return thz
 
 def JIee(ssx1,ssy1,ssz1,ssx2,ssy2,ssz2,X,dim):
+    '''
+    Function for the electron-electron interaction.
+
+    Parameters
+    ----------
+    
+    ssx1 : jax.np.array
+        Pauli matrix of the first spin x component.
+
+    ssy1 : jax.np.array
+        Pauli matrix of the first spin y component.
+        
+    ssz1 : jax.np.array
+        Pauli matrix of the first spin z component.
+        
+    ssx2 : np.array
+        Pauli matrix of the second spin x component.
+    ssy2 : np.array
+        Pauli matrix of the second spin y component.
+    ssz2 : np.array
+        Pauli matrix of the second spin z component.
+    
+    X : jax.np.array
+        Electron-electron interaction constant.
+
+    dim : int
+        Dimension of the total hamiltonian.
+    
+    Returns
+    -------
+
+    eet : jax.np.array
+        Matrix of the Electron-Electron interaction with dimension dim.
+    Example
+
+    -------
+    >>> import epraya as epr
+    >>> import numpy as np
+    >>> Ham,_,_=epr.Jstart()
+    >>> Ham.S1=1
+    >>> Ham.S2=1/2
+    >>> sx1,sy1,sz1=epr.JPauli(Ham.S1)
+    >>> sx2,sy2,sz2=epr.JPauli(Ham.S2)
+    >>> Ham.X1_2=[200,500,200]
+    >>> Ham.X1_2=(Ham.X1_2)*np.eye(3)
+    >>> dim=int((2*Ham.S1+1)*(2*Ham.S2+1))
+    >>> print(epr.JIee(sx1,sy1,sz1,sx2,sy2,sz2,Ham.X1_2,dim))
+    [[ 100.     +0.j    0.     +0.j    0.     +0.j -106.06602+0.j
+    0.     +0.j    0.     +0.j]
+    [   0.     +0.j -100.     +0.j  247.48737+0.j    0.     +0.j
+    0.     +0.j    0.     +0.j]
+    [   0.     +0.j  247.48737+0.j    0.     +0.j    0.     +0.j
+    0.     +0.j -106.06602+0.j]
+    [-106.06602+0.j    0.     +0.j    0.     +0.j    0.     +0.j
+    247.48737+0.j    0.     +0.j]
+    [   0.     +0.j    0.     +0.j    0.     +0.j  247.48737+0.j
+    -100.     +0.j    0.     +0.j]
+    [   0.     +0.j    0.     +0.j -106.06602+0.j    0.     +0.j
+    0.     +0.j  100.     +0.j]]
+    '''
     eet=(X[0,0]*np.kron(ssx1,ssx2))+(X[0,1]*np.kron(ssx1,ssy2))+(X[0,2]*np.kron(ssx1,ssz2))+(X[1,0]*np.kron(ssy1,ssx2))+(X[1,1]*np.kron(ssy1,ssy2))+(X[1,2]*np.kron(ssy1,ssz2))+(X[2,0]*np.kron(ssz1,ssx2))+(X[2,1]*np.kron(ssz1,ssy2))+(X[2,2]*np.kron(ssz1,ssz2))
     eet=jxn.kron(eet,jxn.eye(int(dim/(eet).shape[1])))
     return eet
 
-def JQii(iix,iiy,iiz,q,i,dim):
+def JQii(iix,iiy,iiz,q,dim):
+    '''
+
+    Function for the nuclear quadrupolar interaction.
+    
+    Parameters
+    ----------
+    iix : jax.np.array
+        Pauli matrix of the nuclear spin x component.
+    iiy : jax.np.array
+        Pauli matrix of the nuclear spin y component.
+    iiz : jax.np.array
+        Pauli matrix of the nuclear spin z component.
+    q : jax.np.array
+        Array for the quadrupolar interaction constant.
+    dim : int
+        Dimension of the total hamiltonian.
+        
+    Returns
+    -------
+    tql : jax.np.array
+        Matrix of the nuclear quadrupolar interaction with dimension dim.
+
+    Example
+    -------
+
+    >>> import epraya as epr 
+
+    >>> Ham,Exp,_=epr.Start()
+    >>> Ham.I=1
+    >>> Ham.Q=[0.5,10.0,0]
+    >>> Ham=epr.chaframe(Ham,Exp)
+    >>> ix,iy,iz=epr.Pauli(Ham.I)
+    >>> dim=int((2*Ham.I+1))
+    >>> print(epr.Qii(ix,iy,iz,Ham.Q,dim))
+
+    '''
     hql=(q[0,0]*iix*iix)+(q[1,1]*iiy*iiy)+(q[2,2]*iiz*iiz)+(q[0,1]*(iix*iiy)-(iiy*iix))+(q[1,2]*(iiy*iiz)-(iiz*iiy))
     +(q[2,0]*(iiz*iix)-(iix*iiz))
     tql=jxn.kron(hql,jxn.eye(int(dim/(hql).shape[1])))
@@ -886,7 +1072,7 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None'):
         h1=h1+JLorbit(sx,sy,sz,Ham.lc,dim,Ham.L)
     if Ham.I!=0:
         h1=h1+JHfi(sx,sy,sz,ix,iy,iz,Ham.A,dim)
-        h1=h1+JQii(ix,iy,iz,Ham.Q,Ham.I,dim)
+        h1=h1+JQii(ix,iy,iz,Ham.Q,dim)
         gnk=gnfactor(Nucl)
         nhzex=jxn.asarray(betan*JNhze(Ham.I,ix,iy,iz,dim,gnk,[1,0,0]),dtype=complex)
         nhzey=jxn.asarray(betan*JNhze(Ham.I,ix,iy,iz,dim,gnk,[0,1,0]),dtype=complex)
@@ -989,7 +1175,7 @@ def Calresonant(Hamer,Expe,Nucl='None'):
         h1=h1+JLorbit(sx,sy,sz,Ham.lc,dim,Ham.L)
     if Ham.I!=0:
         h1=h1+JHfi(sx,sy,sz,ix,iy,iz,Ham.A,dim)
-        h1=h1+JQii(ix,iy,iz,Ham.Q,Ham.I,dim)
+        h1=h1+JQii(ix,iy,iz,Ham.Q,dim)
         gnk=gnfactor(Nucl)
         nhzex=jxn.asarray(betan*JNhze(Ham.I,ix,iy,iz,dim,gnk,[1,0,0]),dtype=complex)
         nhzey=jxn.asarray(betan*JNhze(Ham.I,ix,iy,iz,dim,gnk,[0,1,0]),dtype=complex)
@@ -1391,7 +1577,7 @@ def Jcalmulta(maham,Expe,Nucl1='None',Nucl2='None'):
             h1=h1+JLorbit(sx2,sy2,sz2,Ham2.lc,dim,Ham2.L)
         if Ham1.I!=0:
             h1=h1+JHfi(sx1,sy1,sz1,ix1,iy1,iz1,Ham1.A,dim)
-            h1=h1+JQii(ix1,iy1,iz1,Ham1.Q,Ham1.I,dim)
+            h1=h1+JQii(ix1,iy1,iz1,Ham1.Q,dim)
             gnk=gnfactor(Nucl1)
             nhzex=jxn.asarray(betan*JNhze(Ham1.I,ix1,iy1,iz1,dim1,gnk,[1,0,0]),dtype=complex)
             nhzey=jxn.asarray(betan*JNhze(Ham1.I,ix1,iy1,iz1,dim1,gnk,[0,1,0]),dtype=complex)
@@ -1401,7 +1587,7 @@ def Jcalmulta(maham,Expe,Nucl1='None',Nucl2='None'):
             hzez-=jxn.kron(nhzez,jxn.eye(dim2,dtype=complex))
         if Ham2.I!=0:
             h1=h1+JHfi(sx2,sy2,sz2,ix2,iy2,iz2,Ham2.A,dim)
-            h1=h1+JQii(ix2,iy2,iz2,Ham2.Q,Ham2.I,dim)
+            h1=h1+JQii(ix2,iy2,iz2,Ham2.Q,dim)
             gnk=gnfactor(Nucl2)
             nhzex=jxn.asarray(betan*JNhze(Ham2.I,ix2,iy2,iz2,dim2,gnk,[1,0,0]),dtype=complex)
             nhzey=jxn.asarray(betan*JNhze(Ham2.I,ix2,iy2,iz2,dim2,gnk,[0,1,0]),dtype=complex)
@@ -1565,7 +1751,7 @@ def Jcalmusic(maham,Expe,Nucl1='None',Nucl2='None'):
             h1=h1+JLorbit(sx2,sy2,sz2,Ham2.lc,dim,Ham2.L)
         if Ham1.I!=0:
             h1=h1+JHfi(sx1,sy1,sz1,ix1,iy1,iz1,Ham1.A,dim)
-            h1=h1+JQii(ix1,iy1,iz1,Ham1.Q,Ham1.I,dim)
+            h1=h1+JQii(ix1,iy1,iz1,Ham1.Q,dim)
             gnk=gnfactor(Nucl1)
             nhzex=jxn.asarray(betan*JNhze(Ham1.I,ix1,iy1,iz1,dim1,gnk,[1,0,0]),dtype=complex)
             nhzey=jxn.asarray(betan*JNhze(Ham1.I,ix1,iy1,iz1,dim1,gnk,[0,1,0]),dtype=complex)
@@ -1575,7 +1761,7 @@ def Jcalmusic(maham,Expe,Nucl1='None',Nucl2='None'):
             hzez-=jxn.kron(nhzez,jxn.eye(dim2,dtype=complex))
         if Ham2.I!=0:
             h1=h1+JHfi(sx2,sy2,sz2,ix2,iy2,iz2,Ham2.A,dim)
-            h1=h1+JQii(ix2,iy2,iz2,Ham2.Q,Ham2.I,dim)
+            h1=h1+JQii(ix2,iy2,iz2,Ham2.Q,dim)
             gnk=gnfactor(Nucl2)
             nhzex=jxn.asarray(betan*JNhze(Ham2.I,ix2,iy2,iz2,dim2,gnk,[1,0,0]),dtype=complex)
             nhzey=jxn.asarray(betan*JNhze(Ham2.I,ix2,iy2,iz2,dim2,gnk,[0,1,0]),dtype=complex)
