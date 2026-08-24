@@ -645,15 +645,15 @@ def JNhze(I,iix,iiy,iiz,dim,gn,direction=[0,0,1]):
     -------
 
     >>> import epraya as epr 
-    >>> Ham,Exp,_=epr.Start()
+    >>> Ham,Exp,_=epr.Jstart()
     >>> Ham.I=1
-    >>> Ham.Nucl='55Mn'
-    >>> ix,iy,iz=epr.Pauli(Ham.I)
+    >>> gn=1.3813
+    >>> ix,iy,iz=epr.JPauli(Ham.I)
     >>> dim=int((2*Ham.I+1))
-    >>> print(epr.Nhze(Ham.I,ix,iy,iz,dim,Ham.Nucl,[0,0,1]))
-    [[ 1.38128  0.       0.     ]
-    [ 0.       0.       0.     ]
-    [ 0.       0.      -1.38128]]
+    >>> print(epr.JNhze(Ham.I,ix,iy,iz,dim,gn,[0,0,1]))
+    [[ 1.3813+0.j  0.    +0.j  0.    +0.j]
+    [ 0.    +0.j  0.    +0.j  0.    +0.j]
+    [ 0.    +0.j  0.    +0.j -1.3813+0.j]]
     '''
     direct=direction[0]*iix+direction[1]*iiy+direction[2]*iiz
     nhz=gn*direct
@@ -662,10 +662,12 @@ def JNhze(I,iix,iiy,iiz,dim,gn,direction=[0,0,1]):
 
 def gnfactor(Nucl='None'):
     if Nucl!='None':
-        krle=read_csv('nucleardaat.txt',header=0,sep='\t')
+        route=resources.files(__package__).joinpath("nucleardaat.txt")
+        krle=read_csv(route,header=0,sep='\t')
         deq=krle[krle['Symbol']==Nucl]
         return float(deq['gN_factor'].values[0])
-    return 0.0
+    else:
+        return 0.0
 
 def Jchaframe(Ham,Exp):
   Ham=JConvtarray(Ham)
