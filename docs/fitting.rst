@@ -49,7 +49,7 @@ EPRAYA has different forms of loading data, based in the *np.load* function. The
 Fitting functions
 -----------------
 
-This methods can be use directly or with the wrap function *Fitting*, however, the ADAM method requieres the use of the *JAX* framework of EPRAYA, described in :doc: `jax_impl`.  
+This methods can be use directly or with the wrap function *Fitting*, however, the ADAM method requieres the use of the *JAX* framework of EPRAYA, described in :doc:`jax_impl`.  
 
 .. currentmodule:: base_fit
 
