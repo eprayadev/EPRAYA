@@ -47,11 +47,13 @@ from importlib import resources
 def is_notebook():
     try:
         shell=get_ipython().__class__.__name__
-        if shell=='ZMQInteractiveShell':
+        if shell in ['ZMQInteractiveShell','Shell']:
             return True
+        elif shell=='TerminalInteractiveShell':
+            return False
         else:
             return False
-    except NameError:
+    except NameError:                             
         return False
 
 

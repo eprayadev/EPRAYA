@@ -47,6 +47,7 @@ from .base_ham import *
 from .base_plot import *
 from .base_powd import *
 from .base_rotate import *
+import sys
 
 stopvar=threading.Event()
 result={}
@@ -1868,20 +1869,33 @@ def Fitting(Hamer,Exper,Vara,datexp):
     .. code-block:: python
     
        import epraya as epr
-       B,spc=epr.Sload('STRONG PITCH.dat',2046,[2,3])
+       B,spc=epr.Seek()
        Ham,Exp,Vary=epr.Start()
-       Ham.S=1
-       Ham.g=[2.2,2.4,2.6]
-       Exp.Points=2046
-       Exp.Frange=[0,800]
-       Vary.g=[1.5,2.5,1.5,2.5,1.5,2.5]
+       Ham.S=1/2
+       Ham.g=[2.003,2.003,2.003]
+       Ham.Hpp=[0,3]
+       Exp.Points=4096
+       Exp.Frange=[B[0],B[-1]]
+       Vary.g=[2.,2.2,2,2.2,2.,2.2]
        epr.Fitting(Ham,Exp,Vary,spc)
-       
-    .. image:: /_static/sload.png
 
-       :alt: Plot of the Sload function.
+       
+    .. image:: /_static/fit1.PNG
+
+       :alt: Plot of the Fit1 function.
        :align: center
-    '''
+    .. image:: /_static/fit2.PNG
+       :alt: Plot of the Fit2 function.
+       :align: center
+    '''        
+    class OutputRedirector:
+        def __init__(self, output_widget):
+            self.output_widget=output_widget
+        def write(self, string):
+            self.output_widget.append_stdout(string)
+        def flush(self):
+            pass
+            
     stopvar.clear()
     global result
     result={}
@@ -1923,6 +1937,10 @@ def Fitting(Hamer,Exper,Vara,datexp):
                 csample='c'
             print(f'Starting process: {Chmet}...')
             def functiontorun():
+                in_notebook=is_notebook()
+                if in_notebook:
+                    oldout=sys.stdout
+                    sys.stdout=OutputRedirector(outside)
                 try:
                     resultexper=None
                     if Chmet=='Nelder-Mead':
@@ -1949,30 +1967,25 @@ def Fitting(Hamer,Exper,Vara,datexp):
                         ax.plot(Bla,resultexper/np.max(resultexper)*np.max(datexp),color='red',label='Fit')
                     ax.legend()
                     ax.grid()
-                    buf=io.BytesIO()
-                    fig.savefig(buf,format='png',bbox_inches='tight')
-                    buf.seek(0)
-                    img=Image(data=buf.getvalue(),format='png')
-                    outside.append_display_data(img)
-                    buf.close()
+                    if in_notebook:
+                        buf=io.BytesIO()
+                        fig.savefig(buf,format='png',bbox_inches='tight')
+                        buf.seek(0)
+                        img=Image(data=buf.getvalue(),format='png')
+                        outside.append_display_data(img)
+                        buf.close()
+                    else:
+                        filename="fit_result.png"
+                        fig.savefig(filename, format="png",bbox_inches="tight")
+                        print(f"\n[+] Graph saved successfully as '{filename}'")
                     fig.clf()
                 except Exception as e:
                     with outside:
                         print(f"\n[X] Error in function: {e}")
-
+                finally:
+                    if in_notebook:
+                        sys.stdout=oldout
             partoeval=threading.Thread(target=functiontorun)
-            import sys
-        
-            class OutputRedirector:
-                def __init__(self, output_widget):
-                    self.output_widget=output_widget
-                def write(self, string):
-                    self.output_widget.append_stdout(string)
-                def flush(self):
-                    pass
-            
-            oldout=sys.stdout
-            sys.stdout=OutputRedirector(outside)
             partoeval.start()
 
     def Stopfunc(b):
