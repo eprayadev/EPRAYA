@@ -600,8 +600,11 @@ def Nelder(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p'):
     Implementation of the Nelder Mead algorithm for fitting data, based on the code by Hadrien Crassous. Uses the 4 classic possibilities reflection, expansion, contraction and shrink with their respective constants, alpha, gamma, rho and sigma, defined depending in the number of parameters to vary (nparams). With that, their definitions are:
     
     alpha=1
+    
     gamma=1+(2/nparams)
+    
     rho=0.75-(1/(2*nparams))
+    
     sigma=1-(1/nparams)
     
     The algorithm also has a restart function, if the points converge to a local minimun and a heat up function, changing one of the parameters in order to vary the cost.
@@ -1103,6 +1106,7 @@ def Genio2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p'):
 def Genio(Hamer,Expe,Vara,exper,eps=1e-10,maximal=100,datype='data',mode='p'):
     '''
     Fitting function for the experimental data using the genetic algorithm. Creates a population of 35*N individuals, where N is the number of parameters that will change, that have combinations of the possible values of the parameters. This individuals are evaluated, select and cross to produce a new population. 
+    
     The algorithm uses a normal distribution for the mutation probability and a the numpy random int generator for the cross probability. 
     
     Parameters
@@ -1219,7 +1223,7 @@ def Metrostair(Hamer,Exp,Var,date,stepsize,ocos,para,variable,funcname,datype='d
         else:
             return Hamer,ocos,False
 
-def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p'):ingle syste
+def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p'):
     '''
     Fitting adjutsment of the experimental data using a modified Metrópolis-Simulated annealing approach for a single system.
     
@@ -1837,7 +1841,7 @@ def Metro2(Hamer,Exp,Var,dat,maximal,datype='data',mode='p'):
 
 def Metro(Hamer,Exp,Var,exper,maximal=2000,datype='data',mode='p'):
     '''
-    Fitting adjutsment of the experimental data using a modified Metrópolis-Simulated annealing approach. First, the parameters in the Vary container are evaluated in range, one by one, using a gaussian distribution and then, all are varied at the same time. With every evaluation, the difference between 
+    Fitting adjutsment of the experimental data using a modified Metrópolis-Simulated annealing approach. First, the parameters in the Vary container are evaluated in range, one by one, using a gaussian distribution and then, all are varied at the same time. With every evaluation, the difference between the simulation and the data is calculated as a cost.
     
     Depending in the acceptance rate of the process, the temperature of the process change. If the acceptance is too low, the process heats up (the range of the evaluating values increases), if the accpetance is high, the process colds down (the range reduces).
     
@@ -2147,7 +2151,7 @@ def LSquare2(Ham1,Expe,Vary,exper,maximal=1000,mode='p'):
 
 def LSquare(Ham1,Expe,Vary,exper,maximal=1000,mode='p'):
     '''
-    Fitting adjutsment of the experimental data using the *scipy.optimize.least_squares* method. The Trust Region Reflective algorithm is use, with a tolerance for the change of variables (xtol, ftol, gtol) of 1e-10 and a maximun number of evaluations defined with the variable *maximal*. The documentation of the function can be consulted in `here `_https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html.
+    Fitting adjutsment of the experimental data using the *scipy.optimize.least_squares* method. The Trust Region Reflective algorithm is use, with a tolerance for the change of variables (xtol, ftol, gtol) of 1e-10 and a maximun number of evaluations defined with the variable *maximal*. The documentation of the function can be consulted in https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html.
     
     Parameters
     ----------

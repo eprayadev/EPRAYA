@@ -107,11 +107,13 @@ def Splot(field,count):
     
     Example
     -------
-    .. code-block:: python     
+    .. code-block:: python   
+    
        import epraya as epr
        import matplotlib.pyplot as plt
        B,spc=epr.Sload('STRONG PITCH.dat',2046,[2,3])
        epr.Splot(B,spc)
+       
     .. image:: /_static/splot.png
        :alt: Plot of the Sload function.
        :align: center
@@ -355,6 +357,7 @@ def Overseer(field,counts,lt=51,pol=3,i=0,startl=0,endli=-1,epsilon=(5*10**-6),p
   Example
   -------
   .. code-block:: python   
+  
      import epraya as epr
      B,spc=epr.Sload('STRONG PITCH.dat',2046,[2,3])
      Sdata=epr.Overseer(B,spc)
@@ -368,15 +371,18 @@ def Overseer(field,counts,lt=51,pol=3,i=0,startl=0,endli=-1,epsilon=(5*10**-6),p
      1.16253103e-05 1.16295710e-05]
      [0.00000000e+00 2.13932742e-09 3.77939041e-09 ... 2.12170265e-05
      2.12165240e-05 2.12163506e-05]
-    .. image:: /_static/controles.png
-       :alt: Plot of sliders of Overseer.
-       :align: center
-    .. image:: /_static/over1.png
-       :alt: Plot of spectrum of Overseer.
-       :align: center
-    .. image:: /_static/over2.png
-       :alt: Plot of integrals of Overseer.
-       :align: center  
+     
+  .. image:: /_static/controles.png
+     :alt: Plot of sliders of Overseer.
+     :align: center
+     
+  .. image:: /_static/over1.png
+     :alt: Plot of spectrum of Overseer.
+     :align: center
+       
+  .. image:: /_static/over2.png
+     :alt: Plot of integrals of Overseer.
+     :align: center  
   '''
   Sdata=Resultsover()
   #Sliders conditions
