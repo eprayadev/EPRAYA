@@ -1,6 +1,6 @@
 Fitting
 =======
-Here can be find the functions to load and fit experimental data. EPRAYA has 5 methods for EPR data fitting: Nelder-Mead, Genetic Algorithm, Metrópolis, Least Squares and the use of the ADAM Algorithm. This methods can be use directly or with the wrap function *Fitting*, however, the ADAM method requieres the use of the *JAX* framework of EPRAYA, described in :doc: `jax_impl`.  
+Here can be find the functions to load and fit experimental data. EPRAYA has 5 methods for EPR data fitting: Nelder-Mead, Genetic Algorithm, Metrópolis, Least Squares and the use of the ADAM Algorithm. 
 
 Data load functions
 -------------------
@@ -44,3 +44,27 @@ EPRAYA has different forms of loading data, based in the *np.load* function. The
      -  Function for data loading and initial analysis, based on tkinter.
    * - :doc:`epraya.Termal <Termal>`
      -  Function to analyze the change in peak to peak distance, resonant field position, first and second integral of EPR spectrum data with the temperature.
+     
+     
+Fitting functions
+-----------------
+
+This methods can be use directly or with the wrap function *Fitting*, however, the ADAM method requieres the use of the *JAX* framework of EPRAYA, described in :doc: `jax_impl`.  
+
+.. currentmodule:: base_fit
+
+.. toctree::
+   :caption: Fitting functions
+   :hidden:
+   
+   Fitting
+   
+.. list-table::
+   :widths: 25 75
+   :header-rows: 1
+
+   * - Name
+     - Description
+   * - :doc:`epraya.Fitting <Fitting>`
+     - Wrap function for the data fitting process.  
+   
