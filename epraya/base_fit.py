@@ -70,7 +70,35 @@ def CostfNM(exper,intens,metric='rmse'):
             return 1e6
         return 1-pearson
 
-def Nelder1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,dtype='data',mode='p'):
+def Nelder1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p'):
+    '''
+    Implementation of the Nelder Mead algorithm for fitting data for a single system.
+
+    Parameters
+    ----------
+    
+    Hamer: Class
+        Container for the hamiltonian parameters.
+    Expe : Class
+        Container for the experimental conditions.
+    Vara : Class
+        Container for the range and parameters to vary.
+    exper : np.array
+        Experimental spectrum data to fit.
+    eps : float
+        Tolerance value for the error. Default is 1e-10
+    maximal : int
+        Max. number of iterations to evalue the function.
+    datype : str
+        Type of data to do the fitting, can be 'data', the data as it's or 'integral', its first integral.
+    mode : str
+        Defines the sample type, 'p' for powder and 'c' for monocristal.
+    
+    Returns
+    -------
+    spce : np.array
+        Best adjusted spectrum using Powder or Eresonant functions.
+    '''
     #Based on the code by Hadrien Crassous
     def Fincost(points,funcname):
         if stopvar.is_set():
@@ -128,13 +156,13 @@ def Nelder1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,dtype='data',mode='p'):
     stp=[]
     lowfron=[]
     hifron=[]
-    if dtype=='data':
+    if datype=='data':
         exper=exper
-    elif dtype=='integral':
+    elif datype=='integral':
         fielda=np.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
         exper=scii.cumulative_trapezoid(exper,fielda,initial=0)
     else:
-        raise ValueError(f"Data type {dtype} is not supported. Use integral or data instead.")
+        raise ValueError(f"Data type {datype} is not supported. Use integral or data instead.")
     iwas,jwas,kwas,weight,hulk=Delaunay(Exp)
     if Var.g!=0.0:
         pointx.extend(Ham.g)
@@ -299,7 +327,36 @@ def Nelder1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,dtype='data',mode='p'):
     elif funcname in ['Eresonant']:
         return funtiona(Ham,Exp,graph='False',table='False')[1]
 
-def Nelder2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,dtype='data',mode='p'):
+def Nelder2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p'):
+    '''
+    Implementation of the Nelder Mead algorithm for fitting data for multisystems.
+
+    Parameters
+    ----------
+    
+    Hamer: Class
+        Container for the hamiltonian parameters.
+    Expe : Class
+        Container for the experimental conditions.
+    Vara : Class
+        Container for the range and parameters to vary.
+    exper : np.array
+        Experimental spectrum data to fit.
+    eps : float
+        Tolerance value for the error. Default is 1e-10
+    maximal : int
+        Max. number of iterations to evalue the function.
+    datype : str
+        Type of data to do the fitting, can be 'data', the data as it's or 'integral', its first integral.
+    mode : str
+        Defines the sample type, 'p' for powder and 'c' for monocristal.
+    
+    Returns
+    -------
+    spce : np.array
+        Best adjusted spectrum using Mulpol or Music functions.
+    '''
+
     #Based on the code by Hadrien Crassous
     def Fincost(points,funcname):
         if stopvar.is_set():
@@ -359,13 +416,13 @@ def Nelder2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,dtype='data',mode='p'):
     stp=[]
     lowfron=[]
     hifron=[]
-    if dtype=='data':
+    if datype=='data':
         exper=exper
-    elif dtype=='integral':
+    elif datype=='integral':
         fielda=np.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
         exper=scii.cumulative_trapezoid(exper,fielda,initial=0)
     else:
-        raise ValueError(f"Data type {dtype} is not supported. Use integral or data instead.")
+        raise ValueError(f"Data type {datype} is not supported. Use integral or data instead.")
     iwas,jwas,kwas,weight,hulk=Delaunay(Exp.Mexp[0])
     numberes=len(Ham.Mulham)
     for lke in range(0,numberes):
@@ -538,16 +595,51 @@ def Nelder2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,dtype='data',mode='p'):
     elif funcname in ['Music']:
         return funtiona(Ham,Exp,graph='False',table='False')[1]
 
-def Nelder(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,dtype='data',mode='p'):
+def Nelder(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p'):
+    '''
+    Implementation of the Nelder Mead algorithm for fitting data, based on the code by Hadrien Crassous. Uses the 4 classic possibilities reflection, expansion, contraction and shrink with their respective constants, alpha, gamma, rho and sigma, defined depending in the number of parameters to vary (nparams). With that, their definitions are:
+    
+    alpha=1
+    gamma=1+(2/nparams)
+    rho=0.75-(1/(2*nparams))
+    sigma=1-(1/nparams)
+    
+    The algorithm also has a restart function, if the points converge to a local minimun and a heat up function, changing one of the parameters in order to vary the cost.
+    
+    Parameters
+    ----------
+    
+    Hamer: Class
+        Container for the hamiltonian parameters.
+    Expe : Class
+        Container for the experimental conditions.
+    Vara : Class
+        Container for the range and parameters to vary.
+    exper : np.array
+        Experimental spectrum data to fit.
+    eps : float
+        Tolerance value for the error. Default is 1e-10
+    maximal : int
+        Max. number of iterations to evalue the function.
+    datype : str
+        Type of data to do the fitting, can be 'data', the data as it's or 'integral', its first integral.
+    mode : str
+        Defines the sample type, 'p' for powder and 'c' for monocristal.
+    
+    Returns
+    -------
+    spce : np.array
+        Best adjusted spectrum.
+    '''
+
     if type(Hamer)==Multham:
          if Expe.Mexp[0].Points!=len(exper):
             Expe.Mexp[0].Points=len(exper)
-         scpe=Nelder2(Hamer,Expe,Vara,exper,eps,maximal,dtype,mode)
+         scpe=Nelder2(Hamer,Expe,Vara,exper,eps,maximal,datype,mode)
     elif type(Hamer)==Hval:
          if Expe.Points!=len(exper):
             Expe.Points=len(exper)
-         scpe=Nelder1(Hamer,Expe,Vara,exper,eps,maximal,dtype,mode)
-
+         scpe=Nelder1(Hamer,Expe,Vara,exper,eps,maximal,datype,mode)
     return scpe
 
 def CostfG(exper,intens,metric='rmse'):
@@ -598,7 +690,35 @@ def Mutategauss(fela,lowfron,hifron,proba=0.1,desv=0.05):
                 mutant[ap]=hifron[ap]
     return mutant
 
-def Genio1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,dtype='data',mode='p'):
+def Genio1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p'):
+    '''
+    Fitting function for the experimental data using the genetic algorithm for a single system.
+    
+    Parameters
+    ----------
+    
+    Hamer: Class
+        Container for the hamiltonian parameters.
+    Expe : Class
+        Container for the experimental conditions.
+    Vara : Class
+        Container for the range and parameters to vary.
+    exper : np.array
+        Experimental spectrum data to fit.
+    eps : float
+        Tolerance value for the error. Default is 1e-10
+    maximal : int
+        Max. number of generations to evalue.
+    datype : str
+        Type of data to do the fitting, can be 'data', the data as it's or 'integral', its first integral.
+    mode : str
+        Defines the sample type, 'p' for powder and 'c' for monocristal.
+    
+    Returns
+    -------
+    spce : np.array
+        Best adjusted spectrum using the Powder or Eresonant functions.
+    '''
     def Fincost(points,funcname):
         if stopvar.is_set():
             return 1e6
@@ -655,13 +775,13 @@ def Genio1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,dtype='data',mode='p'):
         raise ValueError (f'Valid functions are powder (p) or cristal (c).')
     funcname=funtiona.__name__
     iwas,jwas,kwas,weight,hulk=Delaunay(Exp)
-    if dtype=='data':
+    if datype=='data':
         exper=exper
-    elif dtype=='integral':
+    elif datype=='integral':
         fielda=np.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
         exper=scii.cumulative_trapezoid(exper,fielda,initial=0)
     else:
-        raise ValueError(f"Data type {dtype} is not supported. Use integral or data instead.")
+        raise ValueError(f"Data type {datype} is not supported. Use integral or data instead.")
     if Var.g!=0.0:
         lowfron.extend([Var.g[0],Var.g[2],Var.g[4]])
         hifron.extend([Var.g[1],Var.g[3],Var.g[5]])
@@ -765,7 +885,36 @@ def Genio1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,dtype='data',mode='p'):
     elif funcname in ['Eresonant']:
         return funtiona(Ham,Exp,graph='False',table='False')[1]
 
-def Genio2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,dtype='data',mode='p'):
+def Genio2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p'):
+    '''
+    Fitting function for the experimental data using the genetic algorithm for multysystems.
+    
+    Parameters
+    ----------
+    
+    Hamer: Class
+        Container for the hamiltonian parameters.
+    Expe : Class
+        Container for the experimental conditions.
+    Vara : Class
+        Container for the range and parameters to vary.
+    exper : np.array
+        Experimental spectrum data to fit.
+    eps : float
+        Tolerance value for the error. Default is 1e-10
+    maximal : int
+        Max. number of generations to evalue.
+    datype : str
+        Type of data to do the fitting, can be 'data', the data as it's or 'integral', its first integral.
+    mode : str
+        Defines the sample type, 'p' for powder and 'c' for monocristal.
+    
+    Returns
+    -------
+    spce : np.array
+        Best adjusted spectrum using the Mulpol or Music functions.
+    '''
+
     def Fincost(points,funcname):
         if stopvar.is_set():
             return 1e6
@@ -826,13 +975,13 @@ def Genio2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,dtype='data',mode='p'):
     pointx=[]
     lowfron=[]
     hifron=[]
-    if dtype=='data':
+    if datype=='data':
         exper=exper
-    elif dtype=='integral':
+    elif datype=='integral':
         fielda=np.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
         exper=scii.cumulative_trapezoid(exper,fielda,initial=0)
     else:
-        raise ValueError(f"Data type {dtype} is not supported. Use integral or data instead.")
+        raise ValueError(f"Data type {datype} is not supported. Use integral or data instead.")
     iwas,jwas,kwas,weight,hulk=Delaunay(Exp)
     numberes=len(Ham.Mulham)
     for lke in range(0,numberes):
@@ -951,15 +1100,44 @@ def Genio2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,dtype='data',mode='p'):
     elif funcname in ['Music']:
         return funtiona(Ham,Exp,graph='False',table='False')[1]
 
-def Genio(Hamer,Expe,Vara,exper,eps=1e-10,maximal=100,dtype='data',mode='p'):
+def Genio(Hamer,Expe,Vara,exper,eps=1e-10,maximal=100,datype='data',mode='p'):
+    '''
+    Fitting function for the experimental data using the genetic algorithm. Creates a population of 35*N individuals, where N is the number of parameters that will change, that have combinations of the possible values of the parameters. This individuals are evaluated, select and cross to produce a new population. 
+    The algorithm uses a normal distribution for the mutation probability and a the numpy random int generator for the cross probability. 
+    
+    Parameters
+    ----------
+    
+    Hamer: Class
+        Container for the hamiltonian parameters.
+    Expe : Class
+        Container for the experimental conditions.
+    Vara : Class
+        Container for the range and parameters to vary.
+    exper : np.array
+        Experimental spectrum data to fit.
+    eps : float
+        Tolerance value for the error. Default is 1e-10
+    maximal : int
+        Max. number of generations to evalue.
+    datype : str
+        Type of data to do the fitting, can be 'data', the data as it's or 'integral', its first integral.
+    mode : str
+        Defines the sample type, 'p' for powder and 'c' for monocristal.
+    
+    Returns
+    -------
+    spce : np.array
+        Best adjusted spectrum.
+    '''
     if type(Hamer)==Multham:
          if Expe.Mexp[0].Points!=len(exper):
             Expe.Mexp[0].Points=len(exper)
-         scpe=Genio2(Hamer,Expe,Vara,exper,eps,maximal,dtype,mode)
+         scpe=Genio2(Hamer,Expe,Vara,exper,eps,maximal,datype,mode)
     elif type(Hamer)==Hval:
          if Expe.Points!=len(exper):
             Expe.Points=len(exper)
-         scpe=Genio1(Hamer,Expe,Vara,exper,eps,maximal,dtype,mode)
+         scpe=Genio1(Hamer,Expe,Vara,exper,eps,maximal,datype,mode)
 
     return scpe
 
@@ -982,7 +1160,7 @@ def Costf(exper,intens,metric='rmse'):
             return 1e6
         return 1-pearson
 
-def Metrostair(Hamer,Exp,Var,date,stepsize,ocos,para,variable,funcname,dtype='data'):
+def Metrostair(Hamer,Exp,Var,date,stepsize,ocos,para,variable,funcname,datype='data'):
     Ham=deepcopy(Hamer)
     iwas,jwas,kwas,weight,hulk=Delaunay(Exp)
     if 'g' in variable:
@@ -1021,9 +1199,9 @@ def Metrostair(Hamer,Exp,Var,date,stepsize,ocos,para,variable,funcname,dtype='da
         fielda,intena=Calpowder(Ham,Exp,iwas,jwas,kwas,weight,hulk)
     elif funcname in ['Eresonant']:
         fielda,intena=Eresonant(Ham,Exp,graph='False',table='False')
-    if dtype=='data':
+    if datype=='data':
         ncos=Costf(date,intena,metric='rmse')
-    elif dtype=='integral':
+    elif datype=='integral':
         intenat=scii.cumulative_trapezoid(intena,fielda,initial=0)
         ncos=Costf(date,intenat,metric='rmse')
     else:
@@ -1041,7 +1219,33 @@ def Metrostair(Hamer,Exp,Var,date,stepsize,ocos,para,variable,funcname,dtype='da
         else:
             return Hamer,ocos,False
 
-def Metro1(Hamer,Exp,Var,dat,maximal,dtype='data',mode='p'):
+def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p'):ingle syste
+    '''
+    Fitting adjutsment of the experimental data using a modified Metrópolis-Simulated annealing approach for a single system.
+    
+    Parameters
+    ----------
+    
+    Hamer: Class
+        Container for the hamiltonian parameters.
+    Exp : Class
+        Container for the experimental conditions.
+    Var : Class
+        Container for the range and parameters to vary.
+    dat : np.array
+        Experimental spectrum data to fit.
+    maximal : int
+        Max. number of evaluations of the function.
+    datype : str
+        Type of data to do the fitting, can be 'data', the data as it's or 'integral', its first integral.
+    mode : str
+        Defines the sample type, 'p' for powder and 'c' for monocristal.
+    
+    Returns
+    -------
+    spc : np.array
+        Best adjusted spectrum using the Powder or Eresonant functions.
+    '''
     Ham1=deepcopy(Hamer)
     iwas,jwas,kwas,weight,hulk=Delaunay(Exp)
     if mode=='p':
@@ -1056,9 +1260,9 @@ def Metro1(Hamer,Exp,Var,dat,maximal,dtype='data',mode='p'):
         fielda,intena=funtiona(Ham1,Exp,iwas,jwas,kwas,weight,hulk)
     elif funcname in ['Eresonant']:
         fielda,intena=funtiona(Ham1,Exp,graph='False',table='False')
-    if dtype=='data':
+    if datype=='data':
         ct1=Costf(dat,intena)
-    if dtype=='integral':
+    if datype=='integral':
         dat=scii.cumulative_trapezoid(dat,fielda,initial=0)
         intena=scii.cumulative_trapezoid(intena,fielda,initial=0)
         ct1=Costf(dat,intena)
@@ -1121,7 +1325,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,dtype='data',mode='p'):
                 hemetro=metropa
                 opa=0
                 while opa<pg:
-                    Ham1,ct1,acep=Metrostair(Ham1,Exp,Var,dat,stp,ct1,hemetro,['g'],funcname,dtype)
+                    Ham1,ct1,acep=Metrostair(Ham1,Exp,Var,dat,stp,ct1,hemetro,['g'],funcname,datype)
                     if acep:
                         acepv+=1
                     tries+=1
@@ -1136,7 +1340,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,dtype='data',mode='p'):
                 hemetro=metropa
                 opa=0
                 while opa<pa:
-                    Ham1,ct1,acep=Metrostair(Ham1,Exp,Var,dat,stp,ct1,hemetro,['A'],funcname,dtype)
+                    Ham1,ct1,acep=Metrostair(Ham1,Exp,Var,dat,stp,ct1,hemetro,['A'],funcname,datype)
                     if acep:
                         acepv+=1
                     tries+=1
@@ -1151,7 +1355,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,dtype='data',mode='p'):
                 hemetro=metropa
                 opa=0
                 while opa<pq:
-                    Ham1,ct1,acep=Metrostair(Ham1,Exp,Var,dat,stp,ct1,hemetro,['Q'],funcname,dtype)
+                    Ham1,ct1,acep=Metrostair(Ham1,Exp,Var,dat,stp,ct1,hemetro,['Q'],funcname,datype)
                     if acep:
                         acepv+=1
                     tries+=1
@@ -1166,7 +1370,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,dtype='data',mode='p'):
                 hemetro=metropa
                 opa=0
                 while opa<pdr:
-                    Ham1,ct1,acep=Metrostair(Ham1,Exp,Var,dat,stp,ct1,hemetro,['D'],funcname,dtype)
+                    Ham1,ct1,acep=Metrostair(Ham1,Exp,Var,dat,stp,ct1,hemetro,['D'],funcname,datype)
                     if acep:
                         acepv+=1
                     tries+=1
@@ -1181,7 +1385,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,dtype='data',mode='p'):
                 hemetro=metropa
                 opa=0
                 while opa<pdr:
-                    Ham1,ct1,acep=Metrostair(Ham1,Exp,Var,dat,stp,ct1,hemetro,['Hpp'],funcname,dtype)
+                    Ham1,ct1,acep=Metrostair(Ham1,Exp,Var,dat,stp,ct1,hemetro,['Hpp'],funcname,datype)
                     if acep:
                         acepv+=1
                     tries+=1
@@ -1203,7 +1407,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,dtype='data',mode='p'):
                 hemetro=metropa*1.5
                 opa=0
                 while opa<30:
-                    Ham1,ct1,acep=Metrostair(Ham1,Exp,Var,dat,stp,ct1,hemetro,varact,funcname,dtype)
+                    Ham1,ct1,acep=Metrostair(Ham1,Exp,Var,dat,stp,ct1,hemetro,varact,funcname,datype)
                     if acep:
                         acepv+=1
                     tries+=1
@@ -1294,7 +1498,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,dtype='data',mode='p'):
     elif funcname in ['Eresonant']:
         return funtiona(bestHam,Exp,graph='False',table='False')[1]
 
-def Metrostair2(Hamer,Exp,Var,date,stepsize,ocos,para,variable,aktsys,funcname,dtype='data'):
+def Metrostair2(Hamer,Exp,Var,date,stepsize,ocos,para,variable,aktsys,funcname,datype='data'):
     Ham=deepcopy(Hamer)
     vma=Var.Mvary[aktsys]
     hma=Ham.Mulham[aktsys]
@@ -1334,9 +1538,9 @@ def Metrostair2(Hamer,Exp,Var,date,stepsize,ocos,para,variable,aktsys,funcname,d
         fielda,intena=Mulpol(Ham,Exp,graph='False')
     elif funcname in ['Music']:
         fielda,intena=Music(Ham,Exp,graph='False',table='False')
-    if dtype=='data':
+    if datype=='data':
         ncos=Costf(date,intena,metric='rmse')
-    elif dtype=='integral':
+    elif datype=='integral':
         intenat=scii.cumulative_trapezoid(intena,fielda,initial=0)
         ncos=Costf(date,intenat,metric='rmse')
     else:
@@ -1354,7 +1558,33 @@ def Metrostair2(Hamer,Exp,Var,date,stepsize,ocos,para,variable,aktsys,funcname,d
         else:
             return Hamer,ocos,False
 
-def Metro2(Hamer,Exp,Var,dat,maximal,dtype='data',mode='p'):
+def Metro2(Hamer,Exp,Var,dat,maximal,datype='data',mode='p'):
+    '''
+    Fitting adjutsment of the experimental data using a modified Metrópolis-Simulated annealing approach for multiple systems.
+    
+    Parameters
+    ----------
+    
+    Hamer: Class
+        Container for the hamiltonian parameters.
+    Exp : Class
+        Container for the experimental conditions.
+    Var : Class
+        Container for the range and parameters to vary.
+    dat : np.array
+        Experimental spectrum data to fit.
+    maximal : int
+        Max. number of evaluations of the function.
+    datype : str
+        Type of data to do the fitting, can be 'data', the data as it's or 'integral', its first integral.
+    mode : str
+        Defines the sample type, 'p' for powder and 'c' for monocristal.
+    
+    Returns
+    -------
+    spc : np.array
+        Best adjusted spectrum using the Mulpol or Music functions.
+    '''
     Ham1=deepcopy(Hamer)
     if mode=='p':
         funtiona=Mulpol#(Ham,Exp,graph='False')
@@ -1368,9 +1598,9 @@ def Metro2(Hamer,Exp,Var,dat,maximal,dtype='data',mode='p'):
         fielda,intena=Mulpol(Ham1,Exp,graph='False')
     elif funcname in ['Music']:
         fielda,intena=Music(Ham1,Exp,graph='False',table='False')
-    if dtype=='data':
+    if datype=='data':
         ct1=Costf(dat,intena)
-    if dtype=='integral':
+    if datype=='integral':
         dat=scii.cumulative_trapezoid(dat,fielda,initial=0)
         intena=scii.cumulative_trapezoid(intena,fielda,initial=0)
         ct1=Costf(dat,intena)
@@ -1421,7 +1651,7 @@ def Metro2(Hamer,Exp,Var,dat,maximal,dtype='data',mode='p'):
                     hemetro=metropa
                     opa=0
                     while opa<pg:
-                        Ham1,ct1,acep=Metrostair2(Ham1,Exp,Var,dat,stp,ct1,hemetro,['g'],ira,funcname,dtype)
+                        Ham1,ct1,acep=Metrostair2(Ham1,Exp,Var,dat,stp,ct1,hemetro,['g'],ira,funcname,datype)
                         if acep:
                             acepv+=1
                         tries+=1
@@ -1436,7 +1666,7 @@ def Metro2(Hamer,Exp,Var,dat,maximal,dtype='data',mode='p'):
                     hemetro=metropa
                     opa=0
                     while opa<pa:
-                        Ham1,ct1,acep=Metrostair2(Ham1,Exp,Var,dat,stp,ct1,hemetro,['A'],ira,funcname,dtype)
+                        Ham1,ct1,acep=Metrostair2(Ham1,Exp,Var,dat,stp,ct1,hemetro,['A'],ira,funcname,datype)
                         if acep:
                             acepv+=1
                         tries+=1
@@ -1451,7 +1681,7 @@ def Metro2(Hamer,Exp,Var,dat,maximal,dtype='data',mode='p'):
                     hemetro=metropa
                     opa=0
                     while opa<pq:
-                        Ham1,ct1,acep=Metrostair2(Ham1,Exp,Var,dat,stp,ct1,hemetro,['Q'],ira,funcname,dtype)
+                        Ham1,ct1,acep=Metrostair2(Ham1,Exp,Var,dat,stp,ct1,hemetro,['Q'],ira,funcname,datype)
                         if acep:
                             acepv+=1
                         tries+=1
@@ -1466,7 +1696,7 @@ def Metro2(Hamer,Exp,Var,dat,maximal,dtype='data',mode='p'):
                     hemetro=metropa
                     opa=0
                     while opa<pdr:
-                        Ham1,ct1,acep=Metrostair2(Ham1,Exp,Var,dat,stp,ct1,hemetro,['D'],ira,funcname,dtype)
+                        Ham1,ct1,acep=Metrostair2(Ham1,Exp,Var,dat,stp,ct1,hemetro,['D'],ira,funcname,datype)
                         if acep:
                             acepv+=1
                         tries+=1
@@ -1481,7 +1711,7 @@ def Metro2(Hamer,Exp,Var,dat,maximal,dtype='data',mode='p'):
                     hemetro=metropa
                     opa=0
                     while opa<pdr:
-                        Ham1,ct1,acep=Metrostair2(Ham1,Exp,Var,dat,stp,ct1,hemetro,['Hpp'],ira,funcname,dtype)
+                        Ham1,ct1,acep=Metrostair2(Ham1,Exp,Var,dat,stp,ct1,hemetro,['Hpp'],ira,funcname,datype)
                         if acep:
                             acepv+=1
                         tries+=1
@@ -1508,7 +1738,7 @@ def Metro2(Hamer,Exp,Var,dat,maximal,dtype='data',mode='p'):
                     if np.any(Var.Mvary[ira].Hpp):
                         varact.append('Hpp')
                     if len(varact)>0:
-                        Ham1,ct1,acep=Metrostair2(Ham1,Exp,Var,dat,stp,ct1,hemetro,varact,ira,funcname,dtype)
+                        Ham1,ct1,acep=Metrostair2(Ham1,Exp,Var,dat,stp,ct1,hemetro,varact,ira,funcname,datype)
                         if acep:
                             acepv+=1
                         tries+=1
@@ -1605,15 +1835,43 @@ def Metro2(Hamer,Exp,Var,dat,maximal,dtype='data',mode='p'):
     elif funcname in ['Music']:
         return funtiona(bestHam,Exp,graph='False',table='False')[1]
 
-def Metro(Hamer,Exp,Var,exper,maximal=2000,dtype='data',mode='p'):
+def Metro(Hamer,Exp,Var,exper,maximal=2000,datype='data',mode='p'):
+    '''
+    Fitting adjutsment of the experimental data using a modified Metrópolis-Simulated annealing approach. First, the parameters in the Vary container are evaluated in range, one by one, using a gaussian distribution and then, all are varied at the same time. With every evaluation, the difference between 
+    
+    Depending in the acceptance rate of the process, the temperature of the process change. If the acceptance is too low, the process heats up (the range of the evaluating values increases), if the accpetance is high, the process colds down (the range reduces).
+    
+    Parameters
+    ----------
+    
+    Hamer: Class
+        Container for the hamiltonian parameters.
+    Exp : Class
+        Container for the experimental conditions.
+    Var : Class
+        Container for the range and parameters to vary.
+    exper : np.array
+        Experimental spectrum data to fit.
+    maximal : int
+        Max. number of evaluations of the function.
+    datype : str
+        Type of data to do the fitting, can be 'data', the data as it's or 'integral', its first integral.
+    mode : str
+        Defines the sample type, 'p' for powder and 'c' for monocristal.
+    
+    Returns
+    -------
+    scpe : np.array
+        Best adjusted spectrum.
+    '''
     if type(Hamer)==Multham:
          if Exp.Mexp[0].Points!=len(exper):
             Exp.Mexp[0].Points=len(exper)
-         scpe=Metro2(Hamer,Exp,Var,exper,maximal,dtype,mode)
+         scpe=Metro2(Hamer,Exp,Var,exper,maximal,datype,mode)
     elif type(Hamer)==Hval:
          if Exp.Points!=len(exper):
             Exp.Points=len(exper)
-         scpe=Metro1(Hamer,Exp,Var,exper,maximal,dtype,mode)
+         scpe=Metro1(Hamer,Exp,Var,exper,maximal,datype,mode)
     return scpe
 
 def Packtoscipy(Ham,Var):
@@ -1666,6 +1924,7 @@ def UnpackHam(point,Hamer,Var):
     if np.any(Var.Hpp):
         Ham.Hpp=point[idx:idx+2]
     return Ham
+    
 class Stopall(Exception):
     pass
 
@@ -1687,6 +1946,31 @@ def Residuals(point,Hame,Exp,exper,Vary,fname):
     return inorm-enorm
 
 def LSquare1(Ham1,Expe,Vary,exper,maximal=1000,mode='p'):
+    '''
+    Fitting adjutsment of the experimental data using the *scipy.optimize.least_squares* method. This case is for simple systems.
+    
+    Parameters
+    ----------
+    
+    Ham1 : Class
+        Container for the hamiltonian parameters.
+    Expe : Class
+        Container for the experimental conditions.
+    Vary : Class
+        Container for the range and parameters to vary.
+    exper : np.array
+        Experimental spectrum data to fit.
+    maximal : int
+        Max. number of evaluations of the function.
+    mode : str
+        Defines the sample type, 'p' for powder and 'c' for monocristal.
+    
+    Returns
+    -------
+    
+    spc : np.array
+        Best adjusted spectrum using the Powder or Eresonant functions.
+    '''
     if mode=='p':
         funtiona=Powder#(Ham,Exp,graph='False')
     elif mode=='c':
@@ -1798,6 +2082,31 @@ def Residuals2(point,Hame,Exp,exper,Vary,fname):
         return exper*1e6
 
 def LSquare2(Ham1,Expe,Vary,exper,maximal=1000,mode='p'):
+    '''
+    Fitting adjutsment of the experimental data using the *scipy.optimize.least_squares* method. This case is for multiple systems.
+    
+    Parameters
+    ----------
+    
+    Ham1 : Class
+        Container for the hamiltonian parameters.
+    Expe : Class
+        Container for the experimental conditions.
+    Vary : Class
+        Container for the range and parameters to vary.
+    exper : np.array
+        Experimental spectrum data to fit.
+    maximal : int
+        Max. number of evaluations of the function.
+    mode : str
+        Defines the sample type, 'p' for powder and 'c' for monocristal.
+    
+    Returns
+    -------
+    
+    spc : np.array
+        Best adjusted spectrum using the Mulpol or Music functions.
+    '''
     if mode=='p':
         funtiona=Mulpol#(Ham,Exp,graph='False')
     elif mode=='c':
@@ -1837,6 +2146,31 @@ def LSquare2(Ham1,Expe,Vary,exper,maximal=1000,mode='p'):
         return Music(bHam,Expe,graph='False',table='False')[1]
 
 def LSquare(Ham1,Expe,Vary,exper,maximal=1000,mode='p'):
+    '''
+    Fitting adjutsment of the experimental data using the *scipy.optimize.least_squares* method. The Trust Region Reflective algorithm is use, with a tolerance for the change of variables (xtol, ftol, gtol) of 1e-10 and a maximun number of evaluations defined with the variable *maximal*. The documentation of the function can be consulted in `here `_https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html.
+    
+    Parameters
+    ----------
+    
+    Ham1 : Class
+        Container for the hamiltonian parameters.
+    Expe : Class
+        Container for the experimental conditions.
+    Vary : Class
+        Container for the range and parameters to vary.
+    exper : np.array
+        Experimental spectrum data to fit.
+    maximal : int
+        Max. number of evaluations of the function.
+    mode : str
+        Defines the sample type, 'p' for powder and 'c' for monocristal.
+    
+    Returns
+    -------
+    
+    scpe : np.array
+        Best adjusted spectrum.
+    '''
     if type(Ham1)==Multham:
          if Expe.Mexp[0].Points!=len(exper):
             Expe.Mexp[0].Points=len(exper)
@@ -1861,7 +2195,7 @@ def Fitting(Hamer,Exper,Vara,datexp):
     Vara : Class
         Container for the range and parameters to vary.
     datexp : np.array
-        Experimental data to fit.
+        Experimental spectrum data to fit.
         
     Example
     -------
@@ -1944,11 +2278,11 @@ def Fitting(Hamer,Exper,Vara,datexp):
                 try:
                     resultexper=None
                     if Chmet=='Nelder-Mead':
-                        resultexper=Nelder(Hamer,Exper,Vara,datexp,eps=erroreps,maximal=numtr,dtype=cdtype,mode=csample)
+                        resultexper=Nelder(Hamer,Exper,Vara,datexp,eps=erroreps,maximal=numtr,datype=cdtype,mode=csample)
                     elif Chmet=='Genetic algorithm':
-                        resultexper=Genio(Hamer,Exper,Vara,datexp,eps=erroreps,maximal=numtr,dtype=cdtype,mode=csample)
+                        resultexper=Genio(Hamer,Exper,Vara,datexp,eps=erroreps,maximal=numtr,datype=cdtype,mode=csample)
                     elif Chmet=='Metropolis':
-                        resultexper=Metro(Hamer,Exper,Vara,datexp,maximal=numtr,dtype=cdtype,mode=csample)
+                        resultexper=Metro(Hamer,Exper,Vara,datexp,maximal=numtr,datype=cdtype,mode=csample)
                     elif Chmet=='Least squares':
                         resultexper=LSquare(Hamer,Exper,Vara,datexp,maximal=numtr,mode=csample)
                     #To show the graph
