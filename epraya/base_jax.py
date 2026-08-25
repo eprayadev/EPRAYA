@@ -647,7 +647,7 @@ def JNhze(I,iix,iiy,iiz,dim,gn,direction=[0,0,1]):
     >>> import epraya as epr 
     >>> Ham,Exp,_=epr.Jstart()
     >>> Ham.I=1
-    >>> gn=1.3813
+    >>> gn=epr.gnfactor('55Mn')
     >>> ix,iy,iz=epr.JPauli(Ham.I)
     >>> dim=int((2*Ham.I+1))
     >>> print(epr.JNhze(Ham.I,ix,iy,iz,dim,gn,[0,0,1]))
@@ -661,6 +661,21 @@ def JNhze(I,iix,iiy,iiz,dim,gn,direction=[0,0,1]):
     return nhz
 
 def gnfactor(Nucl='None'):
+    '''
+    Function to read the nuclear g factor from the added table.
+    
+    Parameter
+    ---------
+    
+    Nucl : str
+        Symbol of the element of the paramagnetic center.
+    
+    Returns
+    -------
+    
+    gn : float
+        Nuclear g factor for the Nucl element.
+    '''
     if Nucl!='None':
         route=resources.files(__package__).joinpath("nucleardaat.txt")
         krle=read_csv(route,header=0,sep='\t')
@@ -670,23 +685,130 @@ def gnfactor(Nucl='None'):
         return 0.0
 
 def Jchaframe(Ham,Exp):
-  Ham=JConvtarray(Ham)
-  tA=jxn.eye(3)*Ham.A
-  tQ=jxn.eye(3)*Ham.Q
-  tg=jxn.eye(3)*Ham.g
-  D2s=jxn.asarray([-Ham.D[0]/3+Ham.D[1],-Ham.D[0]/3-Ham.D[1],2*Ham.D[0]/3])
-  tD=jxn.eye(3)*D2s
-  A1=JRotmatrix(Exp.Aframe[0],Exp.Aframe[1],Exp.Aframe[2]).T@tA@(JRotmatrix(Exp.Aframe[0],Exp.Aframe[1],Exp.Aframe[2]))
-  g1=(JRotmatrix(Exp.gframe[0],Exp.gframe[1],Exp.gframe[2])).T@tg@(JRotmatrix(Exp.gframe[0],Exp.gframe[1],Exp.gframe[2]))
-  D2=(JRotmatrix(Exp.Dframe[0],Exp.Dframe[1],Exp.Dframe[2])).T@tD@(JRotmatrix(Exp.Dframe[0],Exp.Dframe[1],Exp.Dframe[2]))
-  Q1=(JRotmatrix(Exp.Qframe[0],Exp.Qframe[1],Exp.Qframe[2])).T@tQ@(JRotmatrix(Exp.Qframe[0],Exp.Qframe[1],Exp.Qframe[2]))
-  return Ham.replace(A=A1,g=g1,D=D2,Q=Q1)
+    '''
+    Adds the rotations for the constants g, A, Q and D, described by the conditions gframe, Aframe, Qframe and D.frame.
+    
+    Parameters
+
+    ----------
+    
+    Ham : Class
+        Container of the Hamiltonian parameters.
+
+    Exp : Class
+        Container of the Experimental conditions.
+
+    Returns
+
+    -------
+    
+    Ham : Class
+        Container of the Hamiltonian parameters, with the corrected values.
+    
+    Example
+    -------
+
+    >>> import epraya as epr 
+    >>> Ham,Exp,_=epr.Start()
+    >>> Ham.g=[2.0003,2.5,2.5]
+
+    >>> Ham.Q=[0.5,10.0,0]
+    >>> print(Ham)
+    >>> Ham=epr.chaframe(Ham,Exp)
+    >>> print(Ham)
+    JHval(S=0.5, g=[2.0003, 2.5, 2.5], I=0.0, L=0.0, A=0.0,
+    Q=[0.5, 10.0, 0], D=Array([0, 0], dtype=int32), 
+    Bk2=[0, 0, 0, 0, 0], Bk4=[0, 0, 0, 0, 0, 0, 0, 0, 0], 
+    Bk6=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], lc=0.0,
+    Hpp=Array([0, 1], dtype=int32), eta=0.5, weight=0.0)
+    JHval(S=0.5, g=Array([[ 2.1690652 ,  0.16222095,  0.20332736],
+    [ 0.16222097,  2.7222438 , -0.09966913],
+    [ 0.20332736, -0.09966913,  2.3750749 ]], dtype=float32),
+    I=0.0, L=0.0, A=Array([[0., 0., 0.],[0., 0., 0.],[0., 0., 0.]],
+    dtype=float32), Q=Array([[ 0.5,  0. ,  0. ],[ 0. , 10. ,  0. ],
+    [ 0. ,  0. ,  0. ]], dtype=float32), D=Array([[0., 0., 0.],
+    [0., 0., 0.],[0., 0., 0.]], dtype=float32), Bk2=[0, 0, 0, 0, 0], 
+    Bk4=[0, 0, 0, 0, 0, 0, 0, 0, 0], 
+    Bk6=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], lc=0.0, 
+    Hpp=Array([0, 1], dtype=int32), eta=0.5, weight=0.0)
+    '''
+    Ham=JConvtarray(Ham)
+    tA=jxn.eye(3)*Ham.A
+    tQ=jxn.eye(3)*Ham.Q
+    tg=jxn.eye(3)*Ham.g
+    D2s=jxn.asarray([-Ham.D[0]/3+Ham.D[1],-Ham.D[0]/3-Ham.D[1],2*Ham.D[0]/3])
+    tD=jxn.eye(3)*D2s
+    rot=JRotationmat(Exp)
+    A1=(JRotmatrix(Exp.Aframe[0],Exp.Aframe[1],Exp.Aframe[2])@rot).T@tA@(JRotmatrix(Exp.Aframe[0],Exp.Aframe[1],Exp.Aframe[2])@rot)
+    g1=(JRotmatrix(Exp.gframe[0],Exp.gframe[1],Exp.gframe[2])@rot).T@tg@(JRotmatrix(Exp.gframe[0],Exp.gframe[1],Exp.gframe[2])@rot)
+    D2=(JRotmatrix(Exp.Dframe[0],Exp.Dframe[1],Exp.Dframe[2])@rot).T@tD@(JRotmatrix(Exp.Dframe[0],Exp.Dframe[1],Exp.Dframe[2])@rot)
+    Q1=(JRotmatrix(Exp.Qframe[0],Exp.Qframe[1],Exp.Qframe[2])@rot).T@tQ@(JRotmatrix(Exp.Qframe[0],Exp.Qframe[1],Exp.Qframe[2])@rot)
+    return Ham.replace(A=A1,g=g1,D=D2,Q=Q1)
 
 def JRotationmat(Exp):
+    '''
+    Creates the rotation matrix to pass from the Lab frame to the molecular frame.
+    
+    Parameters
+    ---------
+    
+    Exp : Class
+        Container for the experimental conditions.
+
+    Returns
+    -------
+    
+    RRmatrix: jax.np.array
+        Matrix for the rotation.
+
+    
+    Example
+    -------
+    >>> import epraya as epr 
+    >>> _, Exp, _=epr.Jstart()
+    >>> Exp.Sampleframe=[30,20,0]
+    >>> Exp.Molframe=[60,0,0]
+    >>> print(epr.JRotationmat(Exp))
+    [[ 0.49999997 -0.86602545  0.        ]
+    [ 0.          0.49999997  0.        ]
+    [ 0.          0.          1.        ]]
+    '''
     RRmatrix=JRotmatrix(Exp.Sampleframe[0],Exp.Sampleframe[1],Exp.Sampleframe[2])@JRotmatrix(Exp.Molframe[0],Exp.Molframe[1],Exp.Molframe[2])
     return RRmatrix.T
 
 def JRotmatrix(alfa,beta,gamma):
+    '''
+    Creates the rotation matrix based in the Euler angles in degrees.
+
+
+    Parameters
+    ----------
+
+    alfa : float
+        Euler angle for rotations around the z axis
+    beta : float
+
+        Euler angle for rotations around the y' axis
+    gamma : float
+        Euler angle for rotations around the z'' axis
+
+
+    Returns
+    -------
+
+    Reuler : np.array
+        Rotation matrix
+
+    Example
+    -------
+
+    >>> import epraya as epr
+    >>> alfa,beta,gamma=20,30,40
+    >>> print(epr.JRotmatrix(alfa,beta,gamma))
+    [[ 0.40355885  0.96394587 -0.38302222]
+    [-0.78510165  0.5294539   0.3213938 ]
+    [ 0.4698463   0.17101006  0.8660254 ]]
+    '''
   alfa,beta,gamma=jxn.radians(alfa),jxn.radians(beta),jxn.radians(gamma)
   cosg,sing=jxn.cos(gamma),jxn.sin(gamma)
   cosa,sina=jxn.cos(alfa),jxn.sin(alfa)
@@ -704,6 +826,22 @@ def JRotmatrix(alfa,beta,gamma):
   return Reuler
 
 def JConvtarray(Ham):
+    '''
+    Conditional function to assure that the hamiltonian parameters have the right dimension.
+
+    Parameters
+    ----------
+
+    Ham : Class
+
+        Container of the Hamiltonian parameters.
+
+    Returns
+    -------
+
+    Ham : Class
+        Container of the Hamiltonian parameters with the corrected parameters.
+    '''
     def formatj(val,variable):
         iti=jxn.asarray(val,dtype=float)
         if iti.ndim==0:
@@ -744,6 +882,46 @@ def JConvtarray(Ham):
 #Stevens Operators
 #Rule: k<=2s
 def JStevensO(ssx,ssy,ssz,s,Ham,dim):
+    '''
+    Expanded Stevens operators following the rule k<=2s and the definition by Rudowicz and Chung.
+
+
+    Parameters
+    ----------
+    
+    ssx : jax.np.array
+        Pauli matrix of the spin x component.
+    ssy : jax.np.array
+        Pauli matrix of the spin y component.
+    ssz : jax.np.array
+        Pauli matrix of the spin z component.
+    s : float
+        Spin operator value.
+    Ham : Class
+        Hamiltonian parameters container.
+    dim : int
+        Dimension of the total hamiltonian.
+        
+    Returns
+    -------
+    
+    totales : jax.np.array
+        Matrix with the contribution of the relevant Stevens operators.
+        
+    Example
+    -------
+    >>> import epraya as epr
+    >>> Ham, _, _ = epr.Jstart()
+    >>> Ham.S=1
+    >>> Ham.D=[700,200]
+    >>> Ham=epr.Jchaframe(Ham,Exp)
+    >>> dim=int(2*Ham.S+1)
+    >>> sx,sy,sz=epr.JPauli(Ham.S)
+    >>> print(epr.JStevensO(sx,sy,sz,Ham.S,Ham,dim))
+    [[ 233.33333+0.j    0.     +0.j  199.99998+0.j]
+    [   0.     +0.j -466.66666+0.j    0.     +0.j]
+    [ 199.99998+0.j    0.     +0.j  233.33333+0.j]]
+    '''
     k=int(2*s)
     B22,B21,B20,Bq21,Bq22=Ham.Bk2
     B20,B22=3*Ham.D[2,2]/2,(Ham.D[0,0]-Ham.D[1,1])*0.5
@@ -845,6 +1023,41 @@ def JStevensO(ssx,ssy,ssz,s,Ham,dim):
 
 
 def JMsmi(I,S,L=0):
+    '''
+    Determinates the quantum numbers for the spin, nuclear spin and angular momentum.
+
+    Parameters
+    ----------
+    I : float
+        Nuclear spin operator value.
+    S : float
+        Spin operator value.
+    L : float
+        Angular momentum operator value.
+
+    Returns
+    -------
+
+    sl : jax.np.array
+        Quantum numbers of the spin operator.
+    nl : jax.np.array
+        Quantum numbers of the nuclear spin operator.
+    ll : jax.np.array
+        Quantum numbers of the angular momentum operator
+
+    Example
+    -------
+
+    >>> import epraya as epr
+    >>> Ham, _, _ = epr.Jstart()
+    >>> Ham.S=1
+    >>> Ham.I=1
+    >>> Ham.L=0
+    >>> print(epr.JMsmi(Ham.I,Ham.S,Ham.L))
+    (Array([ 1.,  1.,  1.,  0.,  0.,  0., -1., -1., -1.], dtype=float32),
+    Array([ 1.,  0., -1.,  1.,  0., -1.,  1.,  0., -1.], dtype=float32), 
+    Array([0., 0., 0., 0., 0., 0., 0., 0., 0.], dtype=float32))
+    '''
     if I<0 or S<0 or L<0:
         raise ValueError('Spin values cannot be negative')
     dim=int(2*S+1)*int(2*I+1)*int(2*L+1)

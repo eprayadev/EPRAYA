@@ -965,27 +965,25 @@ def chaframe(Ham,Exp):
     >>> Ham,Exp,_=epr.Start()
     >>> Ham.g=[2.0003,2.5,2.5]
     >>> Ham.Q=[0.5,10.0,0]
+    >>> Exp.gframe=[20,30,0]
     >>> print(Ham)
     >>> Ham=epr.chaframe(Ham,Exp)
     >>> print(Ham)
-    Hval(S=0.5, g=[2.0003, 2.5, 2.5], I=0.0, L=0.0,
+    Hval(S=0.5, g=[2.0003, 2.5, 2.5], I=0.0, L=0.0, 
     A=array([0, 0, 0]), Q=[0.5, 10.0, 0], D=array([0, 0]),
     Bk2=[0, 0, 0, 0, 0], Bk4=[0, 0, 0, 0, 0, 0, 0, 0, 0],
     Bk6=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], lc=0.0,
     Hpp=array([0, 1]), eta=0.5, weight=0.0, Nucl='None')
-    Hval(S=0.5, g=array([[2.0003, 0.    , 0.    ],
-       [0.    , 2.5   , 0.    ],
-       [0.    , 0.    , 2.5   ]]), 
-       I=0.0, L=0.0, A=array([[0., 0., 0.],
-       [0., 0., 0.],
-       [0., 0., 0.]]), Q=array([[ 0.5,  0. ,  0. ],
-       [ 0. , 10. ,  0. ],
-       [ 0. ,  0. ,  0. ]]), D=array([[0., 0., 0.],
-       [0., 0., 0.],
-       [0., 0., 0.]]), Bk2=[0, 0, 0, 0, 0],
-       Bk4=[0, 0, 0, 0, 0, 0, 0, 0, 0], 
-       Bk6=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], lc=0.0, 
-       Hpp=array([0, 1]), eta=0.5, weight=0.0, Nucl='None')
+    Hval(S=0.5, g=array([[ 2.16906535,  0.162221  ,  0.20332735],
+    [ 0.162221  ,  2.722244  , -0.09966912],
+    [ 0.20332735, -0.09966912,  2.375075  ]]), I=0.0, L=0.0,
+    A=array([[0., 0., 0.], [0., 0., 0.], [0., 0., 0.]]), 
+    Q=array([[ 0.5,  0. ,  0. ],  [ 0. , 10. ,  0. ],
+       [ 0. ,  0. ,  0. ]]),
+    D=array([[0., 0., 0.], [0., 0., 0.],[0., 0., 0.]]),
+    Bk2=[0, 0, 0, 0, 0], Bk4=[0, 0, 0, 0, 0, 0, 0, 0, 0], 
+    Bk6=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], lc=0.0,
+    Hpp=array([0, 1]), eta=0.5, weight=0.0, Nucl='None')
     '''
     Ham=Convtarray(Ham)
     D2s=np.asarray([-Ham.D[0]/3+Ham.D[1],-Ham.D[0]/3-Ham.D[1],2*Ham.D[0]/3])
@@ -994,11 +992,10 @@ def chaframe(Ham,Exp):
     tg=np.eye(3)*Ham.g
     tD=np.eye(3)*D2s
     rot=Rotationmat(Exp)
-    
-    A1=Rotmatrix(Exp.Aframe[0],Exp.Aframe[1],Exp.Aframe[2]).T@tA@(Rotmatrix(Exp.Aframe[0],Exp.Aframe[1],Exp.Aframe[2]))
-    g1=Rotmatrix(Exp.gframe[0],Exp.gframe[1],Exp.gframe[2]).T@tg@(Rotmatrix(Exp.gframe[0],Exp.gframe[1],Exp.gframe[2]))
-    D2=Rotmatrix(Exp.Dframe[0],Exp.Dframe[1],Exp.Dframe[2]).T@tD@(Rotmatrix(Exp.Dframe[0],Exp.Dframe[1],Exp.Dframe[2]))
-    Q1=Rotmatrix(Exp.Qframe[0],Exp.Qframe[1],Exp.Qframe[2]).T@tQ@(Rotmatrix(Exp.Qframe[0],Exp.Qframe[1],Exp.Qframe[2]))
+    A1=(Rotmatrix(Exp.Aframe[0],Exp.Aframe[1],Exp.Aframe[2])@rot).T@tA@((Rotmatrix(Exp.Aframe[0],Exp.Aframe[1],Exp.Aframe[2]))@rot)
+    g1=(Rotmatrix(Exp.gframe[0],Exp.gframe[1],Exp.gframe[2])@rot).T@tg@((Rotmatrix(Exp.gframe[0],Exp.gframe[1],Exp.gframe[2]))@rot)
+    D2=(Rotmatrix(Exp.Dframe[0],Exp.Dframe[1],Exp.Dframe[2])@rot).T@tD@((Rotmatrix(Exp.Dframe[0],Exp.Dframe[1],Exp.Dframe[2]))@rot)
+    Q1=(Rotmatrix(Exp.Qframe[0],Exp.Qframe[1],Exp.Qframe[2])@rot).T@tQ@((Rotmatrix(Exp.Qframe[0],Exp.Qframe[1],Exp.Qframe[2]))@rot)
     Ham.A,Ham.g,Ham.D,Ham.Q=A1,g1,D2,Q1
     return Ham
 
@@ -1013,6 +1010,7 @@ def Rotationmat(Exp):
     
     Returns
     -------
+    
     RRmatrix: np.array
         Matrix for the rotation.
     
@@ -1020,7 +1018,7 @@ def Rotationmat(Exp):
     -------
     >>> import epraya as epr 
     >>> _, Exp, _=epr.Start()
-    >>> Exp.Samplefram=[30,20,0]
+    >>> Exp.Sampleframe=[30,20,0]
     >>> Exp.Molframe=[60,0,0]
     >>> print(epr.Rotationmat(Exp))
     [[ 0.5       -0.8660254  0.       ]
@@ -1288,11 +1286,10 @@ def StevensO(ssx,ssy,ssz,s,Ham,dim):
     >>> Ham=epr.chaframe(Ham,Exp)
     >>> dim=int(2*Ham.S+1)
     >>> sx,sy,sz=epr.Pauli(Ham.S)
-    >>> print(epr.StevensO(sx,sy,sz,Ham.S,dim))
-    [[ 700.        +0.j    0.        +0.j  346.41016151+0.j    0.        +0.j]
-    [   0.        +0.j -700.        +0.j    0.        +0.j  346.41016151+0.j]
-    [ 346.41016151+0.j    0.        +0.j -700.        +0.j    0.        +0.j]
-    [   0.        +0.j  346.41016151+0.j    0.        +0.j  700.        +0.j]]
+    >>> print(epr.StevensO(sx,sy,sz,Ham.S,Ham,dim))
+    [[ 233.33333333+0.j    0.        +0.j  200.        +0.j]
+    [   0.        +0.j -466.66666667+0.j    0.        +0.j]
+    [ 200.        +0.j    0.        +0.j  233.33333333+0.j]]
     '''
     k=int(2*s)
     B22,B21,B20,Bq21,Bq22=Ham.Bk2
