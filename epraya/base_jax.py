@@ -1223,7 +1223,7 @@ def JVoigtp(field,Int,rfield,Hpp,eta):
        import epraya as epr
        import numpy as np
 
-       Ham,Exp,_=epr.Start()
+       Ham,Exp,_=epr.Jstart()
        Ham.Hpp=np.array([10,20])
        Ham.eta=0.5
        Exp.Frange=[200,500]
@@ -1234,12 +1234,12 @@ def JVoigtp(field,Int,rfield,Hpp,eta):
        rsonant=np.array([300,350,320])
        inten=np.random.normal(mu,sigma,len(rsonant))
 
-       spc=epr.Voigtp(fieldr,inten,rsonant,Ham.Hpp,Ham.eta)
+       spc=epr.JVoigtp(fieldr,inten,rsonant,Ham.Hpp,Ham.eta)
        plt.plot(fieldr,spc)
        plt.grid()
        plt.show()
        
-    .. image:: /_static/voigt.png
+    .. image:: /_static/jvoigt.png
        :alt: Plot of the Voigtp function
        :align: center
     '''
@@ -1253,18 +1253,58 @@ def JVoigtp(field,Int,rfield,Hpp,eta):
 #Find energy values in function of field
 @jx.jit
 def JPadaptarray(espac,h1,hx,hy,hz,nx,ny,nz):
+    '''
+    Constructs the Zeeman hamiltonian, adds it to the complete one and finds the energy values and eigenvectors.
+    
+    Parameters
+    ----------
+    
+    espac : np.array
+        Array with the values of the magnetic field.
+    h1 : np.array
+        Hamiltonian matrix that contains all no Zeeman interactions.
+    hx : np.array
+        Hamiltonian matrix of the Zeeman interaction in the x direction.
+    hy : np.array
+        Hamiltonian matrix of the Zeeman interaction in the y direction.
+    hz : np.array
+        Hamiltonian matrix of the Zeeman interaction in the z direction.
+    nx : float
+        Weight coefficient for the interaction in the x direction.
+    ny : float
+        Weight coefficient for the interaction in the y direction.
+    nz : float
+        Weight coefficient for the interaction in the z direction.
+        
+    Returns
+    -------
+
+    Elist : np.array
+        Array of the energy values of the hamiltonian.
+    Vlist : np.array
+        Array of the eigenvectors of the hamiltonian.
+    h2 : np.array
+        Total Zeeman interaction matrix.
+    '''
     h2=nx*hx+ny*hy+nz*hz
     h3=h1[None,:,:]+h2[None,:,:]*espac[:,None,None]
     Elist,Vlist=jxn.linalg.eigh(h3)
     return Elist,Vlist,h2
+    
 # Makes the approximation by the assigment problem solution
 def Hungarian(cost):
+    '''
+    
+    '''
     rowidx,colidx=sci.optimize.linear_sum_assignment(np.array(cost))
     novo=colidx[np.argsort(rowidx)]
-    return novo.astype(np.int32)
+    return novo.astype(np.float64)
 
 def Jungarian(cost):
-    shake=jx.ShapeDtypeStruct((cost.shape[0],),jxn.int32)
+    '''
+    
+    '''
+    shake=jx.ShapeDtypeStruct((cost.shape[0],),jxn.float64)
     return jx.pure_callback(Hungarian,shake,cost,vmap_method='sequential')
 
 @jx.jit
@@ -1360,7 +1400,7 @@ def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2):
     fres=jxn.where(cross,res,0.0).flatten()
     fint=jxn.where(cross,eintensy,0.0).flatten()
     cross=cross.flatten()
-    ntrans=jxn.sum(cross).astype(jxn.int32)
+    ntrans=jxn.sum(cross).astype(jxn.float64)
     Ktra=200
     #Scores for transition possibility
     scores=jxn.where(cross,1.0+fint,-1.0)
@@ -1404,7 +1444,7 @@ def JCaltriangle(Bmin,dB,allres,allint,transi,hulk,weight,points):
         fdiferb=diferb.flatten()
         fIint=Iint.flatten()
         # Find the neighbours
-        vecl=jxn.floor(fdiferb).astype(jxn.int32)
+        vecl=jxn.floor(fdiferb).astype(jxn.float64)
         vecr=vecl+1
         #Divides the intensity between the neighbours, by percentages 
         fracr=fdiferb-vecl
