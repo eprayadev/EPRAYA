@@ -42,6 +42,11 @@ from threadpoolctl import threadpool_limits
 import re
 from itertools import product as iterproduct
 from .base_powd import *
+
+
+
+jx.config.update("jax_enable_x64", True)
+
 @jaxdatclass
 class JHval:
     '''
@@ -1064,8 +1069,61 @@ def JMsmi(I,S,L=0):
     ll,sl,il=jxn.meshgrid(posl,poss,posi,indexing='ij')
     return sl.flatten(),il.flatten(),ll.flatten()
 
+
+
+#For powder
 @jx.jit
 def JLorentzp(field,Int,rfield,Hpp):
+    '''
+    Defines the lorentzian profile of the spectrum, using the resonant fields and calculated intensities.
+    
+    Parameters
+    ----------
+    
+    field : jax.np.array
+        Array of the field values of the spectrum.
+
+    Int : jax.np.array
+        Array of the intensity calculated in the *field* values 
+    rfield : jax.np.array
+        List of the resonant fields of the system.
+
+    Hpp : float
+        Peak to peak distance in mT.
+
+    Returns
+    -------
+    
+    espec : jax.np.array
+
+        EPR spectrum
+    
+    Example
+    -------
+    .. code-block:: python
+    
+       import matplotlib.pyplot as plt
+       import epraya as epr
+       import numpy as np
+       Ham,Exp,_=epr.Jstart()
+       Ham.Hpp=[0,2]
+       Exp.Frange=[200,500]
+       Exp.Points=2000
+       fieldr=np.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
+       mu=350
+       sigma=50
+       rsonant=np.array([300,350,320])
+       inten=np.random.normal(mu,sigma,len(rsonant))
+       spc=epr.JLorentzp(fieldr,inten,rsonant,Ham.Hpp[1])
+
+       plt.plot(fieldr,spc)
+       plt.grid()
+       plt.show()    
+       
+    .. image:: /_static/jlorentz.png
+       :alt: Plot of the JLorentzp function
+       :align: center
+    '''
     espec=jxn.zeros(len(field),dtype=float)
     gamma=jxn.sqrt(3.0)*Hpp
     gamma2=gamma/2.0
@@ -1075,6 +1133,54 @@ def JLorentzp(field,Int,rfield,Hpp):
     return espec
 @jx.jit
 def JGaussp(field,Int,rfield,Hpp):
+    '''
+    Defines the gaussian profile of the spectrum, using the resonant fields and calculated intensities.
+    
+    Parameters
+    ----------
+    
+    field : jax.np.array
+        Array of the field values of the spectrum.
+    Int : jax.np.array
+        Array of the intensity calculated in the *field* values 
+    rfield : jax.np.array
+        List of the resonant fields of the system.
+    Hpp : float
+        Peak to peak distance in mT.
+    
+    Returns
+    -------
+    
+    espec : jax.np.array
+        EPR spectrum
+    
+    Example
+    -------
+    .. code-block:: python
+       
+       import matplotlib.pyplot as plt
+       import epraya as epr
+       import numpy as np
+       Ham,Exp,_=epr.Jstart()
+       Ham.Hpp=[2,0]
+       Exp.Frange=[200,500]
+       Exp.Points=2000
+       fieldr=np.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
+       mu=350
+       sigma=50
+       rsonant=np.array([300,350,320])
+       inten=np.random.normal(mu,sigma,len(rsonant))
+       spc=epr.JGaussp(fieldr,inten,rsonant,Ham.Hpp[0])
+
+       plt.plot(fieldr,spc)
+       plt.grid()
+       plt.show()  
+       
+    .. image:: /_static/Jgauss.png
+       :alt: Plot of the JGaussp function
+       :align: center
+    '''
+
     espec=jxn.zeros(len(field),dtype=float)
     gamma=jxn.sqrt(jxn.log(2.0)/2.0)*Hpp
     ymax=jxn.sqrt(jxn.log(2.0)/jxn.pi)*(1/gamma)
@@ -1085,6 +1191,58 @@ def JGaussp(field,Int,rfield,Hpp):
 
 @jx.jit
 def JVoigtp(field,Int,rfield,Hpp,eta):
+    '''
+    Determinates the voigtian profile of the spectrum as a lineal combination of gaussian and lorentzian profiles.
+    
+    Parameters
+    ----------
+
+    field : jax.np.array
+        Array of the field values of the spectrum.
+
+    Int : jax.np.array
+        Array of the intensity calculated in the *field* values.
+    rfield : jax.np.array
+        List of the resonant fields of the system.
+    Hpp : list
+        Peak to peak distance in mT, for gaussian and lorentzian profiles.
+    eta : float
+        Percentage of the voigitan profile that corresponds to a gaussian profile, from 0 to 1.
+    
+    Returns
+    -------
+
+    espec : jax.np.array
+        EPR spectrum
+    
+    Example
+    -------
+    .. code-block:: python
+    
+       import matplotlib.pyplot as plt
+       import epraya as epr
+       import numpy as np
+
+       Ham,Exp,_=epr.Start()
+       Ham.Hpp=np.array([10,20])
+       Ham.eta=0.5
+       Exp.Frange=[200,500]
+       Exp.Points=2000
+
+       fieldr=np.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
+       mu,sigma=350,50
+       rsonant=np.array([300,350,320])
+       inten=np.random.normal(mu,sigma,len(rsonant))
+
+       spc=epr.Voigtp(fieldr,inten,rsonant,Ham.Hpp,Ham.eta)
+       plt.plot(fieldr,spc)
+       plt.grid()
+       plt.show()
+       
+    .. image:: /_static/voigt.png
+       :alt: Plot of the Voigtp function
+       :align: center
+    '''
     hppg=jxn.where(Hpp[0]==0.0,1e-10,Hpp[0])
     hppl=jxn.where(Hpp[1]==0.0,1e-10,Hpp[1])
     gas=JGaussp(field,Int,rfield,hppg)
@@ -1148,7 +1306,6 @@ def JBoltfactor(Eghz,di,dj,Temp):
     popuj=boltz[dj]/Z
     return (popui-popuj)
 
-@partial(jx.jit,static_argnames=['dim'])
 @partial(jx.jit,static_argnames=['dim'])
 def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2):
     iidx,jidx=jxn.triu_indices(dim,k=1)
@@ -1229,6 +1386,8 @@ def Meshtriangle():
     w2=jxn.array(w2)[:,None]
     w3=jxn.array(w3)[:,None]
     return w1,w2,w3,tpoints
+
+
 @partial(jx.jit, static_argnames=['points'])
 #@jx.checkpoint
 def JCaltriangle(Bmin,dB,allres,allint,transi,hulk,weight,points):

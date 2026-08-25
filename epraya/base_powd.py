@@ -59,7 +59,7 @@ def Lorentzp(field,Int,rfield,Hpp):
     Int : np.array
         Array of the intensity calculated in the *field* values 
     rfield : np.array
-        List of the resonant fields of the system
+        List of the resonant fields of the system.
     Hpp : float
         Peak to peak distance in mT.
     
@@ -76,7 +76,8 @@ def Lorentzp(field,Int,rfield,Hpp):
        import matplotlib.pyplot as plt
        import epraya as epr
        import numpy as np
-       Ham.Hpp=[0,2]
+       Ham,Exp,_=epr.Start()
+       Ham.Hpp=[0,20]
        Exp.Frange=[200,500]
        Exp.Points=2000
        fieldr=np.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
@@ -116,7 +117,7 @@ def Gaussp(field,Int,rfield,Hpp):
     Int : np.array
         Array of the intensity calculated in the *field* values 
     rfield : np.array
-        List of the resonant fields of the system
+        List of the resonant fields of the system.
     Hpp : float
         Peak to peak distance in mT.
     
@@ -133,7 +134,8 @@ def Gaussp(field,Int,rfield,Hpp):
        import matplotlib.pyplot as plt
        import epraya as epr
        import numpy as np
-       Ham.Hpp=[2,0]
+       Ham,Exp,_=epr.Start()
+       Ham.Hpp=[20,0]
        Exp.Frange=[200,500]
        Exp.Points=2000
        fieldr=np.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
@@ -171,9 +173,9 @@ def Voigtp(field,Int,rfield,Hpp,eta):
     field : np.array
         Array of the field values of the spectrum.
     Int : np.array
-        Array of the intensity calculated in the *field* values 
+        Array of the intensity calculated in the *field* values.
     rfield : np.array
-        List of the resonant fields of the system
+        List of the resonant fields of the system.
     Hpp : list
         Peak to peak distance in mT, for gaussian and lorentzian profiles.
     eta : float
@@ -194,7 +196,7 @@ def Voigtp(field,Int,rfield,Hpp,eta):
        import numpy as np
 
        Ham,Exp,_=epr.Start()
-       Ham.Hpp=np.array([1,2])
+       Ham.Hpp=np.array([10,20])
        Ham.eta=0.5
        Exp.Frange=[200,500]
        Exp.Points=2000
