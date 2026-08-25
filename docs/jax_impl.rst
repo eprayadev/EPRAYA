@@ -1,9 +1,9 @@
 Jax implementation
 =======================
 
-Here are the JAX function for the simualtion and fitting of EPR cw data. 
+Here are the *JAX* function for the simualtion and fitting of EPR cw data. 
 
-All functions follow a similar approach to that of its counterparts for the *Classic* method described in the other sections, but adapted to make use of the JAX advantages, without requiring a large amount of RAM.
+All functions follow a similar approach to that of its counterparts for the *Classic* method described in the other sections, but adapted to make use of the *JAX* advantages, without requiring a large amount of RAM.
 
 Hamiltonian's functions
 -----------------------
@@ -85,3 +85,55 @@ Auxiliary functions
      - Makes sure hamiltonian parameters have the right dimensions.      
    * - :doc:`epraya.JMsmi <JMsmi>`
      - Determinates the quantum numbers for the spin, nuclear spin and angular momentum.
+
+Powder samples
+--------------
+
+Like its classic counterpart, the process is based in the modificated SOPHE method (using the function *epraya.Delaunay*), however, the calculation is divided in blocks to keep the processing speed. 
+
+*Note: By the nature of the JAX framework, the reassigment of values to variables and conditionals evaluations must be performed using JAX functions, which requires modifying the program logic, but the results are equivalent to those of the classic one.*
+
+Intensity and resonant fields functions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. currentmodule:: base_jax
+
+.. toctree::
+   :caption: Intensity and resonant fields functions
+   :hidden:
+   
+   Delaunay
+   Powder
+   Calpowder
+   Mulpol
+   Omegaparal
+   Betaparal
+   Nresina
+   Boltfactor
+   Caltriangle
+
+Line profile functions
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. currentmodule:: base_jax
+
+.. toctree::
+   :caption: Line profile functions
+   :hidden:
+   
+   Lorentzp
+   Gaussp
+   Voigtp
+
+.. list-table::
+   :widths: 25 75
+   :header-rows: 1
+
+   * - Name
+     - Description
+   * - :doc:`epraya.Lorentzp <Lorentzp>`
+     - Determinates the lorentzian profile of the spectrum.
+   * - :doc:`epraya.Gaussp <Gaussp>`
+     - Determinates the gaussian profile of the spectrum.
+   * - :doc:`epraya.Voigtp <Voigtp>`
+     - Determinates the voigtian profile of the spectrum.
