@@ -321,7 +321,7 @@ def JPauli(s):
         Pauli matrix of the spin z component.
 
 
-     Example
+    Example
     -------
 
     >>> import epraya as epr
@@ -689,7 +689,6 @@ def Jchaframe(Ham,Exp):
     Adds the rotations for the constants g, A, Q and D, described by the conditions gframe, Aframe, Qframe and D.frame.
     
     Parameters
-
     ----------
     
     Ham : Class
@@ -699,7 +698,6 @@ def Jchaframe(Ham,Exp):
         Container of the Experimental conditions.
 
     Returns
-
     -------
     
     Ham : Class
@@ -709,12 +707,11 @@ def Jchaframe(Ham,Exp):
     -------
 
     >>> import epraya as epr 
-    >>> Ham,Exp,_=epr.Start()
+    >>> Ham,Exp,_=epr.Jstart()
     >>> Ham.g=[2.0003,2.5,2.5]
-
     >>> Ham.Q=[0.5,10.0,0]
     >>> print(Ham)
-    >>> Ham=epr.chaframe(Ham,Exp)
+    >>> Ham=epr.Jchaframe(Ham,Exp)
     >>> print(Ham)
     JHval(S=0.5, g=[2.0003, 2.5, 2.5], I=0.0, L=0.0, A=0.0,
     Q=[0.5, 10.0, 0], D=Array([0, 0], dtype=int32), 
@@ -809,21 +806,21 @@ def JRotmatrix(alfa,beta,gamma):
     [-0.78510165  0.5294539   0.3213938 ]
     [ 0.4698463   0.17101006  0.8660254 ]]
     '''
-  alfa,beta,gamma=jxn.radians(alfa),jxn.radians(beta),jxn.radians(gamma)
-  cosg,sing=jxn.cos(gamma),jxn.sin(gamma)
-  cosa,sina=jxn.cos(alfa),jxn.sin(alfa)
-  cosb,sinb=jxn.cos(beta),jxn.sin(beta)
-  eps=10**-9
-  cosg=jxn.where(jxn.abs(cosg)<eps,0.0,cosg)
-  sing=jxn.where(jxn.abs(sing)<eps,0.0,sing)
-  cosa=jxn.where(jxn.abs(cosa)<eps,0.0,cosa)
-  sina=jxn.where(jxn.abs(sina)<eps,0.0,sina)
-  cosb=jxn.where(jxn.abs(cosb)<eps,0.0,cosb)
-  sinb=jxn.where(jxn.abs(sinb)<eps,0.0,sinb)
-  Reuler=jxn.array([[(cosg*cosa*cosb)-(sing*sina),(cosg*cosa*sinb)+(sing*cosa),-cosg*sinb],
- [-(sing*cosb*cosa)-(cosg*sina),-(sing*cosb*sina)+(cosg*cosa),sing*sinb],
-  [sinb*cosa,sina*sinb,cosb]])
-  return Reuler
+    alfa,beta,gamma=jxn.radians(alfa),jxn.radians(beta),jxn.radians(gamma)
+    cosg,sing=jxn.cos(gamma),jxn.sin(gamma)
+    cosa,sina=jxn.cos(alfa),jxn.sin(alfa)
+    cosb,sinb=jxn.cos(beta),jxn.sin(beta)
+    eps=10**-9
+    cosg=jxn.where(jxn.abs(cosg)<eps,0.0,cosg)
+    sing=jxn.where(jxn.abs(sing)<eps,0.0,sing)
+    cosa=jxn.where(jxn.abs(cosa)<eps,0.0,cosa)
+    sina=jxn.where(jxn.abs(sina)<eps,0.0,sina)
+    cosb=jxn.where(jxn.abs(cosb)<eps,0.0,cosb)
+    sinb=jxn.where(jxn.abs(sinb)<eps,0.0,sinb)
+    Reuler=jxn.array([[(cosg*cosa*cosb)-(sing*sina),(cosg*cosa*sinb)+(sing*cosa),-cosg*sinb],
+    [-(sing*cosb*cosa)-(cosg*sina),-(sing*cosb*sina)+(cosg*cosa),sing*sinb],
+    [sinb*cosa,sina*sinb,cosb]])
+    return Reuler
 
 def JConvtarray(Ham):
     '''
