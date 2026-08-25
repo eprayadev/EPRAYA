@@ -19,14 +19,35 @@ Interaction's functions
    :caption: Interaction's functions
    :hidden:
    
-   Hze
-   Nhze
-   Hfi
-   Qii
-   Iee
-   Lorbit
-   StevensO
-   
+   JHze
+   JNhze
+   JHfi
+   JQii
+   JIee
+   JLorbit
+   JStevensO
+  
+.. list-table::
+   :widths: 25 75
+   :header-rows: 1
+
+   * - Name
+     - Description
+   * - :doc:`epraya.JHze <JHze>`
+     - Function for the Zeeman interaction.
+   * - :doc:`epraya.JNhze <JNhze>`
+     - Function for the nuclear Zeeman interaction.
+   * - :doc:`epraya.JHfi <JHfi>`
+     - Function for the hiperfine interaction.
+   * - :doc:`epraya.JQii <JQii>`
+     - Function for the nuclear quadrupolar interaction.   
+   * - :doc:`epraya.JIee <JIee>`
+     - Function for the electron-electron interaction.   
+   * - :doc:`epraya.JLorbit <JLorbit>`
+     - Function for the spin orbit interaction.       
+   * - :doc:`epraya.JStevensO <JStevensO>`
+     - Function for the expanded Stevens operators.     
+     
 Auxiliary functions
 ^^^^^^^^^^^^^^^^^^^
 
@@ -38,11 +59,29 @@ Auxiliary functions
    
    JKronecker
    JPauli
-   chaframe
-   Rotationmat
-   Rotmatrix
-   Convtarray
-   Msmi
-   Assingstatestobasis
-   PMsmi
-   MMsmi
+   Jchaframe
+   JRotationmat
+   JRotmatrix
+   JConvtarray
+   JMsmi
+   
+.. list-table::
+   :widths: 25 75
+   :header-rows: 1
+
+   * - Name
+     - Description
+   * - :doc:`epraya.JKronecker <JKronecker>`
+     - Function for the Kronecker delta.
+   * - :doc:`epraya.JPauli <JPauli>`
+     - Calculates the Pauli matrices for the spin system.
+   * - :doc:`epraya.Jchaframe <Jchaframe>`
+     - Rotates the hamiltonian parameters to the right reference frame using the Euler angles.    
+   * - :doc:`epraya.JRotationmat <JRotationmat>`
+     - Creates the rotation matrix for the Lab to sample frame transformation.    
+   * - :doc:`epraya.JRotmatrix <JRotmatrix>`
+     - Creates the rotation matrix using the Euler angles.       
+   * - :doc:`epraya.JConvtarray <JConvtarray>`
+     - Makes sure hamiltonian parameters have the right dimensions.      
+   * - :doc:`epraya.JMsmi <JMsmi>`
+     - Determinates the quantum numbers for the spin, nuclear spin and angular momentum.
