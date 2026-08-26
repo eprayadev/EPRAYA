@@ -137,3 +137,31 @@ Line profile functions
      - Determinates the gaussian profile of the spectrum.
    * - :doc:`epraya.Voigtp <Voigtp>`
      - Determinates the voigtian profile of the spectrum.
+     
+Eigen values and vectors functions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. currentmodule:: base_jax
+
+.. toctree::
+   :caption: Eigen values and vectors functions
+   :hidden:
+   
+   Padaptarray
+   Hungorder
+   Getlabel
+
+.. list-table::
+   :widths: 25 75
+   :header-rows: 1
+
+   * - Name
+     - Description
+   * - :doc:`epraya.Padaptarray <Padaptarray>`
+     - Finds the energy values and eigenvectors of the total hamiltonian.
+   * - :doc:`epraya.Hungorder <Hungorder>`
+     - Solves the assigment problem with the J-V method implemented in Scipy for the eigenvectors and energy values.    
+   * - :doc:`epraya.Pretrack <Pretrack>`
+     - Relates the energy values and eigenvectors to the quantum numbers of the system.
+   * - :doc:`epraya.Getlabel <Getlabel>`
+     - Creates the state ket for the energy level, using the quantum numbers.
