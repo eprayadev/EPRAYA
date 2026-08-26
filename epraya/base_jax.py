@@ -91,7 +91,7 @@ class JHval:
     weight: float
 
         Dummy variable by the moment
-    Nucl : string
+    Nucl : str
         Isotope of the sample. Can be the quantum number and the element or only the element ('55Mn' or 'Mn') 
         
 
@@ -673,7 +673,7 @@ def gnfactor(Nucl='None'):
     ---------
     
     Nucl : str
-        Symbol of the element of the paramagnetic center.
+        Isotope of the sample. Can be the quantum number and the element or only the element ('55Mn' or 'Mn') 
     
     Returns
     -------
@@ -1222,7 +1222,6 @@ def JVoigtp(field,Int,rfield,Hpp,eta):
        import matplotlib.pyplot as plt
        import epraya as epr
        import numpy as np
-
        Ham,Exp,_=epr.Jstart()
        Ham.Hpp=np.array([10,20])
        Ham.eta=0.5
@@ -1294,7 +1293,19 @@ def JPadaptarray(espac,h1,hx,hy,hz,nx,ny,nz):
 # Makes the approximation by the assigment problem solution
 def Hungarian(cost):
     '''
+    Solves the assigment problem with the J-V method implemented in scipy, to organize the eigenvectors and energies of the hamiltonian and relate them with the quantum numbers, depending of the change in the cost.
     
+    Parameteres
+    -----------
+    
+    cost : list
+        Cost matrix of the eigenvectors and energies configuration
+        
+    Returns 
+    -------
+    
+    novo : array
+        Sorted eigenvectors and energies of the hamiltonian
     '''
     rowidx,colidx=sci.optimize.linear_sum_assignment(np.array(cost))
     novo=colidx[np.argsort(rowidx)]
@@ -1302,13 +1313,33 @@ def Hungarian(cost):
 
 def Jungarian(cost):
     '''
-    
+    Wrap function to call the Scipy J-V method outside of JAX using ShapeDtypeStruct and pure_callback, in order to not interfere in the ADAM implementation.
     '''
     shake=jx.ShapeDtypeStruct((cost.shape[0],),jxn.float64)
     return jx.pure_callback(Hungarian,shake,cost,vmap_method='sequential')
 
 @jx.jit
 def JPretrack(Enegria, Vector):
+    '''
+    Organize the eigenvectors and energies to relate them with the quantum numbers of the system, taking as references the values at high field. It use the laxscan function from JAX to calculate the best configuration.
+    
+    Parameters
+    ----------
+    
+    Enegria : jax.np.array
+        Array of the energy values of the hamiltonian.
+    Vector : jax.np.array
+        Array of the eigenvectors of the hamiltonian.
+    
+
+    Returns
+    -------
+    tE : jax.numpy.vstack
+        Concatenate array of the energy values of the Hamiltonian.
+        
+    tV : jax.numpy.vstack
+        Concatenate array of the eigenvectors values of the Hamiltonian.
+    '''
     def tmback(cara,vals):
         oldE,oldV=cara
         actE,actV=vals
@@ -1333,9 +1364,32 @@ def JPretrack(Enegria, Vector):
 
 @jx.jit
 def JBoltfactor(Eghz,di,dj,Temp):
+    '''
+
+    Calculates the Boltzmann distribution for the intensity, using states *di* and *dj* and their related energies.
+    
+    Parameters
+    ----------
+
+    Eghz : float
+        Approximated energy value of hamiltonian.
+    di : float
+        State di of the system.
+    dj : float
+        State dj of the system.
+    Temp : float
+        Temperature of the system.
+    
+    Returns
+    -------
+    
+    popui-popuj : jax.np.array
+        Temperature dependent Boltzmann distribution.
+
+    '''
     h=scc.h
     kb=scc.k
-    conver=1e9*h # Provisional conversion value
+    conver=1e9*h 
     Ej=Eghz*conver
     Temp=jxn.where(Temp<=0.0,1.0,Temp)
     beta=1.0/(kb*Temp)
@@ -1348,6 +1402,10 @@ def JBoltfactor(Eghz,di,dj,Temp):
 
 @partial(jx.jit,static_argnames=['dim'])
 def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2):
+    '''
+    Determinates the resonant fields and intensities of the spectrum using the expression for the first order perturbation limit. The intensity is calculated as the product of the transition rate (probability of transition), the Boltzmann factor (Boltzmann distribution) and a frecuency to field conversion factor. 
+    
+    '''
     iidx,jidx=jxn.triu_indices(dim,k=1)
     Vdag=Vlist.conj().swapaxes(-1,-2)
     Tx=Vdag@isx@Vlist
@@ -1444,7 +1502,7 @@ def JCaltriangle(Bmin,dB,allres,allint,transi,hulk,weight,points):
         fdiferb=diferb.flatten()
         fIint=Iint.flatten()
         # Find the neighbours
-        vecl=jxn.floor(fdiferb).astype(jxn.float64)
+        vecl=jxn.floor(fdiferb).astype(jxn.int32)
         vecr=vecl+1
         #Divides the intensity between the neighbours, by percentages 
         fracr=fdiferb-vecl
@@ -1474,13 +1532,69 @@ def JCaltriangle(Bmin,dB,allres,allint,transi,hulk,weight,points):
         return carry+jxn.sum(bspc,axis=0),None
     estotal,_=jx.lax.scan(EWsize,jxn.zeros(points),hulkbatch)
     return estotal
+    
 ww1,ww2,ww3,tpoints=Meshtriangle()
 
-def JPowder(Hamer,Expe,Nucl='None',graph='True'):
+def JPowder(Hamer,Expe,Nucl='None',graph=True):
+    '''
+    Wrap function for the simulation of the EPR spectrum for powder samples. It also use the SOPHE modified method to create the triangular grid and its weights.
+    
+    Parameters
+    ----------
+    
+    Hamer : Class
+        Container for the hamiltonian parameters of the system.
+    
+    Expe : Class
+        Container for the experimental conditions.
+        
+    Nucl : str
+        Isotope of the sample. Can be the quantum number and the element or only the element ('55Mn' or 'Mn') 
+
+    graph : Bool
+        Plots the resulting spectrum.
+
+    
+    Returns
+    -------
+    
+    Blist : jax.np.array
+        Array of the magnetic field.
+    Intensity : np.array
+        Array of the counts of the spectrum.
+    
+    Example
+    -------
+    
+    .. code-block:: python
+    
+
+       import matplotlib.pyplot as plt
+       import epraya as epr
+       import numpy as np
+       Ham,Exp,_=epr.Jstart()
+
+       Ham.S=3/2
+       Ham.I=1
+       Ham.g=np.array([2.003, 2, 2])
+
+       Ham.A=np.array([200, 200, 200])  #Hyperfine constant
+       Ham.D=np.array([800,200])      #Zero field D and E
+       Ham.Hpp=[0, 1]
+       Ham.Nucl='Cr'
+
+       Exp.Freq=9.4
+       Exp.Points=4096
+       Exp.Temperature=300
+
+       Exp.Frange=[0,800]
+       B,spc=epr.JPowder(Ham,Exp)
+    
+    '''
     iwas,jwas,kwas,weight,hulk=Delaunay(Expe)
     iwas,jwas,kwas,weight,hulk=jxn.array(iwas),jxn.array(jwas),jxn.array(kwas),jxn.array(weight),jxn.array(hulk)
     Blist,epc=JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl)
-    if graph=='True':
+    if graph:
         plt.plot(Blist,epc,color='navy')
         plt.xlabel('Field [mT]')
         plt.ylabel('Counts [U. A.]')
@@ -1490,6 +1604,9 @@ def JPowder(Hamer,Expe,Nucl='None',graph='True'):
     return Blist,epc
 
 def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None'):
+    '''
+    
+    '''
     frange0=jxn.where(Expe.Frange[0]<0.0,1e-4,Expe.Frange[0])
     Ham=Hamer.replace(A=jxn.asarray(Hamer.A)/1000.0,D=jxn.asarray(Hamer.D)/1000.0,Hpp=jxn.asarray(Hamer.Hpp)/1.0,Q=jxn.asarray(Hamer.Q)/1000.0,
                      Bk2=jxn.asarray(Hamer.Bk2)/1000.0,Bk4=jxn.asarray(Hamer.Bk4)/1000.0,Bk6=jxn.asarray(Hamer.Bk6)/1000.0)
@@ -1572,10 +1689,10 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None'):
     espectotal=jsig.fftconvolve(sketch,kvoigt,mode='same')*dB
     Blist2=jxn.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
     return Blist2,espectotal
-
-def Jresonant(Hamer,Expe,graph='True',Nucl='None'):
+    
+def Jresonant(Hamer,Expe,graph=True,Nucl='None'):
     Blist,epc=Calresonant(Hamer,Expe,Nucl)
-    if graph=='True':
+    if graph=:
         plt.plot(Blist,epc,color='navy')
         plt.xlabel('Field [mT]')
         plt.ylabel('Counts [U. A.]')
@@ -1737,7 +1854,7 @@ class Mjhval:
         weight of the gaussian contribution to the voigtian function, from 0 to 1. If eta is 0, the function is lorentzian and if eta is 1, the function is gaussian.
     weight: float
         Dummy variable by the moment
-    Nucl : string
+    Nucl : str
         Isotope of the sample. Can be the quantum number and the element or only the element ('55Mn' or 'Mn') 
     A1_2 : array_like
         Hipefine interaction between the spin 1 and nuclear spin 2.
@@ -1954,9 +2071,9 @@ def Jmstart():
     global Exp,Vary,Ham
     Ham,Exp,Vary=Mjhval(),JEmco(),JEmva()
 
-def JMulpol(maham,Expe,Nucl1='None',Nucl2='None',graph='True'):
+def JMulpol(maham,Expe,Nucl1='None',Nucl2='None',graph=True):
     Blist,epc=Jcalmulta(maham,Expe,Nucl1,Nucl2)
-    if graph=='True':
+    if graph:
         plt.plot(Blist,epc,color='navy')
         plt.xlabel('Field [mT]')
         plt.ylabel('Counts [U. A.]')
@@ -2122,9 +2239,9 @@ def Jcalmulta(maham,Expe,Nucl1='None',Nucl2='None'):
         fielde,specs=Blist2,espectotal
     return fielde,specs
 
-def JMusic(maham,Expe,Nucl1='None',Nucl2='None',graph='True'):
+def JMusic(maham,Expe,Nucl1='None',Nucl2='None',graph=True):
     Blist,epc=Jcalmusic(maham,Expe,Nucl1,Nucl2)
-    if graph=='True':
+    if graph:
         plt.plot(Blist,epc,color='navy')
         plt.xlabel('Field [mT]')
         plt.ylabel('Counts [U. A.]')
@@ -2806,9 +2923,9 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
           SHam.Hpp=HHpp
           Hame=SHam.replace(g1=gg1,g2=gg2,A1=AA1,A2=AA2,D1=DD1,D2=DD2,Q1=QQ1,Q2=QQ2,Hpp=HHpp)
           if mode=='p':
-              _,simul=JMulpol(Hame,dExp,graph='False')
+              _,simul=JMulpol(Hame,dExp,graph=False)
           elif mode=='c':
-              _,simul=JMusic(Hame,dExp,graph='False')
+              _,simul=JMusic(Hame,dExp,graph=False)
           maxl=jxn.max(jxn.abs(simul))
           maxl=jxn.where(maxl==0.0,1.0,maxl)
           simul=simul/maxl
@@ -2985,7 +3102,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
               Hppy=Vary.Hpp[2]+(Vary.Hpp[3]-Vary.Hpp[2])*jnn.sigmoid(param['Hpp2']/T)
               print(f"| Hppg: {Hppx:.1f} | Hppl: {Hppy:.1f} |")
           if mode=='p':
-              Blis,espc=JMulpol(Hat,dExp,graph='False')
+              Blis,espc=JMulpol(Hat,dExp,graph=False)
               plt.figure(figsize=(8,6))
               plt.plot(Blis,expr,label='Data')
               plt.plot(Blis,espc/np.max(espc)*np.max(expr),label='Fit')
@@ -2996,7 +3113,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
               plt.show()
               return espc
           elif mode=='c':
-              Blis,espc=JMusic(Hat,dExp,graph='False')
+              Blis,espc=JMusic(Hat,dExp,graph=False)
               plt.figure(figsize=(8,6))
               plt.plot(Blis,expr,label='Data')
               plt.plot(Blis,espc/np.max(espc)*np.max(expr),label='Fit')
@@ -3111,7 +3228,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
           Hppy=Vary.Hpp[2]+(Vary.Hpp[3]-Vary.Hpp[2])*jnn.sigmoid(param['Hpp2']/T)
           print(f"| Hppg: {Hppx:.1f} | Hppl: {Hppy:.1f} |")
       if mode=='p':
-          Blis,espc=JMulpol(Hat,dExp,graph='False')
+          Blis,espc=JMulpol(Hat,dExp,graph=False)
           plt.figure(figsize=(8,6))
           plt.plot(Blis,expr,label='Data')
           plt.plot(Blis,espc/np.max(espc)*np.max(expr),label='Fit')
@@ -3122,7 +3239,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
           plt.show()
           return espc
       elif mode=='c':
-          Blis,espc=JMusic(Hat,dExp,graph='False')
+          Blis,espc=JMusic(Hat,dExp,graph=False)
           plt.figure(figsize=(8,6))
           plt.plot(Blis,expr,label='Data')
           plt.plot(Blis,espc/np.max(espc)*np.max(expr),label='Fit')
