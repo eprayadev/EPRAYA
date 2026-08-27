@@ -435,7 +435,7 @@ def Plotsim(espac1,inten1,resfield,espac2,enegria,curvebasis,splines,resonants,H
         Container for the experimental conditions.
     '''
     slit,nlit,llit,transitions=Msmi(Ham.I,Ham.S,Ham.L)
-    if in_notebook:
+    if is_notebook():
         if resfield!=[]:
           import plotly.graph_objects as pgo
           import plotly.colors as pc
