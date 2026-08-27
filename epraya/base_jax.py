@@ -1405,6 +1405,46 @@ def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2):
     '''
     Determinates the resonant fields and intensities of the spectrum using the expression for the first order perturbation limit. The intensity is calculated as the product of the transition rate (probability of transition), the Boltzmann factor (Boltzmann distribution) and a frecuency to field conversion factor. 
     
+    Initially, the function calculates the intensities for all the block of orientations, then finds the resonant fields searching for the values that comply with the resonant equation and have a crossing. Finally it relates the resonant fields and intensity values depending in the probability of transitions, producing the arrays of intensity, fields and the total number of transitions.
+    
+    Parameters
+    ----------
+    
+    Blist : jax.np.array
+        Magnetic field values that are evaluated to find the resonant fields.
+    Elist : jax.np.array
+        List of the energies from the hamiltonian.
+    Vlist : jax.np.array
+        List of the eigenvectors of the hamiltonian.
+    dim : float
+        Dimension of the total hamiltonian matrix.
+    Freq : float
+        Frequency of operation of the microwave radiation in GHz.
+    isx : jax.np.array
+        Pauli matrix of the total spin (electronic, nuclear spin and angular momentum) contribution in the x direction.
+    isy : jax.np.array
+        Pauli matrix of the total spin (electronic, nuclear spin and angular momentum) contribution in the y direction.
+    isz : jax.np.array
+        Pauli matrix of the total spin (electronic, nuclear spin and angular momentum) contribution in the z direction.
+    nx : jax.np.array 
+        Vectors (points in the grid) to consider in the calculation of the spectrum in the x direction.
+    ny : jax.np.array 
+        Vectors (points in the grid) to consider in the calculation of the spectrum in the y direction.
+    nz : jax.np.array 
+        Vectors (points in the grid) to consider in the calculation of the spectrum in the z direction.
+    Tem : float
+        Temperature of the system.
+    h2 : jax.np.array
+        Zeeman interaction matrix of the system.
+        
+    Returns
+    -------
+    ffres : jax.np.array 
+        List of the resonant fields of the system.
+    ffint : jax.np.array 
+        List of the intensity of the spectrum, evaluated in the resonant fields.
+    ntrans : jax.np.array
+        Zero dimensional array with the number of possible transitions related to the resonant fields.
     '''
     iidx,jidx=jxn.triu_indices(dim,k=1)
     Vdag=Vlist.conj().swapaxes(-1,-2)
@@ -1471,6 +1511,19 @@ def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2):
     return ffres,ffint,ntrans
 
 def Meshtriangle():
+    '''
+    Creates the baricentral mesh of triangles for the JCaltriangle, that calculates the contribution of the resonant fields and their intensities in the final spectrum. It is defined as an independent function because it can interfere with the ADAM algorithm monitoring of the variables.
+    
+    Returns
+    -------
+    
+    w1 : jax.np.array
+        Vector of the points in the x direction of the grid.
+    w2 : jax.np.array
+        Vector of the points in the y direction of the grid.
+    w3 : jax.np.array
+        Vector of the points in the z direction of the grid.
+    '''
     numd=15
     tpoints=(numd*(numd+1))/2.0
     w1,w2,w3=[],[],[]
@@ -1489,10 +1542,37 @@ def Meshtriangle():
 @partial(jx.jit, static_argnames=['points'])
 #@jx.checkpoint
 def JCaltriangle(Bmin,dB,allres,allint,transi,hulk,weight,points):
-    Baxs=jxn.linspace(Bmin,Bmin+dB*(points-1), points)
+    '''
+    Creates a sketch spectrum using a barycentral mesh of triangles to calculate the contribution of the resonant fields and their intensities in the final spectrum. The result of this process is later convolute to generate the corrected EPR spectrum. Using the JAX framework, calculates multiple points at the same time with the function lax_scan and the Takeonetriangle wrap function.
+    
+    Parameters
+    ----------
+    
+    Bmin : float
+        Minimun value of the magnetic field.
+    dB : float
+        Delta difference between the magnetic field values.
+    allres: jax.np.array
+        List of the resonant fields of the system.
+    allint : jax.np.array
+        List of the intensity of the spectrum, evaluated in the resonant fields.
+    transi : jax.np.array
+        List of the possible transitions between the energy levels, related to the resonant fields.
+    hulk : jax.np.arraynp.array
+        Smaller convex poligon tha contains all the points require for the simulation.
+    weight : jax.np.arraynp.array
+        Normalized value of the weight of the points to evaluate it's contribution to the spectrum.
+        
+    Returns
+    -------
+    
+    estotal : jax.np.array
+        Array that contains the resulting spectrum sketch.
+    
+    '''
     def Takeonetriangle(trindex):
         i1,i2,i3=trindex[0],trindex[1],trindex[2]
-        B1,B2, B3=allres[i1],allres[i2],allres[i3]
+        B1,B2,B3=allres[i1],allres[i2],allres[i3]
         I1,I2,I3=allint[i1],allint[i2],allint[i3]
         weig=(weight[i1]+weight[i2]+weight[i3])/3.0
         pointweg=weig/tpoints
@@ -1514,8 +1594,8 @@ def JCaltriangle(Bmin,dB,allres,allint,transi,hulk,weight,points):
         rright=(vecr>=0)&(vecr<points)
         vecl=jxn.where(rleft,vecl,0)
         vecr=jxn.where(rright,vecr,0)
-        Ilef=jxn.where(vecl,Ilef,0.0)
-        Irig=jxn.where(vecr,Irig,0.0)
+        Ilef=jxn.where(rleft,Ilef,0.0)
+        Irig=jxn.where(rright,Irig,0.0)
         sketch1=jxn.zeros(points)
         sketch1=sketch1.at[vecl].add(Ilef)
         sketch1=sketch1.at[vecr].add(Irig)
@@ -1554,13 +1634,12 @@ def JPowder(Hamer,Expe,Nucl='None',graph=True):
     graph : Bool
         Plots the resulting spectrum.
 
-    
     Returns
     -------
     
     Blist : jax.np.array
         Array of the magnetic field.
-    Intensity : np.array
+    epc : jax.np.array
         Array of the counts of the spectrum.
     
     Example
@@ -1605,6 +1684,41 @@ def JPowder(Hamer,Expe,Nucl='None',graph=True):
 
 def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None'):
     '''
+    Function for the simulation of the EPR spectrum for powder samples using the JAX functions. Instead of making the calculations with fors cycles, uses the vmap function for the calculations, dividing the points of calculations in blocks, that pass using the Oneori (One orientation) and Processvmap functions.
+    
+    Parameters
+    ----------
+    
+    Hamer : Class
+        Container for the hamiltonian parameters of the system.
+    
+    Expe : Class
+        Container for the experimental conditions.
+        
+    iwas : jax.np.array
+        Vectors (points in the grid) to consider in the calculation of the spectrum in the x direction.
+    
+    jwas : jax.np.array
+        Vectors (points in the grid) to consider in the calculation of the spectrum in the y direction.
+        
+    kwas : jax.np.array
+        Vectors (points in the grid) to consider in the calculation of the spectrum in the z direction.
+
+    weight : jax.np.array
+        Normalized value of the weight of the points to evaluate it's contribution to the spectrum.
+    
+    hulk : jax.np.array
+        Smaller convex poligon tha contains all the points require for the simulation.
+    
+    Returns
+
+    -------
+    Blist2 : jax.np.array
+        Array of the magnetic field.
+
+
+    espectotal : jax.np.array
+        Array of the counts of the spectrum.
     
     '''
     frange0=jxn.where(Expe.Frange[0]<0.0,1e-4,Expe.Frange[0])
@@ -1657,6 +1771,30 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None'):
     
     @jx.jit
     def Oneori(nx,ny,nz):
+        '''
+        Wrap function to use JPadaptarray and JNresina with the JAX.vmap implementation. Vmap vectorizes this two functions, making them work with block of data instead of individual process in a loop. The blocks are divided in parts of csize size, and process with the function Processvmap, that calculates the total values of resonant fields, intenitys and transitions.
+        
+        Parameters
+        ----------
+        
+        nx : jax.np.array
+            Vectors (points in the grid) to consider in the calculation of the spectrum in the x direction.
+        ny : jax.np.array
+            Vectors (points in the grid) to consider in the calculation of the spectrum in the y direction.
+        nz : jax.np.array
+            Vectors (points in the grid) to consider in the calculation of the spectrum in the z direction.
+        
+        Returns
+        -------
+        resfield : jax.np.array 
+            List of the resonant fields of the system.
+        intensy : jax.np.array 
+            List of the intensity of the spectrum, evaluated in the resonant fields.
+        ntrans : jax.np.array
+            Zero dimensional array with the number of possible transitions related to the resonant fields.
+        
+    
+        '''
         Elist,Vlist,h2=JPadaptarray(Blist1,h1,hzex,hzey,hzez,nx,ny,nz)
         resfield,intensy,ntrans=JNresina(Blist1,Elist,Vlist,dim,Exp.Freq,isx,isy,isz,nx,ny,nz,Exp.Temperature,Ham.Hpp,h2)
         return resfield,intensy,ntrans
@@ -1692,7 +1830,7 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None'):
     
 def Jresonant(Hamer,Expe,graph=True,Nucl='None'):
     Blist,epc=Calresonant(Hamer,Expe,Nucl)
-    if graph=:
+    if graph:
         plt.plot(Blist,epc,color='navy')
         plt.xlabel('Field [mT]')
         plt.ylabel('Counts [U. A.]')
