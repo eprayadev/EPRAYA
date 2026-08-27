@@ -42,6 +42,7 @@ from threadpoolctl import threadpool_limits
 import re
 from itertools import product as iterproduct
 from .base_powd import *
+from .base_ham import *
 from matplotlib import cm
 
 
@@ -1913,7 +1914,7 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None'):
        :align: center
     
     '''
-    slit,nlit,llit=JMsmi(Hamer.I,Hamer.S,Hamer.L)
+    slit,nlit,llit,transitions=Msmi(Hamer.I,Hamer.S,Hamer.L)
     Blist,epc,Elist,Vlist=Calresonant(Hamer,Expe,Nucl,diagram=True)
     Blist=np.array(Blist)
     Elist=np.array(Elist)
