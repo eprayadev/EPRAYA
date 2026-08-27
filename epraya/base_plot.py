@@ -898,7 +898,7 @@ class TkinterApp2:
         def conversion(factor,unit):
             self.tfields=fields*factor
             self.tunit=unit
-            dialog.quit()
+            dialog.destroy()
         ttk.Label(dialog,text="Select field units change:", font=('Helvetica',11,'bold')).pack(padx=20,pady=10)
         ttk.Button(dialog,text="Keep data in mT",command=lambda:conversion(1,"mT")).pack(fill='x',padx=20,pady=5)
         ttk.Button(dialog,text="Data in Gauss -> Change to mT (/10)",command=lambda:conversion(0.1,"mT")).pack(fill='x',padx=20,pady=5)
@@ -1074,7 +1074,7 @@ class TkinterApp2:
             epval=5e-6
         self.Sdat=Spmanipulation(self.fig,self.axes,self.field,self.counts,startl=sval,endli=enval,einmal=sinval,aufmal=finval,lt=ltval,pol=polval,epsilon=epval)
         self.root.quit()
-        self.root.quit()
+        self.root.destroy()
         
     def expandplot(self,axexpand):
         if not self.originalpositions:
@@ -1478,9 +1478,9 @@ class BaselineTuner: #For data tuning
         
     def saveaclo(self):
         self.fdata=(self.field,self.spcc,self.integc,self.tempa,self.val,self.Hpp,self.hp,self.integto)
-        self.top.quit()
+        self.top.destroy()
     def cance(self):
-        self.top.quit()
+        self.top.destroy()
     def onclick(self,event):
         if not event.inaxes or self.toolbar.mode: 
             return
@@ -1664,7 +1664,7 @@ class TkinterApp3:
             def conversion(factor,unit):
                 self.tfactor=factor
                 self.tunit=unit
-                dialog.quit()
+                dialog.destroy()
             ttk.Label(dialog,text="Select field units change:",font=('Helvetica',11,'bold')).pack(padx=20,pady=10)
             ttk.Button(dialog,text="Keep data in mT",command=lambda: conversion(1.0,"mT")).pack(fill='x',padx=20,pady=5)
             ttk.Button(dialog,text="Data in Gauss -> Change to mT (/10)",command=lambda:conversion(0.1,"mT")).pack(fill='x',padx=20,pady=5)

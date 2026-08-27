@@ -271,7 +271,7 @@ def Eresonant(Hamer,Exp,graph=True,table=True):  #Function for finding the reson
     Ham.Bk2=Ham.Bk2/1000
     Ham.Bk4=Ham.Bk4/1000
     Ham.Bk6=Ham.Bk6/1000
-    Ham.Hpp[0],Ham.Hpp[1]=Ham.Hpp[0]/10.0,Ham.Hpp[1]/10.0
+    Ham.Hpp[0],Ham.Hpp[1]=Ham.Hpp[0]/1.0,Ham.Hpp[1]/1.0
     if Ham.Hpp[0]==0.0 and Ham.Hpp[1]!=0.0:
         eta=1.0
     elif Ham.Hpp[0]!=0.0 and Ham.Hpp[1]==0.0:
@@ -700,7 +700,7 @@ def Cristalfm(Hamer,Exp):  #Function for finding the resonant fields and energie
     Ham.Bk2=Ham.Bk2/1000
     Ham.Bk4=Ham.Bk4/1000
     Ham.Bk6=Ham.Bk6/1000
-    Ham.Hpp[0],Ham.Hpp[1]=Ham.Hpp[0]/10.0,Ham.Hpp[1]/10.0
+    Ham.Hpp[0],Ham.Hpp[1]=Ham.Hpp[0]/1.0,Ham.Hpp[1]/1.0
     if Ham.Hpp[0]==0.0 and Ham.Hpp[1]!=0.0:
         eta=1.0
     elif Ham.Hpp[0]!=0.0 and Ham.Hpp[1]==0.0:
@@ -932,7 +932,7 @@ def Music(Hamer,Exper,graph=True,table=True):
             if Exp.Mexp[0].Frange[0]>=Exp.Mexp[0].Frange[1]:
                 raise ValueError("Field range can't be from higher to lower values.")
             numberes=len(Ham.Mulham)
-            Ham.Mulham[0].Hpp[0],Ham.Mulham[0].Hpp[1]=Ham.Mulham[0].Hpp[0]/10.0,Ham.Mulham[0].Hpp[1]/10.0
+            Ham.Mulham[0].Hpp[0],Ham.Mulham[0].Hpp[1]=Ham.Mulham[0].Hpp[0]/1.0,Ham.Mulham[0].Hpp[1]/1.0
             if Ham.Mulham[0].Hpp[0]==0.0 and Ham.Mulham[0].Hpp[1]!=0.0:
                 Ham.Mulham[0].eta=1.0
             elif Ham.Mulham[0].Hpp[0]!=0.0 and Ham.Mulham[0].Hpp[1]==0.0:

@@ -904,7 +904,7 @@ def Calpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk):
     Ham.Bk2=Ham.Bk2/1000
     Ham.Bk4=Ham.Bk4/1000
     Ham.Bk6=Ham.Bk6/1000
-    Ham.Hpp[0],Ham.Hpp[1]=Ham.Hpp[0]/10.0,Ham.Hpp[1]/10.0
+    Ham.Hpp[0],Ham.Hpp[1]=Ham.Hpp[0]/1.0,Ham.Hpp[1]/1.0
     if Ham.Hpp[0]==0.0 and Ham.Hpp[1]!=0.0:
         eta=1.0
     elif Ham.Hpp[0]!=0.0 and Ham.Hpp[1]==0.0:
@@ -1077,8 +1077,8 @@ def Mulpol(Hamer,Expe,graph=True):
     sumespct=np.zeros(Exp.Mexp[0].Points)
     for elka in numboint:
         if len(elka)==1:
-            Ham.Mulham[elka[0]].Hpp[0]=Ham.Mulham[0].Hpp[0]/10
-            Ham.Mulham[elka[0]].Hpp[1]=Ham.Mulham[0].Hpp[1]/10
+            Ham.Mulham[elka[0]].Hpp[0]=Ham.Mulham[0].Hpp[0]/1.0
+            Ham.Mulham[elka[0]].Hpp[1]=Ham.Mulham[0].Hpp[1]/1.0
             Ham.Mulham[elka[0]].eta=Ham.Mulham[0].eta
             fild1,fild2=Calpowder(Ham.Mulham[elka[0]],Exp.Mexp[elka[0]],iwas,jwas,kwas,weight,hulk)
             sumespct+=fild2
