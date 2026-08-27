@@ -1675,13 +1675,14 @@ def JPowder(Hamer,Expe,Nucl='None',graph=True):
     Blist,epc=JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl)
     if graph:
         plt.figure(figsize=(10,6))
-        plt.plot(Blist,epc,color='navy')
+        plt.plot(Blist,epc,color='navy',label='Spectrum')
         plt.xlabel('Magnetic Field [mT]')
         formatter=EngFormatter(sep='') 
         plt.gca().yaxis.set_major_formatter(formatter)
         plt.ylabel('Counts [U. A.]')
         plt.xlim(Expe.Frange[0],Expe.Frange[1])
         plt.grid()
+        plt.legend()
         plt.show(block=False)
     return Blist,epc
 
@@ -1983,13 +1984,14 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None'):
         print("No resonant fields detected in selected range")
     if graph:
         plt.figure(figsize=(10,6))
-        plt.plot(Blist,epc,color='navy')
+        plt.plot(Blist,epc,color='navy',label='Spectrum')
         plt.xlabel('Magnetic field [mT]')
         plt.ylabel('Counts [U. A.]')
         formatter=EngFormatter(sep='') 
         plt.gca().yaxis.set_major_formatter(formatter)
         plt.xlim(Expe.Frange[0],Expe.Frange[1])
         plt.grid()
+        plt.legend()
         plt.show(block=False)
         
         fig2,ax2=plt.subplots(figsize=(10,6))
@@ -2026,7 +2028,50 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False):
     '''
     Function for the calculation of the EPR cw spectrum of monocristal systems. Uses a formulation similar to the *Eresonant* function, to calculate the resonant fields and intensities, but calculates de absorption curve (first integral) of the spectrum that is numerically  derived, producing the final spectrum.
     
+    Parameters
+    ----------
     
+    Hamer : Class
+        Container for the hamiltonian parameters of the system.
+    
+    Expe : Class
+        Container for the experimental conditions.
+    Nucl : str
+        Isotope of the sample. Can be the quantum number and the element or only the element ('55Mn' or 'Mn') 
+    diagram : Bool
+        To pass the Energy data.
+        
+    Returns
+    -------
+    
+    Blist : jax.np.array
+        Array of the magnetic field.
+    epc : jax.np.array
+        Array of the counts of the spectrum.
+    
+    Example
+    -------
+
+    >>> import matplotlib.pyplot as plt
+    >>> import epraya as epr
+    >>> import numpy as np
+    >>> Ham,Exp,_=epr.Jstart()
+    >>> Ham.S=3/2
+    >>> Ham.I=1
+    >>> Ham.g=np.array([2.003, 2, 2])
+    >>> Ham.A=np.array([200, 200, 200])  #Hyperfine constant
+    >>> Ham.D=np.array([800,200])      #Zero field D and E
+    >>> Ham.Hpp=[0,10]
+    >>> Ham.Nucl='Cr'
+    >>> Exp.Freq=9.4
+    >>> Exp.Points=4096
+    >>> Exp.Temperature=300
+    >>> Exp.Frange=[0,800]
+    >>> print(epr.Calresonant(Ham,Exp))
+    (Array([0.00000000e+00, 1.95360195e-01, 3.90720391e-01, ...,
+       7.99609280e+02, 7.99804640e+02, 8.00000000e+02], dtype=float64),
+    Array([-1.64840330e-07, -1.10427100e-07, -8.03249933e-08, ...,
+    -8.85167972e-08, -8.84171157e-08, -8.83673152e-08], dtype=float64))
     '''
     frange0=jxn.where(Expe.Frange[0]<0.0,1e-4,Expe.Frange[0])
     Ham=Hamer.replace(A=jxn.asarray(Hamer.A)/1000.0,D=jxn.asarray(Hamer.D)/1000.0,Hpp=jxn.asarray(Hamer.Hpp)/1.0,Q=jxn.asarray(Hamer.Q)/1000.0,
