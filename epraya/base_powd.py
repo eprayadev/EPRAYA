@@ -992,7 +992,7 @@ def Calpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk):
 
 def Mulpol(Hamer,Expe,graph=True):
     '''
-    Function for the simulation the EPR spectrum for powder samples of multiple interactive or non interactive systems (from 2 to 4 systems). If there is an interaction between the systems (electron-eletron or hiperfine), solves the total hamiltonian. Otherwise, use the function Calpowder and sums the contributions to the total spectrum.
+    Function for the simulation of the EPR spectrum for powder samples of multiple interactive or non interactive systems (from 2 to 4 systems). If there is an interaction between the systems (electron-eletron or hiperfine), solves the total hamiltonian. Otherwise, use the function Calpowder and sums the contributions to the total spectrum.
     
     Parameters
     ----------
@@ -1002,8 +1002,6 @@ def Mulpol(Hamer,Expe,graph=True):
     
     Expe : Class
         Container for the experimental conditions.
-        
-
     graph : Bool
         Plots the resulting spectrum.
     

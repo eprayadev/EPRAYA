@@ -1658,7 +1658,6 @@ def JPowder(Hamer,Expe,Nucl='None',graph=True):
        Ham.A=np.array([200, 200, 200])  #Hyperfine constant
        Ham.D=np.array([800,200])      #Zero field D and E
        Ham.Hpp=[0,10]
-       Ham.Nucl='Cr'
        Exp.Freq=9.4
        Exp.Points=4096
        Exp.Temperature=300
@@ -1679,7 +1678,7 @@ def JPowder(Hamer,Expe,Nucl='None',graph=True):
         plt.xlabel('Magnetic Field [mT]')
         formatter=EngFormatter(sep='') 
         plt.gca().yaxis.set_major_formatter(formatter)
-        plt.ylabel('Counts [U. A.]')
+        plt.ylabel('Counts [A. U.]')
         plt.xlim(Expe.Frange[0],Expe.Frange[1])
         plt.grid()
         plt.legend()
@@ -1740,7 +1739,6 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None'):
     >>> Ham.A=np.array([200, 200, 200])  #Hyperfine constant
     >>> Ham.D=np.array([800,200])      #Zero field D and E
     >>> Ham.Hpp=[0,10]
-    >>> Ham.Nucl='Cr'
     >>> Exp.Freq=9.4
     >>> Exp.Points=4096
     >>> Exp.Temperature=300
@@ -1904,17 +1902,23 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None'):
        Ham.A=np.array([200, 200, 200])  #Hyperfine constant
        Ham.D=np.array([800,200])      #Zero field D and E
        Ham.Hpp=[0,10]
-       Ham.Nucl='Cr'
        Exp.Freq=9.4
        Exp.Points=4096
        Exp.Temperature=300
        Exp.Frange=[0,800]
        B,spc=epr.Jresonant(Ham,Exp)
        
+     .. image:: /_static/tabaj.PNG
+       :alt: Table of transitions of the Jresonant function
+       :align: center
+       
     .. image:: /_static/jreso.PNG
        :alt: Plot of the spectrum of the Jresonant function
        :align: center
-    
+       
+    .. image:: /_static/diaj.PNG
+       :alt: Energy diagram of the Jresonant function
+       :align: center    
     '''
     slit,nlit,llit,transitions=Msmi(Hamer.I,Hamer.S,Hamer.L)
     Blist,epc,Elist,Vlist=Calresonant(Hamer,Expe,Nucl,diagram=True)
@@ -1986,7 +1990,7 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None'):
         plt.figure(figsize=(10,6))
         plt.plot(Blist,epc,color='navy',label='Spectrum')
         plt.xlabel('Magnetic field [mT]')
-        plt.ylabel('Counts [U. A.]')
+        plt.ylabel('Counts [A. U.]')
         formatter=EngFormatter(sep='') 
         plt.gca().yaxis.set_major_formatter(formatter)
         plt.xlim(Expe.Frange[0],Expe.Frange[1])
@@ -2062,7 +2066,6 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False):
     >>> Ham.A=np.array([200, 200, 200])  #Hyperfine constant
     >>> Ham.D=np.array([800,200])      #Zero field D and E
     >>> Ham.Hpp=[0,10]
-    >>> Ham.Nucl='Cr'
     >>> Exp.Freq=9.4
     >>> Exp.Points=4096
     >>> Exp.Temperature=300
@@ -2442,10 +2445,42 @@ def Jmstart():
     JEmva(g1=0.0, A1=0.0, Q1=0.0, D1=0.0, g2=0.0, A2=0.0, Q2=0.0,
     D2=0.0, Hpp=Array([0, 0], dtype=int32), weight=0.0)
     '''
-    global Exp,Vary,Ham
     Ham,Exp,Vary=Mjhval(),JEmco(),JEmva()
+    return Ham,Exp,Vary
 
 def JMulpol(maham,Expe,Nucl1='None',Nucl2='None',graph=True):
+    '''
+    Wrap function for the simulation of the EPR spectrum for powder samples of two systems. If there is an interaction between the systems (electron-eletron or hiperfine), solves the total hamiltonian. Otherwise, sums the contributions to the total spectrum.
+    
+    Parameters
+    ----------
+    
+     maham : Class
+        Container for the hamiltonian parameters of the two systems.
+    
+    Expe : Class
+        Container for the experimental conditions.
+    Nucl1 : str
+        Isotope of the first system. Can be the quantum number and the element or only the element ('55Mn' or 'Mn') 
+    Nucl2 : str
+        Isotope of the second system. Can be the quantum number and the element or only the element ('55Mn' or 'Mn') 
+    graph : Bool
+        PLots the spectrum of the multisystem.
+    
+    Returns
+    -------
+    
+    Blist : jax.np.array
+        Array of the magnetic field.
+    epc : jax.np.array
+        Array of the counts of the spectrum.
+
+    Example
+    -------
+
+    .. code-block:: python
+       
+    '''
     Blist,epc=Jcalmulta(maham,Expe,Nucl1,Nucl2)
     if graph:
         plt.figure(figsize=(10,6))
@@ -2453,7 +2488,7 @@ def JMulpol(maham,Expe,Nucl1='None',Nucl2='None',graph=True):
         plt.xlabel('Magnetic field [mT]')
         formatter=EngFormatter(sep='') 
         plt.gca().yaxis.set_major_formatter(formatter)
-        plt.ylabel('Counts [U. A.]')
+        plt.ylabel('Counts [A. U.]')
         plt.xlim(Expe.Frange[0],Expe.Frange[1])
         plt.grid()
         plt.show(block=False)
@@ -2622,7 +2657,7 @@ def JMusic(maham,Expe,Nucl1='None',Nucl2='None',graph=True):
         plt.figure(figsize=(10,6))
         plt.plot(Blist,epc,color='navy')
         plt.xlabel('Magnetic field [mT]')
-        plt.ylabel('Counts [U. A.]')
+        plt.ylabel('Counts [A. U.]')
         plt.xlim(Expe.Frange[0],Expe.Frange[1])
         plt.grid()
         plt.show(block=False)
@@ -3052,7 +3087,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
               formatter=EngFormatter(sep='') 
               plt.gca().yaxis.set_major_formatter(formatter)
               plt.xlabel('Field [mT]')
-              plt.ylabel('Counts [U. A.]')
+              plt.ylabel('Counts [A. U.]')
               plt.grid()
               plt.title('EPR Spectrum')
               plt.show()
@@ -3065,7 +3100,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
               plt.gca().yaxis.set_major_formatter(formatter)
               plt.plot(Blis,espc/np.max(espc)*np.max(expr),label='Fit')
               plt.xlabel('Field [mT]')
-              plt.ylabel('Counts [U. A.]')
+              plt.ylabel('Counts [A. U.]')
               plt.grid()
               plt.title('EPR Spectrum')
               plt.show()
@@ -3136,7 +3171,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
           plt.gca().yaxis.set_major_formatter(formatter)
           plt.plot(Blis,espc/np.max(espc)*np.max(expr),label='Fit')
           plt.xlabel('Field [mT]')
-          plt.ylabel('Counts [U. A.]')
+          plt.ylabel('Counts [A. U.]')
           plt.grid()
           plt.title('EPR Spectrum')
           plt.show()
@@ -3149,7 +3184,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
           plt.gca().yaxis.set_major_formatter(formatter)
           plt.plot(Blis,espc/np.max(espc)*np.max(expr),label='Fit')
           plt.xlabel('Field [mT]')
-          plt.ylabel('Counts [U. A.]')
+          plt.ylabel('Counts [A. U.]')
           plt.grid()
           plt.title('EPR Spectrum')
           plt.show()
@@ -3495,7 +3530,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
               plt.gca().yaxis.set_major_formatter(formatter)
               plt.plot(Blis,espc/np.max(espc)*np.max(expr),label='Fit')
               plt.xlabel('Field [mT]')
-              plt.ylabel('Counts [U. A.]')
+              plt.ylabel('Counts [A. U.]')
               plt.grid()
               plt.title('EPR Spectrum')
               plt.show()
@@ -3508,7 +3543,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
               plt.gca().yaxis.set_major_formatter(formatter)
               plt.plot(Blis,espc/np.max(espc)*np.max(expr),label='Fit')
               plt.xlabel('Field [mT]')
-              plt.ylabel('Counts [U. A.]')
+              plt.ylabel('Counts [A. U.]')
               plt.grid()
               plt.title('EPR Spectrum')
               plt.show()
@@ -3625,7 +3660,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
           plt.gca().yaxis.set_major_formatter(formatter)
           plt.plot(Blis,espc/np.max(espc)*np.max(expr),label='Fit')
           plt.xlabel('Magnetic field [mT]')
-          plt.ylabel('Counts [U. A.]')
+          plt.ylabel('Counts [A. U.]')
           plt.grid()
           plt.title('EPR Spectrum')
           plt.show()
@@ -3638,7 +3673,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
           plt.gca().yaxis.set_major_formatter(formatter)
           plt.plot(Blis,espc/np.max(espc)*np.max(expr),label='Fit')
           plt.xlabel('Magnetic field [mT]')
-          plt.ylabel('Counts [U. A.]')
+          plt.ylabel('Counts [A. U.]')
           plt.grid()
           plt.title('EPR Spectrum')
           plt.show()
