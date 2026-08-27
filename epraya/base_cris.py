@@ -1166,7 +1166,7 @@ def Music(Hamer,Exper,graph=True,table=True):
             graphp.add_hline(y=0,line_color="black",line_width=1)
             graphp.add_vline(x=0,line_color="black",line_width=1)
             display(graphp)
-                    graphp.show()
+            graphp.show()
         else:
             fig,ax=plt.subplots(figsize=(10,6))
             ax.plot(fild1,sumespct,color='navy',label='Spectrum')
