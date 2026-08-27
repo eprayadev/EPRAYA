@@ -551,7 +551,7 @@ def Plotsim(espac1,inten1,resfield,espac2,enegria,curvebasis,splines,resonants,H
 
         ax1.axhline(0, color='black',linewidth=1)
         ax1.axvline(0, color='black',linewidth=1)
-        ax1.set_title('EPR spectrum',fontname='Georgia',fontsize=18)
+        ax1.set_title('EPR spectrum',fontsize=18)
         ax1.set_xlabel('Field [mT]')
         ax1.set_ylabel('Counts [A. U.]')
         ax1.set_xlim(espac1[0],espac1[-1]+5)
@@ -580,7 +580,7 @@ def Plotsim(espac1,inten1,resfield,espac2,enegria,curvebasis,splines,resonants,H
             else:
                 ax2.plot([fv,fv],[eni,enj],color='gray',marker='o',markersize=4,linestyle='-')
 
-        ax2.set_title('Energy VS Field',fontname='Georgia',fontsize=18)
+        ax2.set_title('Energy VS Field',fontsize=18)
         ax2.set_xlabel('Field [mT]')
         ax2.set_ylabel('Energy [GHz]')
         ax2.set_xlim(espac1[0],espac1[-1]+5)

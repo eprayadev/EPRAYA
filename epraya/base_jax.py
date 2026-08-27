@@ -1674,8 +1674,9 @@ def JPowder(Hamer,Expe,Nucl='None',graph=True):
     iwas,jwas,kwas,weight,hulk=jxn.array(iwas),jxn.array(jwas),jxn.array(kwas),jxn.array(weight),jxn.array(hulk)
     Blist,epc=JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl)
     if graph:
+        plt.figure(figsize=(10,6))
         plt.plot(Blist,epc,color='navy')
-        plt.xlabel('Field [mT]')
+        plt.xlabel('Magnetic Field [mT]')
         formatter=EngFormatter(sep='') 
         plt.gca().yaxis.set_major_formatter(formatter)
         plt.ylabel('Counts [U. A.]')
@@ -1981,6 +1982,7 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None'):
     else:
         print("No resonant fields detected in selected range")
     if graph:
+        plt.figure(figsize=(10,6))
         plt.plot(Blist,epc,color='navy')
         plt.xlabel('Magnetic field [mT]')
         plt.ylabel('Counts [U. A.]')
@@ -2009,7 +2011,7 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None'):
             else:
                 ax2.plot([fv,fv],[eni,enj],color='gray',marker='o',markersize=4,linestyle='-')
 
-        ax2.set_title('Energy VS Field',fontname='Georgia',fontsize=18)
+        ax2.set_title('Energy VS Field',fontsize=18)
         ax2.set_xlabel('Field [mT]')
         ax2.set_ylabel('Energy [GHz]')
         ax2.set_xlim(Blist[0],Blist[-1]+5)
@@ -2401,8 +2403,9 @@ def Jmstart():
 def JMulpol(maham,Expe,Nucl1='None',Nucl2='None',graph=True):
     Blist,epc=Jcalmulta(maham,Expe,Nucl1,Nucl2)
     if graph:
+        plt.figure(figsize=(10,6))
         plt.plot(Blist,epc,color='navy')
-        plt.xlabel('Field [mT]')
+        plt.xlabel('Magnetic field [mT]')
         formatter=EngFormatter(sep='') 
         plt.gca().yaxis.set_major_formatter(formatter)
         plt.ylabel('Counts [U. A.]')
@@ -2571,8 +2574,9 @@ def Jcalmulta(maham,Expe,Nucl1='None',Nucl2='None'):
 def JMusic(maham,Expe,Nucl1='None',Nucl2='None',graph=True):
     Blist,epc=Jcalmusic(maham,Expe,Nucl1,Nucl2)
     if graph:
+        plt.figure(figsize=(10,6))
         plt.plot(Blist,epc,color='navy')
-        plt.xlabel('Field [mT]')
+        plt.xlabel('Magnetic field [mT]')
         plt.ylabel('Counts [U. A.]')
         plt.xlim(Expe.Frange[0],Expe.Frange[1])
         plt.grid()
