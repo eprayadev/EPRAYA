@@ -789,22 +789,34 @@ def Powder(Hamer,Expe,graph=True):  #Method ASG
     iwas,jwas,kwas,weight,hulk=Delaunay(Expe)
     Bfield,Intensity=Calpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk)
     if graph:
-        import plotly.graph_objects as pgo
-        import plotly.colors as pc
-        graphp=pgo.Figure(data=pgo.Scatter(x=Bfield,y=Intensity, mode='lines',name="Spectrum",line=dict(color='navy')))
-        graphp.update_layout(
-            title={'text':'EPR spectrum','xanchor':'center','yanchor':'auto','x':0.45, 'y':0.95,
-                   'font': dict(family='Georgia', size=24,color='black')},
-            xaxis=dict(title='Field [mT]',showline=True,linecolor='black',mirror=True,linewidth=2,showgrid=True,gridcolor='black',range=[Bfield[0],Bfield[-1]+2])
-            ,yaxis=dict(title='Counts [U. A.]',showline=True,linecolor='black',mirror=True,linewidth=2,showgrid=True,gridcolor='black'),
-            plot_bgcolor='white',
-            width=1000,
-            height=600,
-            margin=dict(l=50,r=50,b=50,t=70,pad=4),
-            showlegend=True)
-        graphp.add_hline(y=0,line_color="black",line_width=1)
-        graphp.add_vline(x=0,line_color="black",line_width=1)
-        graphp.show()
+        if is_notebook():
+            import plotly.graph_objects as pgo
+            import plotly.colors as pc
+            graphp=pgo.Figure(data=pgo.Scatter(x=Bfield,y=Intensity, mode='lines',name="Spectrum",line=dict(color='navy')))
+            graphp.update_layout(
+                title={'text':'EPR spectrum','xanchor':'center','yanchor':'auto','x':0.45, 'y':0.95,
+                       'font': dict(family='Georgia', size=24,color='black')},
+                xaxis=dict(title='Field [mT]',showline=True,linecolor='black',mirror=True,linewidth=2,showgrid=True,gridcolor='black',range=[Bfield[0],Bfield[-1]+2])
+                ,yaxis=dict(title='Counts [A. U.]',showline=True,linecolor='black',mirror=True,linewidth=2,showgrid=True,gridcolor='black'),
+                plot_bgcolor='white',
+                width=1000,
+                height=600,
+                margin=dict(l=50,r=50,b=50,t=70,pad=4),
+                showlegend=True)
+            graphp.add_hline(y=0,line_color="black",line_width=1)
+            graphp.add_vline(x=0,line_color="black",line_width=1)
+            graphp.show()
+        else:
+            fig,ax=plt.subplots(figsize=(10,6))
+            ax.plot(Bfield,Intensity,color='navy',label='Spectrum')
+            formatter=EngFormatter(sep='')
+            ax.yaxis.set_major_formatter(formatter)
+            ax.set_xlabel('Magnetic field [mT]')
+            ax.set_ylabel('Counts [A. U.]')
+            ax.set_title('EPR Spectrum')
+            ax.legend()
+            ax.grid(True)
+            plt.show()
         return Bfield,Intensity
     else:
         return Bfield,Intensity
@@ -1231,22 +1243,34 @@ def Mulpol(Hamer,Expe,graph=True):
             sumespct+=espectotal
             fild1=espac1
     if graph:
-        import plotly.graph_objects as pgo
-        import plotly.colors as pc
-        graphp=pgo.Figure(data=pgo.Scatter(x=fild1,y=sumespct,mode='lines',name="Spectrum",line=dict(color='navy')))
-        graphp.update_layout(
-            title={'text':'EPR spectrum','xanchor':'center','yanchor':'auto','x':0.45, 'y':0.95,
-                   'font': dict(family='Georgia', size=24,color='black')},
-            xaxis=dict(title='Field [mT]',showline=True,linecolor='black',mirror=True,linewidth=2,showgrid=True,gridcolor='black',range=[fild1[0],fild1[-1]+10])
-            ,yaxis=dict(title='Counts [U. A.]',showline=True,linecolor='black',mirror=True,linewidth=2,showgrid=True,gridcolor='black'),
-            plot_bgcolor='white',
-            width=1000,
-            height=600,
-            margin=dict(l=50,r=50,b=50,t=70,pad=4),
-            showlegend=True)
-        graphp.add_hline(y=0,line_color="black",line_width=1)
-        graphp.add_vline(x=0,line_color="black",line_width=1)
-        graphp.show()
+        if is_notebook():
+            import plotly.graph_objects as pgo
+            import plotly.colors as pc
+            graphp=pgo.Figure(data=pgo.Scatter(x=fild1,y=sumespct,mode='lines',name="Spectrum",line=dict(color='navy')))
+            graphp.update_layout(
+                title={'text':'EPR spectrum','xanchor':'center','yanchor':'auto','x':0.45, 'y':0.95,
+                       'font': dict(family='Georgia', size=24,color='black')},
+                xaxis=dict(title='Field [mT]',showline=True,linecolor='black',mirror=True,linewidth=2,showgrid=True,gridcolor='black',range=[fild1[0],fild1[-1]+10])
+                ,yaxis=dict(title='Counts [A. U.]',showline=True,linecolor='black',mirror=True,linewidth=2,showgrid=True,gridcolor='black'),
+                plot_bgcolor='white',
+                width=1000,
+                height=600,
+                margin=dict(l=50,r=50,b=50,t=70,pad=4),
+                showlegend=True)
+            graphp.add_hline(y=0,line_color="black",line_width=1)
+            graphp.add_vline(x=0,line_color="black",line_width=1)
+            graphp.show()
+        else:
+            fig,ax=plt.subplots(figsize=(10,6))
+            ax.plot(fild1,sumespct,color='navy',label='Spectrum')
+            formatter=EngFormatter(sep='')
+            ax.yaxis.set_major_formatter(formatter)
+            ax.set_xlabel('Magnetic field [mT]')
+            ax.set_ylabel('Counts [A. U.]')
+            ax.set_title('EPR Spectrum')
+            ax.legend()
+            ax.grid(True)
+            plt.show()
     return fild1,sumespct
 
 def Betaparal(args):

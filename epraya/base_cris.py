@@ -435,105 +435,159 @@ def Plotsim(espac1,inten1,resfield,espac2,enegria,curvebasis,splines,resonants,H
         Container for the experimental conditions.
     '''
     slit,nlit,llit,transitions=Msmi(Ham.I,Ham.S,Ham.L)
-    if resfield!=[]:
-      import plotly.graph_objects as pgo
-      import plotly.colors as pc
-      if len(resfield)>1:
-        col=pc.sample_colorscale('Viridis',[k/(len(resfield)-1) for k in range(len(resfield))])
-      else:
-          col=['red']
-      graphp=pgo.Figure(data=pgo.Scatter(x=espac1,y=inten1, mode='lines',name="Spectrum",line=dict(color='navy')))
-      graphp.update_layout(
-          title={'text':'EPR spectrum','xanchor':'center','yanchor':'auto','x':0.45, 'y':0.95,
-                'font': dict(family='Georgia', size=24,color='black')
-                },
-          xaxis=dict(title='Field [mT]',showline=True,linecolor='black',mirror=True,linewidth=2,showgrid=True,gridcolor='black',range=[espac1[0],espac1[-1]+10])
-          ,yaxis=dict(title='Counts [U. A.]',showline=True,linecolor='black',mirror=True,linewidth=2,showgrid=True,gridcolor='black'),
-          plot_bgcolor='white',
-          width=1000,
-          height=600,
-          margin=dict(l=50,r=50,b=50,t=70,pad=4),
-          showlegend=True
-      )
-      i=0
-      for r in resonants:
-          fv=r['field']
-          if r['type']=='Allowed':
-              graphp.add_trace(pgo.Scatter(x=[fv, fv], y=[-np.mean(inten1)/2, np.mean(inten1)/2],mode='markers+lines',line=dict(color=col[i], dash='dot'),name=f"Field: {fv:.2f} mT"))
+    if in_notebook:
+        if resfield!=[]:
+          import plotly.graph_objects as pgo
+          import plotly.colors as pc
+          if len(resfield)>1:
+            col=pc.sample_colorscale('Viridis',[k/(len(resfield)-1) for k in range(len(resfield))])
           else:
-              graphp.add_trace(pgo.Scatter(x=[fv, fv], y=[-np.mean(inten1)/20, np.mean(inten1)/20],mode='markers+lines',line=dict(color='gray', dash='dot'),name=f"Field: {fv:.2f} mT"))
-          i+=1
-      upbutton = [
-          dict(label="All", method="update", args=[{"visible": [True]*len(graphp.data)}]),
-          dict(label="Fields", method="update", args=[{"visible": [trace.name.startswith('Field') for trace in graphp.data]}]),
-          dict(label="Spectrum", method="update", args=[{"visible": [True if i == 0 else False for i, trace in enumerate(graphp.data)]}])
-      ]
-      graphp.update_layout(
+              col=['red']
+          graphp=pgo.Figure(data=pgo.Scatter(x=espac1,y=inten1, mode='lines',name="Spectrum",line=dict(color='navy')))
+          graphp.update_layout(
+              title={'text':'EPR spectrum','xanchor':'center','yanchor':'auto','x':0.45, 'y':0.95,
+                    'font': dict(family='Georgia', size=24,color='black')
+                    },
+              xaxis=dict(title='Field [mT]',showline=True,linecolor='black',mirror=True,linewidth=2,showgrid=True,gridcolor='black',range=[espac1[0],espac1[-1]+5])
+              ,yaxis=dict(title='Counts [A. U.]',showline=True,linecolor='black',mirror=True,linewidth=2,showgrid=True,gridcolor='black'),
+              plot_bgcolor='white',
+              width=1000,
+              height=600,
+              margin=dict(l=50,r=50,b=50,t=70,pad=4),
+              showlegend=True
+          )
+          i=0
+          for r in resonants:
+              fv=r['field']
+              if r['type']=='Allowed':
+                  graphp.add_trace(pgo.Scatter(x=[fv, fv], y=[-np.mean(inten1)/2, np.mean(inten1)/2],mode='markers+lines',line=dict(color=col[i], dash='dot'),name=f"Field: {fv:.2f} mT"))
+              else:
+                  graphp.add_trace(pgo.Scatter(x=[fv, fv], y=[-np.mean(inten1)/20, np.mean(inten1)/20],mode='markers+lines',line=dict(color='gray', dash='dot'),name=f"Field: {fv:.2f} mT"))
+              i+=1
+          upbutton = [
+              dict(label="All", method="update", args=[{"visible": [True]*len(graphp.data)}]),
+              dict(label="Fields", method="update", args=[{"visible": [trace.name.startswith('Field') for trace in graphp.data]}]),
+              dict(label="Spectrum", method="update", args=[{"visible": [True if i == 0 else False for i, trace in enumerate(graphp.data)]}])
+          ]
+          graphp.update_layout(
 
-          updatemenus=[dict(
-              type="buttons", direction="down",
-              buttons=upbutton,
-              x=0.01,xanchor="auto",y=0.01,yanchor="auto"
-          )]
-      )
-      graphp.add_hline(y=0,line_color="black",line_width=1)
-      graphp.add_vline(x=0,line_color="black",line_width=1)
-      display(graphp)
+              updatemenus=[dict(
+                  type="buttons", direction="down",
+                  buttons=upbutton,
+                  x=0.01,xanchor="auto",y=0.01,yanchor="auto"
+              )]
+          )
+          graphp.add_hline(y=0,line_color="black",line_width=1)
+          graphp.add_vline(x=0,line_color="black",line_width=1)
+          display(graphp)
 
-      graphe=pgo.Figure()
-      elk=0
-      col=pc.sample_colorscale('Viridis',[k/(len(enegria[0])-1) for k in range(len(enegria[0]))])
-      coel=pc.sample_colorscale('Jet',[k/(len(enegria[0])-1) for k in range(len(enegria[0]))])
-      for elk in range(0,len(enegria[0])):
-        basidx=curvebasis[elk]
-        labelr=Getlabel(basidx,slit,nlit,llit,Ham.L,Ham.I)
-        graphe.add_trace(pgo.Scatter(x=espac2,y=enegria[:,elk],mode='lines',line=dict(color=col[elk]),name=labelr,legendgroup="En",legendgrouptitle_text="Energies",legend="legend"))
-      for r in resonants:
-        fv=r['field']
-        idi,idj=r['inx']
-        eni=splines(fv)[idi]
-        enj=splines(fv)[idj]
-        if r['type']=='Allowed':
-            graphe.add_trace(pgo.Scatter(x=[fv,fv],y=[eni,enj],mode='markers+lines',line=dict(color=coel[idi]),name=f"Field: {fv:.2f} mT",legendgroup="Fir",
-        legendgrouptitle_text="R. Fields",legend="legend2"))
+          graphe=pgo.Figure()
+          elk=0
+          col=pc.sample_colorscale('Viridis',[k/(len(enegria[0])-1) for k in range(len(enegria[0]))])
+          coel=pc.sample_colorscale('Jet',[k/(len(enegria[0])-1) for k in range(len(enegria[0]))])
+          for elk in range(0,len(enegria[0])):
+            basidx=curvebasis[elk]
+            labelr=Getlabel(basidx,slit,nlit,llit,Ham.L,Ham.I)
+            graphe.add_trace(pgo.Scatter(x=espac2,y=enegria[:,elk],mode='lines',line=dict(color=col[elk]),name=labelr,legendgroup="En",legendgrouptitle_text="Energies",legend="legend"))
+          for r in resonants:
+            fv=r['field']
+            idi,idj=r['inx']
+            eni=splines(fv)[idi]
+            enj=splines(fv)[idj]
+            if r['type']=='Allowed':
+                graphe.add_trace(pgo.Scatter(x=[fv,fv],y=[eni,enj],mode='markers+lines',line=dict(color=coel[idi]),name=f"Field: {fv:.2f} mT",legendgroup="Fir",
+            legendgrouptitle_text="R. Fields",legend="legend2"))
+            else:
+                graphe.add_trace(pgo.Scatter(x=[fv,fv],y=[eni,enj],mode='markers+lines',line=dict(color='gray'),name=f"Field: {fv:.2f} mT",legendgroup="Fi",
+            legendgrouptitle_text="R. Fields",legend="legend2"))
+          graphe.update_layout(
+            title={'text':'Energy VS Field','xanchor':'center','yanchor':'auto','x':0.45, 'y':0.95,
+                   'font': dict(family='Georgia', size=24,color='black')
+                   },
+            xaxis=dict(title='Field [mT]',showline=True,linecolor='black',mirror=True,linewidth=2,showgrid=True,gridcolor='black',range=[espac1[0],espac1[-1]+10])
+            ,yaxis=dict(title='Energy [GHz]',showline=True,linecolor='black',mirror=True,linewidth=2,showgrid=True,gridcolor='black'),
+            plot_bgcolor='white',
+            width=1075,
+            height=600,
+            legend=dict(
+                x=1.02,y=1,xanchor='left',yanchor='top',bgcolor='rgba(0,0,0,0)'
+                ,groupclick="toggleitem"
+            ),
+            legend2=dict(
+                x=1.25,y=1,xanchor='left',yanchor='top',bgcolor='rgba(0,0,0,0)'
+                ,groupclick="toggleitem"
+            ),
+            margin=dict(l=50,r=250,b=50,t=70,pad=4),
+            showlegend=True
+          )
+          upbutton = [
+              dict(label="All", method="update", args=[{"visible": [True] * len(graphe.data)}]),
+              dict(label="Fields", method="update", args=[{"visible": [trace.legendgroup!='Fi' for trace in graphe.data]}]),
+              dict(label="Energy", method="update", args=[{"visible": [trace.legendgroup=='En' for trace in graphe.data]}])
+          ]
+          graphe.update_layout(
+
+              updatemenus=[dict(
+                  type="buttons", direction="up",
+                  buttons=upbutton,
+                  x=0.01, xanchor="auto", y=1, yanchor="auto"
+              )]
+          )
+          graphe.show()
+    else:
+        fig1,ax1=plt.subplots(figsize=(10,6))
+        ax1.plot(espac1,inten1,color='navy',label="Spectrum",linewidth=1.5)
+        if len(resfield)>1:
+            col_es=cm.viridis(np.linspace(0,1,len(resfield)))
         else:
-            graphe.add_trace(pgo.Scatter(x=[fv,fv],y=[eni,enj],mode='markers+lines',line=dict(color='gray'),name=f"Field: {fv:.2f} mT",legendgroup="Fi",
-        legendgrouptitle_text="R. Fields",legend="legend2"))
-      graphe.update_layout(
-        title={'text':'Energy VS Field','xanchor':'center','yanchor':'auto','x':0.45, 'y':0.95,
-               'font': dict(family='Georgia', size=24,color='black')
-               },
-        xaxis=dict(title='Field [mT]',showline=True,linecolor='black',mirror=True,linewidth=2,showgrid=True,gridcolor='black',range=[espac1[0],espac1[-1]+10])
-        ,yaxis=dict(title='Energy [GHz]',showline=True,linecolor='black',mirror=True,linewidth=2,showgrid=True,gridcolor='black'),
-        plot_bgcolor='white',
-        width=1075,
-        height=600,
-        legend=dict(
-            x=1.02,y=1,xanchor='left',yanchor='top',bgcolor='rgba(0,0,0,0)'
-            ,groupclick="toggleitem"
-        ),
-        legend2=dict(
-            x=1.25,y=1,xanchor='left',yanchor='top',bgcolor='rgba(0,0,0,0)'
-            ,groupclick="toggleitem"
-        ),
-        margin=dict(l=50,r=250,b=50,t=70,pad=4),
-        showlegend=True
-      )
-      upbutton = [
-          dict(label="All", method="update", args=[{"visible": [True] * len(graphe.data)}]),
-          dict(label="Fields", method="update", args=[{"visible": [trace.legendgroup!='Fi' for trace in graphe.data]}]),
-          dict(label="Energy", method="update", args=[{"visible": [trace.legendgroup=='En' for trace in graphe.data]}])
-      ]
-      graphe.update_layout(
+            colres=['red']
+        meanint=np.mean(inten1)
+        for i,r in enumerate(resonants):
+            fv=r['field']
+            if r['type']=='Allowed':
+                ax1.vlines(fv,-meanint/ 2,meanint/2, color=colres[i],linestyle=':',label=f"Field: {fv:.2f} mT")
+            else:
+                ax1.vlines(fv,-meanint/20,meanint/20,color='gray',linestyle=':',label=f"Field: {fv:.2f} mT")
 
-          updatemenus=[dict(
-              type="buttons", direction="up",
-              buttons=upbutton,
-              x=0.01, xanchor="auto", y=1, yanchor="auto"
-          )]
-      )
-      graphe.show()
+        ax1.axhline(0, color='black',linewidth=1)
+        ax1.axvline(0, color='black',linewidth=1)
+        ax1.set_title('EPR spectrum',fontname='Georgia',fontsize=18)
+        ax1.set_xlabel('Field [mT]')
+        ax1.set_ylabel('Counts [A. U.]')
+        ax1.set_xlim(espac1[0],espac1[-1]+5)
+        ax1.yaxis.set_major_formatter(EngFormatter(sep=''))
+        ax1.grid(True,color='black',alpha=0.3,linestyle='-')
+        ax1.legend(bbox_to_anchor=(1.02,1),loc='upper left')
+        plt.tight_layout()
+        plt.show()
 
+        fig2,ax2=plt.subplots(figsize=(10,6))
+        numlevels=enegria.shape[1]
+        colenergy= cm.viridis(np.linspace(0,1,numlevels))
+        coljet=cm.jet(np.linspace(0,1,numlevels))
+        for elk in range(num_levels):
+            basidx=curvebasis[elk]
+            labelr=Getlabel(basidx,slit,nlit,llit,Ham.L,Ham.I)
+            ax2.plot(espac2,enegria[:,elk],color=colenergy[elk],label=labelr)
+
+        for r in resonants:
+            fv=r['field']
+            idi,idj =r['inx']
+            eni=splines(fv)[idi]
+            enj=splines(fv)[idj]
+            if r['type']=='Allowed':
+                ax2.plot([fv,fv],[eni,enj],color=coljet[idi],marker='o',markersize=4,linestyle='-')
+            else:
+                ax2.plot([fv,fv],[eni,enj],color='gray',marker='o',markersize=4,linestyle='-')
+
+        ax2.set_title('Energy VS Field',fontname='Georgia',fontsize=18)
+        ax2.set_xlabel('Field [mT]')
+        ax2.set_ylabel('Energy [GHz]')
+        ax2.set_xlim(espac1[0],espac1[-1]+5)
+        ax2.grid(True,color='black',alpha=0.3,linestyle='-')
+        ax2.legend(bbox_to_anchor=(1.02,1),loc='upper left')
+        plt.tight_layout()
+        plt.show()
 
 def DFormatfra(val):
     #Change format for fractions
@@ -1095,20 +1149,33 @@ def Music(Hamer,Exper,graph=True,table=True):
         else:
             print(dfdis)
     if graph:
-        import plotly.graph_objects as pgo
-        import plotly.colors as pc
-        graphp=pgo.Figure(data=pgo.Scatter(x=fild1,y=sumespct,mode='lines',name="Spectrum",line=dict(color='navy')))
-        graphp.update_layout(
-            title={'text':'EPR spectrum','xanchor':'center','yanchor':'auto','x':0.45, 'y':0.95,
-                   'font': dict(family='Georgia', size=24,color='black')},
-            xaxis=dict(title='Field [mT]',showline=True,linecolor='black',mirror=True,linewidth=2,showgrid=True,gridcolor='black',range=[fild1[0],fild1[-1]+10])
-            ,yaxis=dict(title='Counts [U. A.]',showline=True,linecolor='black',mirror=True,linewidth=2,showgrid=True,gridcolor='black'),
-            plot_bgcolor='white',
-            width=1000,
-            height=600,
-            margin=dict(l=50,r=50,b=50,t=70,pad=4),
-            showlegend=True)
-        graphp.add_hline(y=0,line_color="black",line_width=1)
-        graphp.add_vline(x=0,line_color="black",line_width=1)
-        display(graphp)
+        if is_notebook():
+            import plotly.graph_objects as pgo
+            import plotly.colors as pc
+            graphp=pgo.Figure(data=pgo.Scatter(x=fild1,y=sumespct,mode='lines',name="Spectrum",line=dict(color='navy')))
+            graphp.update_layout(
+                title={'text':'EPR spectrum','xanchor':'center','yanchor':'auto','x':0.45, 'y':0.95,
+                       'font': dict(family='Georgia', size=24,color='black')},
+                xaxis=dict(title='Field [mT]',showline=True,linecolor='black',mirror=True,linewidth=2,showgrid=True,gridcolor='black',range=[fild1[0],fild1[-1]+5])
+                ,yaxis=dict(title='Counts [A. U.]',showline=True,linecolor='black',mirror=True,linewidth=2,showgrid=True,gridcolor='black'),
+                plot_bgcolor='white',
+                width=1000,
+                height=600,
+                margin=dict(l=50,r=50,b=50,t=70,pad=4),
+                showlegend=True)
+            graphp.add_hline(y=0,line_color="black",line_width=1)
+            graphp.add_vline(x=0,line_color="black",line_width=1)
+            display(graphp)
+                    graphp.show()
+        else:
+            fig,ax=plt.subplots(figsize=(10,6))
+            ax.plot(fild1,sumespct,color='navy',label='Spectrum')
+            formatter=EngFormatter(sep='')
+            ax.yaxis.set_major_formatter(formatter)
+            ax.set_xlabel('Magnetic field [mT]')
+            ax.set_ylabel('Counts [A. U.]')
+            ax.set_title('EPR Spectrum')
+            ax.legend()
+            ax.grid(True)
+            plt.show()
     return fild1,sumespct

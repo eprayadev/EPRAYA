@@ -2291,6 +2291,7 @@ def Fitting(Hamer,Exper,Vara,datexp):
                         resultexper=LSquare(Hamer,Exper,Vara,datexp,maximal=numtr,mode=csample)
                     #To show the graph
                     fig=Figure(figsize=(8,10))
+                    formatter=EngFormatter(sep='') 
                     canvas=FigureCanvasAgg(fig)
                     ax=fig.add_subplot(211)
                     if hasattr(Exper,'Mexp'):
@@ -2298,6 +2299,9 @@ def Fitting(Hamer,Exper,Vara,datexp):
                     else:
                         Bla=np.linspace(Exper.Frange[0],Exper.Frange[1],Exper.Points)
                     ax.plot(Bla,datexp,color='blue',label='Data')
+                    ax.yaxis.set_major_formatter(formatter)
+                    ax.set_xlabel('Magnetic field [mT]')
+                    ax.set_ylabel('Counts [A. U.]')
                     if resultexper is not None:
                         maximo=np.max(resultexper)
                         if maximo==0:

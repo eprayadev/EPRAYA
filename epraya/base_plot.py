@@ -122,6 +122,8 @@ def Splot(field,count):
     plt.xlabel('Magnetic Field [mT]')
     plt.ylabel('Counts [A. U.]')
     plt.title('EPR spectrum')
+    formatter=EngFormatter(sep='') 
+    plt.gca().yaxis.set_major_formatter(formatter)
     plt.plot(field, count, color='green')
     plt.grid(True)
     plt.show()
@@ -257,6 +259,8 @@ def Sfilter(field,count,lt=51,pol=3,startl=0,endli=-1,epsilon=(5*10**-6),plot=Tr
       plt.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
       plt.ylabel('Counts [A. U.]')
       plt.title('EPR spectrum')
+      formatter=EngFormatter(sep='') 
+      plt.gca().yaxis.set_major_formatter(formatter)
       plt.plot(field, spc)
       plt.grid()
       plt.plot(field, basel, "--",color = 'green',label='Baseline')
@@ -281,6 +285,8 @@ def Sfilter(field,count,lt=51,pol=3,startl=0,endli=-1,epsilon=(5*10**-6),plot=Tr
       plt.ylabel('Counts [A. U.]')
       plt.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
       plt.title('EPR spectrum')
+      formatter=EngFormatter(sep='') 
+      plt.gca().yaxis.set_major_formatter(formatter)
       plt.plot(field, (spc - basel))
       if len(tempa)!=0:
         plt.plot(tempa, (spc - basel)[val], "*",color = 'red',label='Resonant field')
@@ -295,6 +301,8 @@ def Sfilter(field,count,lt=51,pol=3,startl=0,endli=-1,epsilon=(5*10**-6),plot=Tr
       plt.xlabel('Magnetic Field [mT]')
       plt.ylabel('[A. U.]')
       plt.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
+      formatter=EngFormatter(sep='') 
+      plt.gca().yaxis.set_major_formatter(formatter)
       plt.plot(field, integ)
       if len(tempa)!=0:
         plt.plot(tempa, integ[val], "*",color = 'red',label='Resonant field')
@@ -306,6 +314,8 @@ def Sfilter(field,count,lt=51,pol=3,startl=0,endli=-1,epsilon=(5*10**-6),plot=Tr
       plt.xlabel('Magnetic Field [mT]')
       plt.ylabel('[A. U.]')
       plt.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
+      formatter=EngFormatter(sep='') 
+      plt.gca().yaxis.set_major_formatter(formatter)
       plt.plot(field, integto)
       plt.title('EPR Intensity')
       if len(tempa)!=0:
@@ -615,6 +625,8 @@ def Spmanipulation(fig,axes,field,count,lt=51,pol=3,startl=0,endli=-1,einmal=0,a
         dfr=DataFrame(data=drr)
     ax1=axes[0,0]
     ax1.plot(field,spc)
+    formatter=EngFormatter(sep='') 
+    ax1.yaxis.set_major_formatter(formatter)
     ax1.plot(field,basel,"--",color='green',label='Baseline')
     ax1.plot(field[startl],spc[startl],"o",color='blue',label='Line start')
     ax1.plot(field[endli],spc[endli],"o",color='blue',label='Line end')
@@ -644,6 +656,8 @@ def Spmanipulation(fig,axes,field,count,lt=51,pol=3,startl=0,endli=-1,einmal=0,a
     ax2.set_title('EPR spectrum')
     ax2.set_xlabel('Magnetic Field [mT]')
     ax2.set_ylabel('Counts [A. U.]')
+    formatter=EngFormatter(sep='') 
+    ax2.yaxis.set_major_formatter(formatter)
     if len(tempa)!=0:
         ax2.plot(tempa,(spc-basel)[val],"*",color='red',label='Resonant field')
         ax2.legend()
@@ -651,6 +665,8 @@ def Spmanipulation(fig,axes,field,count,lt=51,pol=3,startl=0,endli=-1,einmal=0,a
     ax2.grid(True)
     
     ax3=axes[1,0]
+    formatter=EngFormatter(sep='') 
+    ax3.yaxis.set_major_formatter(formatter)
     ax3.plot(field,integ)
     principal=[integ[einmal],integ[aufmal]]
     principal1=[field[einmal],field[aufmal]]
@@ -667,6 +683,8 @@ def Spmanipulation(fig,axes,field,count,lt=51,pol=3,startl=0,endli=-1,einmal=0,a
     ax3.grid(True)
     
     ax4=axes[1,1]
+    formatter=EngFormatter(sep='') 
+    ax4.yaxis.set_major_formatter(formatter)
     ax4.plot(field,integto)
     if len(tempa)!=0:
         ax4.plot(tempa,integto[val],"*",color='red',label='Resonant field')
@@ -1426,6 +1444,8 @@ class BaselineTuner: #For data tuning
         axint=self.ax[1]
 
         axspc.clear()
+        formatter=EngFormatter(sep='') 
+        axspc.yaxis.set_major_formatter(formatter)
         principal=[self.spcc[sind],self.spcc[eind]]
         principal1=[self.field[sind],self.field[eind]]
         axspc.plot(principal1,principal,"--",color='green')
@@ -1442,6 +1462,8 @@ class BaselineTuner: #For data tuning
         axint.clear()
         principal=[self.integc[siind],self.integc[eiind]]
         principal1=[self.field[siind],self.field[eiind]]
+        formatter=EngFormatter(sep='') 
+        axint.yaxis.set_major_formatter(formatter)
         axint.plot(principal1,principal,"--",color='green')
         axint.plot(self.field,self.integc,color='green')
         axint.plot(self.field[siind],self.integc[siind],"o",color='blue')
@@ -1718,6 +1740,9 @@ class TkinterApp3:
         if not precedent:
             axspc.plot(fieldss,spcc,label=latext)
             axint.plot(fieldss,integc,label=latext)
+            formatter=EngFormatter(sep='') 
+            axspc.yaxis.set_major_formatter(formatter)
+            axint.yaxis.set_major_formatter(formatter)
             axspc.set_title('Spectrum')
             axspc.set_xlabel('Magnetic Field [mT]')
             axspc.set_ylabel('Counts [A.U.]')
@@ -1736,6 +1761,7 @@ class TkinterApp3:
             axint.autoscale_view()
             axres.set_title('Resonant Fields')
             axres.set_ylabel('Resonant fields [mT]')
+            axres.yaxis.set_major_formatter(formatter)
             axres.set_xlabel('Temperature [K]')
             axres.plot(reten,tempa,'o',label=latext)
             axres.grid(True)
@@ -1748,6 +1774,7 @@ class TkinterApp3:
             axhpp.set_title('Hpp distance')
             axhpp.set_ylabel('Peak to peak distance [mT]')
             axhpp.set_xlabel('Temperature [K]')
+            axhpp.yaxis.set_major_formatter(formatter)
             axhpp.plot(reten,hpp,'o',label=latext)
             if not isinstance(hpp,float):
                 axhpp.plot(reten[0],phpp,'s',label=f"_{latext}_phpp")
@@ -1765,6 +1792,7 @@ class TkinterApp3:
             axi2s.set_xlabel('Magnetic Field [mT]')
             axi2s.set_ylabel('EPR Intensity [A. U.]')
             axi2s.ticklabel_format(style='sci',axis='y',scilimits=(0,0))
+            axi2s.yaxis.set_major_formatter(formatter)
             axi2s.grid(True)
             axi2s.relim()
             axi2s.legend()
@@ -1773,6 +1801,7 @@ class TkinterApp3:
             aximax.set_title('Intensity Maximums')
             aximax.set_xlabel('Temperature [K]')
             aximax.set_ylabel('Max Intensity [A. U.]')
+            aximax.yaxis.set_major_formatter(formatter)
             aximax.grid(True)
             aximax.relim()
             aximax.legend()
@@ -1787,6 +1816,7 @@ class TkinterApp3:
                 axiint.set_title('Inverse of Intensity')
                 axiint.set_xlabel('Temperature [K]')
                 axiint.set_ylabel('1/I [A. U.]')
+                axiint.yaxis.set_major_formatter(formatter)
                 axiint.grid(True)
                 axiint.relim()
                 axiint.autoscale_view()
