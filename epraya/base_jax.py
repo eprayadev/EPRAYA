@@ -42,7 +42,7 @@ from threadpoolctl import threadpool_limits
 import re
 from itertools import product as iterproduct
 from .base_powd import *
-
+from matplotlib import cm
 
 
 jx.config.update("jax_enable_x64", True)
@@ -1647,27 +1647,26 @@ def JPowder(Hamer,Expe,Nucl='None',graph=True):
     
     .. code-block:: python
     
-
        import matplotlib.pyplot as plt
        import epraya as epr
        import numpy as np
        Ham,Exp,_=epr.Jstart()
-
        Ham.S=3/2
        Ham.I=1
        Ham.g=np.array([2.003, 2, 2])
-
        Ham.A=np.array([200, 200, 200])  #Hyperfine constant
        Ham.D=np.array([800,200])      #Zero field D and E
-       Ham.Hpp=[0, 1]
+       Ham.Hpp=[0,10]
        Ham.Nucl='Cr'
-
        Exp.Freq=9.4
        Exp.Points=4096
        Exp.Temperature=300
-
        Exp.Frange=[0,800]
        B,spc=epr.JPowder(Ham,Exp)
+       
+    .. image:: /_static/jaxp.PNG
+       :alt: Plot of the spectrum of the Jpowder function
+       :align: center
     
     '''
     iwas,jwas,kwas,weight,hulk=Delaunay(Expe)
@@ -1711,7 +1710,8 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None'):
     
     hulk : jax.np.array
         Smaller convex poligon tha contains all the points require for the simulation.
-    
+    Nucl : str
+        Isotope of the sample. Can be the quantum number and the element or only the element ('55Mn' or 'Mn') 
     Returns
 
     -------
@@ -1722,6 +1722,31 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None'):
     espectotal : jax.np.array
         Array of the counts of the spectrum.
     
+    Example
+    -------
+    >>> import matplotlib.pyplot as plt
+    >>> import epraya as epr
+    >>> import numpy as np
+    >>> import jax.numpy as jxn
+    >>> Ham,Exp,_=epr.Jstart()
+    >>> iwas,jwas,kwas,weight,hulk=epr.Delaunay(Exp)
+    >>> iwas,jwas,kwas,weight,hulk=jxn.array(iwas),jxn.array(jwas),jxn.array(kwas),jxn.array(weight),jxn.array(hulk)
+    >>> Ham.S=3/2
+    >>> Ham.I=1
+    >>> Ham.g=np.array([2.003, 2, 2])
+    >>> Ham.A=np.array([200, 200, 200])  #Hyperfine constant
+    >>> Ham.D=np.array([800,200])      #Zero field D and E
+    >>> Ham.Hpp=[0,10]
+    >>> Ham.Nucl='Cr'
+    >>> Exp.Freq=9.4
+    >>> Exp.Points=4096
+    >>> Exp.Temperature=300
+    >>> Exp.Frange=[0,800]
+    >>> print(epr.JCalpowder(Ham,Exp,iwas,jwas,kwas,weight,hulk))
+    (Array([0.00000000e+00, 1.95360195e-01, 3.90720391e-01, ...,
+       7.99609280e+02, 7.99804640e+02, 8.00000000e+02], dtype=float64),
+    Array([ 1.48600800e-22,  1.06329540e-21,  6.49499460e-22, ...,
+        2.06205909e-21,  5.04622598e-22, -1.50266650e-21], dtype=float64))   
     '''
     frange0=jxn.where(Expe.Frange[0]<0.0,1e-4,Expe.Frange[0])
     Ham=Hamer.replace(A=jxn.asarray(Hamer.A)/1000.0,D=jxn.asarray(Hamer.D)/1000.0,Hpp=jxn.asarray(Hamer.Hpp)/1.0,Q=jxn.asarray(Hamer.Q)/1000.0,
@@ -1830,8 +1855,130 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None'):
     Blist2=jxn.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
     return Blist2,espectotal
     
-def Jresonant(Hamer,Expe,graph=True,Nucl='None'):
-    Blist,epc=Calresonant(Hamer,Expe,Nucl)
+def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None'):
+    '''
+    Wrap function for the simulation of the EPR spectrum for monocrystal samples. Also creates the table of transitions and energy diagrams of the system.
+    
+    Parameters
+    ----------
+    
+    Hamer : Class
+        Container for the hamiltonian parameters of the system.
+    
+    Expe : Class
+        Container for the experimental conditions.
+    graph : Bool
+        Plots the resulting spectrum.
+    table : Bool
+        Creates the table of transitions.
+    Nucl : str
+        Isotope of the sample. Can be the quantum number and the element or only the element ('55Mn' or 'Mn') 
+
+
+        
+    Returns
+    -------
+    
+    Blist : jax.np.array
+
+        Array of the magnetic field.
+    epc : jax.np.array
+        Array of the counts of the spectrum.
+    
+
+    Example
+    -------
+    
+    .. code-block:: python
+    
+       import matplotlib.pyplot as plt
+       import epraya as epr
+       import numpy as np
+       Ham,Exp,_=epr.Jstart()
+       Ham.S=3/2
+       Ham.I=1
+       Ham.g=np.array([2.003, 2, 2])
+       Ham.A=np.array([200, 200, 200])  #Hyperfine constant
+       Ham.D=np.array([800,200])      #Zero field D and E
+       Ham.Hpp=[0,10]
+       Ham.Nucl='Cr'
+       Exp.Freq=9.4
+       Exp.Points=4096
+       Exp.Temperature=300
+       Exp.Frange=[0,800]
+       B,spc=epr.Jresonant(Ham,Exp)
+       
+    .. image:: /_static/jreso.PNG
+       :alt: Plot of the spectrum of the Jresonant function
+       :align: center
+    
+    '''
+    slit,nlit,llit=JMsmi(Hamer.I,Hamer.S,Hamer.L)
+    Blist,epc,Elist,Vlist=Calresonant(Hamer,Expe,Nucl,diagram=True)
+    Blist=np.array(Blist)
+    Elist=np.array(Elist)
+    Vlist=np.array(Vlist)
+    #For the energy diagrams
+    Elist,Vlist=JPretrack(Elist,Vlist)
+    splines=cubichers(Blist,Elist,axis=0)
+    targettr=set()
+    targettr.update(tuple(sorted(p)) for p in transitions["allowed"])
+    targettr.update(tuple(sorted(p)) for p in transitions["for Dms2"])
+    maxvector=Vlist[-1]
+    curvebasis=Assingstatestobasis(maxvector)
+    dim=Elist.shape[1]
+    resfield=[]
+    resonants=[]
+    for i in range(dim):
+        for j in range(i+1, dim):
+            basis1=curvebasis[i]
+            basis2=curvebasis[j]
+            pair=tuple(sorted((basis1,basis2)))
+            if pair not in targettr:
+                continue
+            diffv=np.abs(Elist[:,j]-Elist[:,i])-Expe.Freq
+            signch=np.where(np.diff(np.signbit(diffv)))[0]
+            for k in signch:
+                bstart,bend=Blist[k],Blist[k+1]
+                def deltaE(b):
+                    return np.real(np.abs(splines(b)[j]-splines(b)[i]))-Expe.Freq
+                try:
+                    res=sci.optimize.root_scalar(deltaE,bracket=[bstart,bend],method='brentq')
+                    if res.converged:
+                        ms1,ms2=slit[basis1],slit[basis2]
+                        mi1,mi2=nlit[basis1],nlit[basis2]
+                        dms=np.abs(ms1-ms2)
+                        dmi=np.abs(mi1-mi2)
+                        if np.isclose(dms,1) and np.isclose(dmi,0):
+                            ttyp="Allowed"
+                        elif np.isclose(dms,2):
+                            ttyp="Forbidden (2)"
+                        elif not np.isclose(dmi,0):
+                            ttyp="Forbidden (N)"
+                        else:
+                            ttyp="Forbidden"
+                        state1=Getlabel(basis1,slit,nlit,llit,Hamer.L,Hamer.I)
+                        state2=Getlabel(basis2,slit,nlit,llit,Hamer.L,Hamer.I)
+                        resonants.append({'field': res.root,'inx': (i, j),'bainx': (basis1,basis2),'type': ttyp,'transition': f"{state1} <-> {state2}"})
+                        resfield.append(res.root)
+                except ValueError:
+                    pass
+    if len(resfield)>0:
+        if table:
+            df=DataFrame(data=resonants)
+            dfdis=df[['field', 'transition', 'type']].copy()
+            dfl=dfdis.iloc[::2].reset_index(drop=True)
+            dfr=dfdis.iloc[1::2].reset_index(drop=True)
+            dfdis=concat([dfl, dfr],axis=1)
+            dfdis.columns=['Field (mT)','Transition','Type','Field (mT)','Transition','Type']
+            dfdis['Field (mT)']=dfdis['Field (mT)'].round(3)
+            if is_notebook():
+                from IPython.display import display
+                display(dfdis)
+            else:
+                print(dfdis)
+    else:
+        print("No resonant fields detected in selected range")
     if graph:
         plt.plot(Blist,epc,color='navy')
         plt.xlabel('Magnetic field [mT]')
@@ -1841,9 +1988,43 @@ def Jresonant(Hamer,Expe,graph=True,Nucl='None'):
         plt.xlim(Expe.Frange[0],Expe.Frange[1])
         plt.grid()
         plt.show(block=False)
+        
+        fig2,ax2=plt.subplots(figsize=(10,6))
+        numlevels=Elist.shape[1]
+        colenergy= cm.viridis(np.linspace(0,1,numlevels))
+        coljet=cm.jet(np.linspace(0,1,numlevels))
+        for elk in range(numlevels):
+            basidx=curvebasis[elk]
+            labelr=Getlabel(basidx,slit,nlit,llit,Hamer.L,Hamer.I)
+            ax2.plot(Blist,Elist[:,elk],color=colenergy[elk],label=labelr)
+
+        for r in resonants:
+            fv=r['field']
+            idi,idj =r['inx']
+            eni=splines(fv)[idi]
+            enj=splines(fv)[idj]
+            if r['type']=='Allowed':
+                ax2.plot([fv,fv],[eni,enj],color=coljet[idi],marker='o',markersize=4,linestyle='-')
+            else:
+                ax2.plot([fv,fv],[eni,enj],color='gray',marker='o',markersize=4,linestyle='-')
+
+        ax2.set_title('Energy VS Field',fontname='Georgia',fontsize=18)
+        ax2.set_xlabel('Field [mT]')
+        ax2.set_ylabel('Energy [GHz]')
+        ax2.set_xlim(Blist[0],Blist[-1]+5)
+        ax2.grid(True,color='black',alpha=0.3,linestyle='-')
+        ax2.legend(bbox_to_anchor=(1.02,1),loc='upper left')
+        plt.tight_layout()
+        plt.show()
+
     return Blist,epc
 
-def Calresonant(Hamer,Expe,Nucl='None'):
+def Calresonant(Hamer,Expe,Nucl='None',diagram=False):
+    '''
+    Function for the calculation of the EPR cw spectrum of monocristal systems. Uses a formulation similar to the *Eresonant* function, to calculate the resonant fields and intensities, but calculates de absorption curve (first integral) of the spectrum that is numerically  derived, producing the final spectrum.
+    
+    
+    '''
     frange0=jxn.where(Expe.Frange[0]<0.0,1e-4,Expe.Frange[0])
     Ham=Hamer.replace(A=jxn.asarray(Hamer.A)/1000.0,D=jxn.asarray(Hamer.D)/1000.0,Hpp=jxn.asarray(Hamer.Hpp)/1.0,Q=jxn.asarray(Hamer.Q)/1000.0,
                      Bk2=jxn.asarray(Hamer.Bk2)/1000.0,Bk4=jxn.asarray(Hamer.Bk4)/1000.0,Bk6=jxn.asarray(Hamer.Bk6)/1000.0)
@@ -1953,7 +2134,10 @@ def Calresonant(Hamer,Expe,Nucl='None'):
     spcint=jxn.sum(intensy*voigt,axis=1)
     dB=Blist[1]-Blist[0]
     spc=jxn.gradient(spcint,dB)
-    return Blist,spc
+    if diagram:
+        return Blist,spc,Elist,Vlist
+    else:
+        return Blist,spc
     
 @jaxdatclass
 class Mjhval:

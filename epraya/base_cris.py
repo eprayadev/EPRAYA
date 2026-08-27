@@ -46,7 +46,7 @@ from .base_ham import *
 from .base_plot import *
 from .base_rotate import *
 from .base_powd import *
-
+from matplotlib import cm
 
 #Find energy values in function of field
 def EAdaptarray(espac,h1,iser):
@@ -241,7 +241,7 @@ def Eresonant(Hamer,Exp,graph=True,table=True):  #Function for finding the reson
        Ham.I=1/2
        Ham.g=np.array([2.003, 2, 2])
        Ham.A=np.array([200, 200, 200])
-       Ham.Hpp=[0, 2]
+       Ham.Hpp=[0, 20]
        Exp.Freq=9.4
        Exp.Points=4096
        Exp.Temperature=300
@@ -565,7 +565,7 @@ def Plotsim(espac1,inten1,resfield,espac2,enegria,curvebasis,splines,resonants,H
         numlevels=enegria.shape[1]
         colenergy= cm.viridis(np.linspace(0,1,numlevels))
         coljet=cm.jet(np.linspace(0,1,numlevels))
-        for elk in range(num_levels):
+        for elk in range(numlevels):
             basidx=curvebasis[elk]
             labelr=Getlabel(basidx,slit,nlit,llit,Ham.L,Ham.I)
             ax2.plot(espac2,enegria[:,elk],color=colenergy[elk],label=labelr)
@@ -663,7 +663,7 @@ def Cristalfm(Hamer,Exp):  #Function for finding the resonant fields and energie
     >>> Ham.I=1/2
     >>> Ham.g=np.array([2.003, 2, 2])
     >>> Ham.A=np.array([200, 200, 200])
-    >>> Ham.Hpp=[0, 2]
+    >>> Ham.Hpp=[0, 20]
     >>> Exp.Freq=9.4
     >>> Exp.Points=4096
     >>> Exp.Temperature=300

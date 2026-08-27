@@ -774,7 +774,7 @@ def Powder(Hamer,Expe,graph=True):  #Method ASG
        Ham.g=np.array([2.003, 2, 2])
        Ham.A=np.array([200, 200, 200])  #Hyperfine constant
        Ham.D=np.array([800,200])      #Zero field D and E
-       Ham.Hpp=[0, 1]
+       Ham.Hpp=[0, 10]
        Ham.Nucl='Cr'
        Exp.Freq=9.4
        Exp.Points=4096
@@ -871,7 +871,7 @@ def Calpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk):
     >>> Ham.g=np.array([2.003, 2, 2])
     >>> Ham.A=np.array([200, 200, 200])  #Hyperfine constant00
     >>> Ham.D=np.array([800,200])      #Zero field D and E
-    >>> Ham.Hpp=[0, 1]
+    >>> Ham.Hpp=[0, 10]
     >>> Ham.Nucl='Cr'
     >>> Exp.Freq=9.4
     >>> Exp.Points=4096
