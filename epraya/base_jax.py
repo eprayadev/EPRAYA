@@ -1309,7 +1309,7 @@ def Hungarian(cost):
     '''
     rowidx,colidx=sci.optimize.linear_sum_assignment(np.array(cost))
     novo=colidx[np.argsort(rowidx)]
-    return novo.astype(np.float64)
+    return novo.astype(np.int32)
 
 def Jungarian(cost):
     '''
