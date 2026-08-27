@@ -1315,7 +1315,7 @@ def Jungarian(cost):
     '''
     Wrap function to call the Scipy J-V method outside of JAX using ShapeDtypeStruct and pure_callback, in order to not interfere in the ADAM implementation.
     '''
-    shake=jx.ShapeDtypeStruct((cost.shape[0],),jxn.float64)
+    shake=jx.ShapeDtypeStruct((cost.shape[0],),jxn.int32)
     return jx.pure_callback(Hungarian,shake,cost,vmap_method='sequential')
 
 @jx.jit
