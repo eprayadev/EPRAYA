@@ -70,6 +70,7 @@ This methods can be use directly or with the wrap function *Fitting*, however, t
    LSquare
    LSquare1
    LSquare2
+   Briggs
    
 .. list-table::
    :widths: 25 75
@@ -103,20 +104,6 @@ This methods can be use directly or with the wrap function *Fitting*, however, t
      - Fitting adjutsment of the experimental data using the *scipy.optimize.least_squares* method. This case is for simple systems.
    * - :doc:`epraya.LSquare2 <LSquare2>`
      - Fitting adjutsment of the experimental data using the *scipy.optimize.least_squares* method. This case is for multiple systems.
-     
-.. currentmodule:: base_jax
-
-.. toctree::
-   :caption: JAX fitting function
-   :hidden:
-   
-   Briggs
-   
-.. list-table::
-   :widths: 25 75
-   :header-rows: 1
-
-   * - Name
-     - Description
    * - :doc:`epraya.Briggs <Briggs>`
-     - Wrap function for the ADAM fitting method.  
+     - Wrap function for the ADAM fitting method.     
+
