@@ -3954,7 +3954,7 @@ def containeigh(A,eps=1e-5):
     return w,v
 
 @containeigh.defjvp
-def eighmethod(eps,primals,tangents):
+def _containeigh_jvp(eps,primals,tangents):
     (A,),(dA,)=primals,tangents
     w,v=containeigh(A,eps)
     #Hermitic condition
