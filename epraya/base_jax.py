@@ -1794,7 +1794,7 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None'):
         hzey-=nhzey
         hzez-=nhzez
     h1=jxn.asarray(h1,dtype=complex)
-    Blist1=jxn.linspace(Exp.Frange[0],Exp.Frange[1],1000)
+    Blist1=jxn.linspace(frange0,Exp.Frange[1],1000)
     dB=(Exp.Frange[1]-Exp.Frange[0])/(Exp.Points-1)
     Bmin=Exp.Frange[0]
     
@@ -2106,7 +2106,6 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False):
     isz=jxn.kron(jxn.eye(int(2*Ham.L+1)),isz)
     isz=jxn.asarray(isz,dtype=jxn.complex64)
     E=Exp.Freq
-    espac1=jxn.linspace(frange0,Exp.Frange[1],500)
     beta=(scic.physical_constants["Bohr magneton"][0]/scic.physical_constants["Planck constant"][0])/1e12
     betan=(scic.physical_constants["nuclear magneton"][0]/scic.physical_constants["Planck constant"][0])/1e12
     hzex=jxn.asarray(beta*JHze(sx,sy,sz,Ham.g,[1,0,0],dim),dtype=complex)
@@ -2130,10 +2129,11 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False):
         hzez-=nhzez
     h1=jxn.asarray(h1,dtype=complex)
     hze=nx*hzex+ny*hzey+nz*hzez
-    Blist=jxn.linspace(Expe.Frange[0],Expe.Frange[1],Expe.Points)
+    Blist=jxn.linspace(frange0,Expe.Frange[1],Expe.Points)
     def Jdiagop(B):
         h5=h1+B*hze
-        Elist,Vlist=jxn.linalg.eigh(h5)
+        apertur=jxn.eye(h5.shape[-1])*1e-8
+        Elist,Vlist=jxn.linalg.eigh(h5+apertur)
         return Elist,Vlist
     Elist,Vlist=jx.vmap(Jdiagop)(Blist)
     spc=jxn.zeros(Expe.Points)
@@ -2609,7 +2609,6 @@ def Jcalmulta(maham,Expe,Nucl1='None',Nucl2='None'):
         sx2,sy2,sz2=JPauli(Ham2.S)
         ix2,iy2,iz2=JPauli(Ham2.I)
         E=Exp.Freq
-        espac1=jxn.linspace(frange0,Exp.Frange[1],500)
         beta=(scic.physical_constants["Bohr magneton"][0]/scic.physical_constants["Planck constant"][0])/1e12
         betan=(scic.physical_constants["nuclear magneton"][0]/scic.physical_constants["Planck constant"][0])/1e12
         h1=np.zeros((dim,dim),dtype='complex')
@@ -2688,7 +2687,7 @@ def Jcalmulta(maham,Expe,Nucl1='None',Nucl2='None'):
             stody+=jxn.kron(jxn.eye(dim1,dtype=complex),sy2r)
             stodz+=jxn.kron(jxn.eye(dim1,dtype=complex),sz2r)
 
-        Blist1=jxn.linspace(Exp.Frange[0],Exp.Frange[1],500)
+        Blist1=jxn.linspace(frange0,Exp.Frange[1],500)
         dB=(Exp.Frange[1]-Exp.Frange[0])/(Exp.Points-1)
         Bmin=Exp.Frange[0]
         
@@ -2890,7 +2889,6 @@ def Jcalmusic(maham,Expe,Nucl1='None',Nucl2='None'):
         sx2,sy2,sz2=JPauli(Ham2.S)
         ix2,iy2,iz2=JPauli(Ham2.I)
         E=Exp1.Freq
-        espac1=jxn.linspace(frange0,Exp1.Frange[1],500)
         beta=(scic.physical_constants["Bohr magneton"][0]/scic.physical_constants["Planck constant"][0])/1e12
         betan=(scic.physical_constants["nuclear magneton"][0]/scic.physical_constants["Planck constant"][0])/1e12
         h1=np.zeros((dim,dim),dtype='complex')
@@ -2969,10 +2967,11 @@ def Jcalmusic(maham,Expe,Nucl1='None',Nucl2='None'):
             stody+=jxn.kron(jxn.eye(dim1,dtype=complex),sy2r)
             stodz+=jxn.kron(jxn.eye(dim1,dtype=complex),sz2r)
         hze=nx*hzex+ny*hzey+nz*hzez
-        Blist=jxn.linspace(Exp1.Frange[0],Exp1.Frange[1],Exp1.Points)
+        Blist=jxn.linspace(frange0,Exp1.Frange[1],Exp1.Points)
         def Jdiagop(B):
             h5=h1+B*hze
-            Elist,Vlist=jxn.linalg.eigh(h5)
+            apertur=jxn.eye(h5.shape[-1])*1e-8
+            Elist,Vlist=jxn.linalg.eigh(h5+apertur)
             return Elist,Vlist
         Elist,Vlist=jx.vmap(Jdiagop)(Blist)
         spc=jxn.zeros(Exp1.Points)
@@ -3282,7 +3281,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
               Qxf=Vary.Q[0]+(Vary.Q[1]-Vary.Q[0])*jnn.sigmoid(param['Qx']/T)
               Qyf=Vary.Q[2]+(Vary.Q[3]-Vary.Q[2])*jnn.sigmoid(param['Qy']/T)
               Qzf=Vary.Q[4]+(Vary.Q[5]-Vary.Q[4])*jnn.sigmoid(param['Qz']/T)
-              print(f"| Qx: {QXf:.4f} | Qy: {Qyf:.4f} | Qz: {Qzf:.4f} |")
+              print(f"| Qx: {Qxf:.4f} | Qy: {Qyf:.4f} | Qz: {Qzf:.4f} |")
           if 'Hpp1' in param.keys():
               Hppx=Vary.Hpp[0]+(Vary.Hpp[1]-Vary.Hpp[0])*jnn.sigmoid(param['Hpp1']/T)
               Hppy=Vary.Hpp[2]+(Vary.Hpp[3]-Vary.Hpp[2])*jnn.sigmoid(param['Hpp2']/T)
@@ -3369,7 +3368,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
           Qxf=Vary.Q[0]+(Vary.Q[1]-Vary.Q[0])*jnn.sigmoid(param['Qx']/T)
           Qyf=Vary.Q[2]+(Vary.Q[3]-Vary.Q[2])*jnn.sigmoid(param['Qy']/T)
           Qzf=Vary.Q[4]+(Vary.Q[5]-Vary.Q[4])*jnn.sigmoid(param['Qz']/T)
-          print(f"| Qx: {QXf:.4f} | Qy: {Qyf:.4f} | Qz: {Qzf:.4f} |")
+          print(f"| Qx: {Qxf:.4f} | Qy: {Qyf:.4f} | Qz: {Qzf:.4f} |")
       if 'Hpp1' in param.keys():
           Hppx=Vary.Hpp[0]+(Vary.Hpp[1]-Vary.Hpp[0])*jnn.sigmoid(param['Hpp1']/T)
           Hppy=Vary.Hpp[2]+(Vary.Hpp[3]-Vary.Hpp[2])*jnn.sigmoid(param['Hpp2']/T)
