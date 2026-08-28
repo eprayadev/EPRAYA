@@ -3947,7 +3947,7 @@ def Ealpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None'):
         print(jxn.min(gaps),jxn.unravel_index(jxn.argmin(gaps),gaps.shape))
         
         
-@partial(jx.jit,static_argnames=['eps'])
+
 @partial(jx.custom_jvp,nondiff_argnums=(1,))
 def containeigh(A,eps=1e-5):
     w,v=jxn.linalg.eigh(A)
