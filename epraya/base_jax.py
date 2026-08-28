@@ -3946,5 +3946,5 @@ def Ealpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None'):
     Bmin=Exp.Frange[0]
     for i in range(0,len(iwas)):
         Elist,Vlist,h2=APadaptarray(Blist1,h1,hzex,hzey,hzez,iwas[i],jwas[i],kwas[i])
-        gaps=np.diff(jnp.sort(Elist,axis=-1),axis=-1)
-        print(jnp.min(gaps),jnp.unravel_index(jnp.argmin(gaps),gaps.shape))
+        gaps=np.diff(jxn.sort(Elist,axis=-1),axis=-1)
+        print(jxn.min(gaps),jxn.unravel_index(jxn.argmin(gaps),gaps.shape))
