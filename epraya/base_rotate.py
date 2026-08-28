@@ -288,7 +288,7 @@ def Pot(espac2,enegria,curvebasis,resonants,lab,espac1,Ham,):
               )]
           )
           graphe.show()
-    else:
+      else:
         fig,ax=plt.subplots(figsize=(12,6))
         numlevels=enegria.shape[1]
         colenergy=cm.viridis(np.linspace(0,1,numlevels))
