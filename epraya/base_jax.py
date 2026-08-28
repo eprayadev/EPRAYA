@@ -1525,7 +1525,7 @@ def Meshtriangle():
     w3 : jax.np.array
         Vector of the points in the z direction of the grid.
     '''
-    numd=15
+    numd=20
     tpoints=(numd*(numd+1))/2.0
     w1,w2,w3=[],[],[]
     for i in range(numd):
@@ -1771,7 +1771,6 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None'):
     isz=jxn.kron(jxn.eye(int(2*Ham.L+1)),isz)
     isz=jxn.asarray(isz,dtype=jxn.complex64)
     E=Exp.Freq
-    espac1=jxn.linspace(frange0,Exp.Frange[1],500)
     beta=(scic.physical_constants["Bohr magneton"][0]/scic.physical_constants["Planck constant"][0])/1e12
     betan=(scic.physical_constants["nuclear magneton"][0]/scic.physical_constants["Planck constant"][0])/1e12
     hzex=jxn.asarray(beta*JHze(sx,sy,sz,Ham.g,[1,0,0],dim),dtype=complex)
@@ -1793,7 +1792,7 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None'):
         hzey-=nhzey
         hzez-=nhzez
     h1=jxn.asarray(h1,dtype=complex)
-    Blist1=jxn.linspace(Exp.Frange[0],Exp.Frange[1],500)
+    Blist1=jxn.linspace(Exp.Frange[0],Exp.Frange[1],1000)
     dB=(Exp.Frange[1]-Exp.Frange[0])/(Exp.Points-1)
     Bmin=Exp.Frange[0]
     
@@ -1849,7 +1848,7 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None'):
     ntrans=ntrans.reshape(-1)[:tlen]
     sketch=JCaltriangle(Bmin,dB,allres,allint,ntrans,hulk,weight,Exp.Points)
     maxlenght=jxn.max(jxn.array(Ham.Hpp))*10
-    kpoints=501 
+    kpoints=1000
     kaxis=jxn.arange(-kpoints//2+1,kpoints//2+1)*dB
     kvoigt=JVoigtp(kaxis,jxn.array([1.0]),jxn.array([0.0]),Ham.Hpp,etas)
     espectotal=jsig.fftconvolve(sketch,kvoigt,mode='same')*dB
@@ -2479,21 +2478,97 @@ def JMulpol(maham,Expe,Nucl1='None',Nucl2='None',graph=True):
     -------
 
     .. code-block:: python
+    
+       import matplotlib.pyplot as plt
+       import epraya as epr
+       import numpy as np
+       Ham,Exp,_=epr.Jmstart()
+       Ham.S1=3/2
+       Ham.I1=1
+       Ham.S2=1
+       Ham.I2=1
+       Ham.g1=np.array([2.003, 2, 2])
+       Ham.g2=np.array([1.5, 1.5, 1.5])
+       Ham.A1=np.array([200, 200, 200])  #Hyperfine constant
+       Ham.D1=np.array([800,200])      #Zero field D and E
+       Ham.Hpp=[0,10]
+       Exp.Freq=9.4
+       Exp.Points=4096
+       Exp.Temperature=300
+       Exp.Frange=[0,800]
+       B,spc=epr.JMulpol(Ham,Exp)
        
+    .. image:: /_static/jpol.PNG
+       :alt: Plot of the JMulpol function
+       :align: center
     '''
     Blist,epc=Jcalmulta(maham,Expe,Nucl1,Nucl2)
     if graph:
         plt.figure(figsize=(10,6))
-        plt.plot(Blist,epc,color='navy')
+        plt.plot(Blist,epc,color='navy',label='Spectrum')
         plt.xlabel('Magnetic field [mT]')
         formatter=EngFormatter(sep='') 
         plt.gca().yaxis.set_major_formatter(formatter)
         plt.ylabel('Counts [A. U.]')
         plt.xlim(Expe.Frange[0],Expe.Frange[1])
         plt.grid()
+        plt.legend()
         plt.show(block=False)
     return Blist,epc
+    
+
 def Jcalmulta(maham,Expe,Nucl1='None',Nucl2='None'):
+    '''
+    Determinates the spectrum for a two paramagnetic centers system. Follows the same logic from the function Jpowder, but adapted to the two centers system.
+    
+    Parameters
+    ----------
+    
+    maham : Class
+        Container for the hamiltonian parameters of the two systems.
+    Expe : Class
+        Container for the experimental conditions.
+    Nucl1 : str
+        Isotope of the first system. Can be the quantum number and the element or only the element ('55Mn' or 'Mn') 
+    Nucl2 : str
+        Isotope of the second system. Can be the quantum number and the element or only the element ('55Mn' or 'Mn') 
+    graph : Bool
+        PLots the spectrum of the multisystem.
+    
+    Returns
+    -------
+    
+    fielde : jax.np.array
+        Array of the magnetic field.
+    specs : jax.np.array
+        Array of the counts of the spectrum.
+    
+    Example
+    -------
+    
+    >>> import matplotlib.pyplot as plt
+    >>> import epraya as epr
+    >>> import numpy as np
+    >>> Ham,Exp,_=epr.Jmstart()
+    >>> Ham.S1=3/2
+    >>> Ham.I1=1
+    >>> Ham.S2=1
+    >>> Ham.I2=1
+    >>> Ham.g1=np.array([2.003, 2, 2])
+    >>> Ham.g2=np.array([1.5, 1.5, 1.5])
+    >>> Ham.A1=np.array([200, 200, 200])  #Hyperfine constant
+    >>> Ham.D1=np.array([800,200])      #Zero field D and E
+    >>> Ham.Hpp=[0,10]
+    >>> Exp.Freq=9.4
+    >>> Exp.Points=4096
+    >>> Exp.Temperature=300
+    >>> Exp.Frange=[0,800]
+    >>> print(epr.Jcalmulta(Ham,Exp))
+    (Array([0.00000000e+00, 1.95360195e-01, 3.90720391e-01, ...,
+    7.99609280e+02, 7.99804640e+02, 8.00000000e+02], dtype=float64),
+    Array([-1.51007828e-21,  1.87293010e-21,  1.91587492e-21, ...,
+    3.33966042e-21,  1.25252035e-21, -1.98829450e-21], dtype=float64))
+    '''
     maham.X1_2=np.asarray(maham.X1_2)
     maham.A1_2=np.asarray(maham.A1_2)
     maham.A2_1=np.asarray(maham.A2_1)
@@ -2652,18 +2727,124 @@ def Jcalmulta(maham,Expe,Nucl1='None',Nucl2='None'):
     return fielde,specs
 
 def JMusic(maham,Expe,Nucl1='None',Nucl2='None',graph=True):
+    '''
+    Wrap function for the simulation of the EPR spectrum for monocristal samples of two systems. If there is an interaction between the systems (electron-eletron or hiperfine), solves the total hamiltonian. Otherwise, sums the contributions to the total spectrum.
+    
+    Parameters
+    ----------
+
+     maham : Class
+        Container for the hamiltonian parameters of the two systems.
+    Expe : Class
+        Container for the experimental conditions.
+    Nucl1 : str
+        Isotope of the first system. Can be the quantum number and the element or only the element ('55Mn' or 'Mn') 
+    Nucl2 : str
+        Isotope of the second system. Can be the quantum number and the element or only the element ('55Mn' or 'Mn') 
+    graph : Bool
+        PLots the spectrum of the multisystem.
+    
+    Returns
+    -------
+    
+    Blist : jax.np.array
+        Array of the magnetic field.
+    epc : jax.np.array
+        Array of the counts of the spectrum.
+
+    Example
+    -------
+
+    .. code-block:: python
+    
+       import matplotlib.pyplot as plt
+       import epraya as epr
+       import numpy as np
+       Ham,Exp,_=epr.Jmstart()
+       Ham.S1=3/2
+       Ham.I1=1
+       Ham.S2=1
+       Ham.I2=1
+       Ham.g1=np.array([2.003, 2, 2])
+       Ham.g2=np.array([1.5, 1.5, 1.5])
+       Ham.A1=np.array([200, 200, 200])  #Hyperfine constant
+       Ham.D1=np.array([800,200])      #Zero field D and E
+       Ham.Hpp=[0,10]
+       Exp.Freq=9.4
+       Exp.Points=4096
+       Exp.Temperature=300
+       Exp.Frange=[0,800]
+       B,spc=epr.JMusic(Ham,Exp)
+       
+    .. image:: /_static/jmusic.PNG
+       :alt: Plot of the Jmusic function
+       :align: center
+    '''
     Blist,epc=Jcalmusic(maham,Expe,Nucl1,Nucl2)
     if graph:
         plt.figure(figsize=(10,6))
-        plt.plot(Blist,epc,color='navy')
+        plt.plot(Blist,epc,color='navy',label='Spectrum')
         plt.xlabel('Magnetic field [mT]')
         plt.ylabel('Counts [A. U.]')
         plt.xlim(Expe.Frange[0],Expe.Frange[1])
         plt.grid()
+        plt.legend()
         plt.show(block=False)
     return Blist,epc
 
 def Jcalmusic(maham,Expe,Nucl1='None',Nucl2='None'):
+    '''
+    Determinates the spectrum for a two paramagnetic centers system. Follows the same logic from the function Jresonant, but adapted to the two centers system.
+    
+    
+    Parameters
+    ----------
+    
+    maham : Class
+        Container for the hamiltonian parameters of the two systems.
+    Expe : Class
+        Container for the experimental conditions.
+    Nucl1 : str
+        Isotope of the first system. Can be the quantum number and the element or only the element ('55Mn' or 'Mn') 
+    Nucl2 : str
+        Isotope of the second system. Can be the quantum number and the element or only the element ('55Mn' or 'Mn') 
+    graph : Bool
+        PLots the spectrum of the multisystem.
+    
+    Returns
+    -------
+    
+    fielde : jax.np.array
+        Array of the magnetic field.
+    specs : jax.np.array
+        Array of the counts of the spectrum.
+    
+    Example
+    -------
+    
+    >>> import matplotlib.pyplot as plt
+    >>> import epraya as epr
+    >>> import numpy as np
+    >>> Ham,Exp,_=epr.Jmstart()
+    >>> Ham.S1=3/2
+    >>> Ham.I1=1
+    >>> Ham.S2=1
+    >>> Ham.I2=1
+    >>> Ham.g1=np.array([2.003, 2, 2])
+    >>> Ham.g2=np.array([1.5, 1.5, 1.5])
+    >>> Ham.A1=np.array([200, 200, 200])  #Hyperfine constant
+    >>> Ham.D1=np.array([800,200])      #Zero field D and E
+    >>> Ham.Hpp=[0,10]
+    >>> Exp.Freq=9.4
+    >>> Exp.Points=4096
+    >>> Exp.Temperature=300
+    >>> Exp.Frange=[0,800]
+    >>> print(epr.Jcalmusic(Ham,Exp))
+    (Array([0.00000000e+00, 1.95360195e-01, 3.90720391e-01, ...,
+    7.99609280e+02, 7.99804640e+02, 8.00000000e+02], dtype=float64),
+    Array([-1.60669060e-07, -9.66774880e-08, -5.69966581e-08, ...,
+    -2.01984373e-07, -2.01714437e-07, -2.01579599e-07], dtype=float64))
+    '''
     maham.X1_2=np.asarray(maham.X1_2)
     maham.A1_2=np.asarray(maham.A1_2)
     maham.A2_1=np.asarray(maham.A2_1)
@@ -2848,6 +3029,39 @@ def Jcalmusic(maham,Expe,Nucl1='None',Nucl2='None'):
     return fielde,specs
     
 def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
+    '''
+    Fitting function for the experimental data using the ADAM Algorithm. Uses the *Optax* (part of the Deepmind proyect) ADAM algorithm implementation with a learning rate of 0.1. The parameters are changed and evaluated using a normalized sigmoid function in the range from the *Vary* container. 
+    
+    It's recommended to use the function in VS code, Jupyter or Colab, because the process can be stop at any moment using the stop process button of the notebook.
+    
+    Parameters
+    ----------
+    Hamer: Class
+        Container for the hamiltonian parameters.
+    Exp : Class
+        Container for the experimental conditions.
+    Vary : Class
+        Container for the range and parameters to vary.
+
+    exper : np.array
+        Experimental spectrum data to fit.
+    maximal : int
+        Max. number of iterations to evalue the function.
+    eps : float
+        Tolerance value for the error. Default is 1e-10
+    mode : str
+        Defines the sample type, 'p' for powder and 'c' for monocristal.
+    
+    Returns
+    -------
+    espc : np.array
+        Best adjusted spectrum.
+        
+    Example
+    -------
+    
+    
+    '''
     if isinstance(Hamer,JHval):
       Ham=deepcopy(Hamer)
       class StaticHam:
@@ -3089,6 +3303,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
               plt.xlabel('Field [mT]')
               plt.ylabel('Counts [A. U.]')
               plt.grid()
+              plt.legend()
               plt.title('EPR Spectrum')
               plt.show()
               return espc
@@ -3102,6 +3317,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
               plt.xlabel('Field [mT]')
               plt.ylabel('Counts [A. U.]')
               plt.grid()
+              plt.legend()
               plt.title('EPR Spectrum')
               plt.show()
               return espc
@@ -3173,6 +3389,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
           plt.xlabel('Field [mT]')
           plt.ylabel('Counts [A. U.]')
           plt.grid()
+          plt.legend()
           plt.title('EPR Spectrum')
           plt.show()
           return espc
@@ -3186,6 +3403,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
           plt.xlabel('Field [mT]')
           plt.ylabel('Counts [A. U.]')
           plt.grid()
+          plt.legend()
           plt.title('EPR Spectrum')
           plt.show()
           return espc
@@ -3531,6 +3749,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
               plt.plot(Blis,espc/np.max(espc)*np.max(expr),label='Fit')
               plt.xlabel('Field [mT]')
               plt.ylabel('Counts [A. U.]')
+              plt.legend()
               plt.grid()
               plt.title('EPR Spectrum')
               plt.show()
@@ -3544,6 +3763,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
               plt.plot(Blis,espc/np.max(espc)*np.max(expr),label='Fit')
               plt.xlabel('Field [mT]')
               plt.ylabel('Counts [A. U.]')
+              plt.legend()
               plt.grid()
               plt.title('EPR Spectrum')
               plt.show()
@@ -3662,6 +3882,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
           plt.xlabel('Magnetic field [mT]')
           plt.ylabel('Counts [A. U.]')
           plt.grid()
+          plt.legend()
           plt.title('EPR Spectrum')
           plt.show()
           return espc
@@ -3675,6 +3896,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
           plt.xlabel('Magnetic field [mT]')
           plt.ylabel('Counts [A. U.]')
           plt.grid()
+          plt.legend()
           plt.title('EPR Spectrum')
           plt.show()
           return espc

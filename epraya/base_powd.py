@@ -1002,6 +1002,7 @@ def Mulpol(Hamer,Expe,graph=True):
     
     Expe : Class
         Container for the experimental conditions.
+
     graph : Bool
         Plots the resulting spectrum.
     
@@ -1036,6 +1037,7 @@ def Mulpol(Hamer,Expe,graph=True):
        Exp.Temperature1=300
        Exp.Frange1=[0,800]
        B,spc=epr.Mulpol(Ham,Exp)
+       
     .. image:: /_static/mulpol.PNG
        :alt: Plot of the Mulpol function
        :align: center
