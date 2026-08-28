@@ -1288,7 +1288,8 @@ def JPadaptarray(espac,h1,hx,hy,hz,nx,ny,nz):
     '''
     h2=nx*hx+ny*hy+nz*hz
     h3=h1[None,:,:]+h2[None,:,:]*espac[:,None,None]
-    Elist,Vlist=jxn.linalg.eigh(h3)
+    apertur=jxn.eye(h3.shape[-1])*1e-12
+    Elist,Vlist=jxn.linalg.eigh(h3+apertur)
     return Elist,Vlist,h2
     
 # Makes the approximation by the assigment problem solution
@@ -1487,7 +1488,7 @@ def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2):
     #Search for crossings
     cross=(dEl*dEr<=0.0)&(dEl!=dEr)
     denom=dEr-dEl
-    denom=jxn.where(denom== 0.0,1e-10,denom)
+    denom=jxn.where(denom==0.0,1e-8,denom)
     t=-dEl/denom
     t=jxn.where(cross,t,0.0)
     Bl=Blist[:-1,None]
