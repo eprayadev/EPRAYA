@@ -48,7 +48,7 @@ import matplotlib.cm as cm
 
 def Nrotate(Hamer,Expe,phi=0):
     '''
-    Studys the variation of the resonant fields in relation to the rotations of the sample by its z axis. Rotations are from 0 to 180 degrees and the inclination between the sample z axis and the lab z axis is defined by the user using the phi variable.
+    Shows the variation of the resonant fields in relation to the rotations of the sample by its z axis. Rotations are from 0 to 180 degrees and the inclination between the sample z axis and the lab z axis is defined by the user using the phi variable.
     
     Parameters
     ----------
@@ -484,8 +484,25 @@ def Spectre(Hamer,Expe,phi=0,orient='Z'):
     
     Example
     -------
+    >>> import epraya as epr
+    >>> Ham,Exp,Vary=epr.Start()
+    >>> Ham.S=1
+    >>> Ham.I=1
+    >>> Ham.Hpp=[10,15]
+    >>> Ham.g=[2.2,2.4,2.2]
+    >>> Ham.A=[500,250,500]
+    >>> Ham.D=[600,100]
+    >>> Exp.Points=4096
+    >>> Exp.Frange=[0,500]
+    >>> epr.Spectre(Ham,Exp,phi=0)
+    (array([0.00000000e+00, 1.22100122e-01, 2.44200244e-01, ...,
+    4.99755800e+02, 4.99877900e+02, 5.00000000e+02], shape=(4096,)),
+    array([ 6.67524538e-11,  6.73816040e-11,  6.79981823e-11, ...,
+    -3.30499062e-21, -3.04059137e-21, -3.30499062e-21], shape=(4096,)))
     
-    
+    .. image:: /_static/spectre.png
+       :alt: Plot of the Spectre function
+       :align: center
     '''
     iwas,jwas,kwas,weight,hulk=Delaunay(Expe)
     Ham=deepcopy(Hamer)

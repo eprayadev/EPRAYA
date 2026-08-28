@@ -485,8 +485,8 @@ def JHze(ssx,ssy,ssz,g,biel,dim):
         Dimension of the total hamiltonian.
         
     Returns
-
     -------
+    
     thz : jax.np.array
         Matrix of the Zeeman interaction with dimension dim.
 
@@ -543,8 +543,8 @@ def JIee(ssx1,ssy1,ssz1,ssx2,ssy2,ssz2,X,dim):
 
     eet : jax.np.array
         Matrix of the Electron-Electron interaction with dimension dim.
+    
     Example
-
     -------
     >>> import epraya as epr
     >>> import numpy as np
@@ -1296,7 +1296,7 @@ def Hungarian(cost):
     '''
     Solves the assigment problem with the J-V method implemented in scipy, to organize the eigenvectors and energies of the hamiltonian and relate them with the quantum numbers, depending of the change in the cost.
     
-    Parameteres
+    Parameters
     -----------
     
     cost : list
@@ -1315,6 +1315,18 @@ def Hungarian(cost):
 def Jungarian(cost):
     '''
     Wrap function to call the Scipy J-V method outside of JAX using ShapeDtypeStruct and pure_callback, in order to not interfere in the ADAM implementation.
+    
+    Parameters
+    -----------
+    
+    cost : list
+        Cost matrix of the eigenvectors and energies configuration
+    
+    Returns
+    
+    val : function
+        Pure call back of the hungarian function.
+        
     '''
     shake=jx.ShapeDtypeStruct((cost.shape[0],),jxn.int32)
     return jx.pure_callback(Hungarian,shake,cost,vmap_method='sequential')
@@ -1715,8 +1727,8 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None'):
         Smaller convex poligon tha contains all the points require for the simulation.
     Nucl : str
         Isotope of the sample. Can be the quantum number and the element or only the element ('55Mn' or 'Mn') 
+        
     Returns
-
     -------
     Blist2 : jax.np.array
         Array of the magnetic field.
@@ -1855,7 +1867,37 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None'):
     espectotal=jsig.fftconvolve(sketch,kvoigt,mode='same')*dB
     Blist2=jxn.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
     return Blist2,espectotal
+@jx.jit
+def oneori(nx,ny,nz):
+        '''
+        Wrap function to use JPadaptarray and JNresina with the JAX.vmap implementation. Vmap vectorizes this two functions, making them work with block of data instead of individual process in a loop. The blocks are divided in parts of csize size, and process with the function Processvmap, that calculates the total values of resonant fields, intenitys and transitions.
+        
+        Parameters
+        ----------
+        
+        nx : jax.np.array
+            Vectors (points in the grid) to consider in the calculation of the spectrum in the x direction.
+        ny : jax.np.array
+            Vectors (points in the grid) to consider in the calculation of the spectrum in the y direction.
+        nz : jax.np.array
+            Vectors (points in the grid) to consider in the calculation of the spectrum in the z direction.
+        
+        Returns
+        -------
+        resfield : jax.np.array 
+            List of the resonant fields of the system.
+        intensy : jax.np.array 
+            List of the intensity of the spectrum, evaluated in the resonant fields.
+        ntrans : jax.np.array
+
+            Zero dimensional array with the number of possible transitions related to the resonant fields.
+        
     
+        '''
+        Elist,Vlist,h2=JPadaptarray(Blist1,h1,hzex,hzey,hzez,nx,ny,nz)
+        resfield,intensy,ntrans=JNresina(Blist1,Elist,Vlist,dim,Exp.Freq,isx,isy,isz,nx,ny,nz,Exp.Temperature,Ham.Hpp,h2)
+        return resfield,intensy,ntrans   
+        
 def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None'):
     '''
     Wrap function for the simulation of the EPR spectrum for monocrystal samples. Also creates the table of transitions and energy diagrams of the system.
@@ -2454,9 +2496,8 @@ def JMulpol(maham,Expe,Nucl1='None',Nucl2='None',graph=True):
     Parameters
     ----------
     
-     maham : Class
+    maham : Class
         Container for the hamiltonian parameters of the two systems.
-    
     Expe : Class
         Container for the experimental conditions.
     Nucl1 : str
@@ -2775,7 +2816,7 @@ def JMusic(maham,Expe,Nucl1='None',Nucl2='None',graph=True):
        Exp.Frange=[0,800]
        B,spc=epr.JMusic(Ham,Exp)
        
-    .. image:: /_static/jmusic.PNG
+    .. image:: /_static/jmusic.png
        :alt: Plot of the Jmusic function
        :align: center
     '''
@@ -2793,7 +2834,7 @@ def JMusic(maham,Expe,Nucl1='None',Nucl2='None',graph=True):
 
 def Jcalmusic(maham,Expe,Nucl1='None',Nucl2='None'):
     '''
-    Determinates the spectrum for a two paramagnetic centers system. Follows the same logic from the function Jresonant, but adapted to the two centers system.
+    Determinates the spectrum for a two paramagnetic centers monocristal system. Follows the same logic from the function Jresonant, but adapted to the two centers system.
     
     
     Parameters
@@ -3108,9 +3149,8 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
     | D: 821.3 | E: 611.3 |
     | Hppg: 0.0 | Hppl: 61.3 |
 
-    ==================================================
     Process stopped at iteration:140
-    ==================================================
+    
     Step 141 | Error: 5.93200e-03 |
     | gx: 2.1404 | gy: 1.9589 | gz: 1.8065 |
     | D: 822.2 | E: 628.8 |
@@ -3950,7 +3990,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
 @partial(jx.custom_jvp,nondiff_argnums=(1,))
 def containeigh(A,eps=1e-5):
     '''
-    Wrap function for the eignevalues determination using jax and making sure the value doesn't go to infinity by the energy degeneration.
+    Wrap function for the eignevalues determination using JAX and making sure the value doesn't go to infinity by the energy degeneration.
     
     Parameters
     ----------
