@@ -1288,8 +1288,8 @@ def JPadaptarray(espac,h1,hx,hy,hz,nx,ny,nz):
     '''
     h2=nx*hx+ny*hy+nz*hz
     h3=h1[None,:,:]+h2[None,:,:]*espac[:,None,None]
-    apertur=jxn.eye(h3.shape[-1])*1e-8
-    Elist,Vlist=jxn.linalg.eigh(h3+apertur)
+
+    Elist,Vlist=containeigh(h3)
     return Elist,Vlist,h2
     
 # Makes the approximation by the assigment problem solution
@@ -2132,8 +2132,7 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False):
     Blist=jxn.linspace(frange0,Expe.Frange[1],Expe.Points)
     def Jdiagop(B):
         h5=h1+B*hze
-        apertur=jxn.eye(h5.shape[-1])*1e-8
-        Elist,Vlist=jxn.linalg.eigh(h5+apertur)
+        Elist,Vlist=containeigh(h5)
         return Elist,Vlist
     Elist,Vlist=jx.vmap(Jdiagop)(Blist)
     spc=jxn.zeros(Expe.Points)
@@ -2970,8 +2969,7 @@ def Jcalmusic(maham,Expe,Nucl1='None',Nucl2='None'):
         Blist=jxn.linspace(frange0,Exp1.Frange[1],Exp1.Points)
         def Jdiagop(B):
             h5=h1+B*hze
-            apertur=jxn.eye(h5.shape[-1])*1e-8
-            Elist,Vlist=jxn.linalg.eigh(h5+apertur)
+            Elist,Vlist=containeigh(h5)
             return Elist,Vlist
         Elist,Vlist=jx.vmap(Jdiagop)(Blist)
         spc=jxn.zeros(Exp1.Points)
@@ -3892,8 +3890,7 @@ def APadaptarray(espac,h1,hx,hy,hz,nx,ny,nz):
 
     h2=nx*hx+ny*hy+nz*hz
     h3=h1[None,:,:]+h2[None,:,:]*espac[:,None,None]
-    apertur=jxn.eye(h3.shape[-1])*1e-8
-    Elist,Vlist=jxn.linalg.eigh(h3+apertur)
+    Elist,Vlist=containeigh(h3)
     return Elist,Vlist,h2
     
 def Ealpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None'):
@@ -3948,3 +3945,26 @@ def Ealpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None'):
         Elist,Vlist,h2=APadaptarray(Blist1,h1,hzex,hzey,hzez,iwas[i],jwas[i],kwas[i])
         gaps=np.diff(jxn.sort(Elist,axis=-1),axis=-1)
         print(jxn.min(gaps),jxn.unravel_index(jxn.argmin(gaps),gaps.shape))
+        
+        
+@partial(jx.jit,static_argnames=['eps'])
+@partial(jx.custom_jvp,nondiff_argnums=(1,))
+def containeigh(A,eps=1e-5):
+    w,v=jxn.linalg.eigh(A)
+    return w,v
+
+@containeigh.defjvp
+def eighmethod(eps,primals,tangents):
+    (A,),(dA,)=primals,tangents
+    w,v=containeigh(A,eps)
+    #Hermitic condition
+    dAh=0.5*(dA+jxn.swapaxes(dA,-1,-2).conj())
+    vH=jxn.swapaxes(v,-1,-2).conj()
+    M=vH@dAh@v
+    dw=jxn.real(jxn.diagonal(M,axis1=-2,axis2=-1))
+    wi=w[...,:,None]
+    wj=w[...,None,:]
+    denom=wj-wi             
+    F=denom/(denom**2+eps**2)
+    dV=v@(F*M)
+    return (w,v),(dw,dV)
