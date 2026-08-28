@@ -1505,6 +1505,7 @@ def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2):
     #Scores for transition possibility
     scores=jxn.where(cross,1.0+fint,-1.0)
     topones,toponesind=jx.lax.top_k(scores,Ktra)
+    toponesind=jx.lax.stop_gradient(toponesind)
     ffres=fres[toponesind]
     ffint=fint[toponesind]
     maski=topones>0.0
