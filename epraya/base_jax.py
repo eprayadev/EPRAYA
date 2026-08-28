@@ -1288,7 +1288,7 @@ def JPadaptarray(espac,h1,hx,hy,hz,nx,ny,nz):
     '''
     h2=nx*hx+ny*hy+nz*hz
     h3=h1[None,:,:]+h2[None,:,:]*espac[:,None,None]
-    apertur=jxn.eye(h3.shape[-1])*1e-12
+    apertur=jxn.eye(h3.shape[-1])*1e-8
     Elist,Vlist=jxn.linalg.eigh(h3+apertur)
     return Elist,Vlist,h2
     
