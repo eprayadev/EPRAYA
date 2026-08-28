@@ -3887,3 +3887,64 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
           plt.title('EPR Spectrum')
           plt.show()
           return espc
+          
+def APadaptarray(espac,h1,hx,hy,hz,nx,ny,nz):
+
+    h2=nx*hx+ny*hy+nz*hz
+    h3=h1[None,:,:]+h2[None,:,:]*espac[:,None,None]
+    apertur=jxn.eye(h3.shape[-1])*1e-8
+    Elist,Vlist=jxn.linalg.eigh(h3+apertur)
+    return Elist,Vlist,h2
+    
+def Ealpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None'):
+
+    frange0=jxn.where(Expe.Frange[0]<0.0,1e-4,Expe.Frange[0])
+    Ham=Hamer.replace(A=jxn.asarray(Hamer.A)/1000.0,D=jxn.asarray(Hamer.D)/1000.0,Hpp=jxn.asarray(Hamer.Hpp)/1.0,Q=jxn.asarray(Hamer.Q)/1000.0,
+                     Bk2=jxn.asarray(Hamer.Bk2)/1000.0,Bk4=jxn.asarray(Hamer.Bk4)/1000.0,Bk6=jxn.asarray(Hamer.Bk6)/1000.0)
+    etas=Ham.eta
+    etas=jxn.where(Ham.Hpp[1]==0.0,0.0,etas)
+    etas=jxn.where(Ham.Hpp[0]==0.0,1.0,etas)
+    Ham=Ham.replace(eta=etas)
+    dim=int(2*Ham.S+1)*int(2*Ham.I+1)*int(2*Ham.L+1)
+    Exp=Expe
+    Ham=Jchaframe(Ham,Exp)
+    sx,sy,sz=JPauli(Ham.S)
+    ix,iy,iz=JPauli(Ham.I)
+    isx=jxn.kron(sx,jxn.eye(int(2*Ham.I+1)))
+    isx=jxn.kron(jxn.eye(int(2*Ham.L+1)),isx)
+    isx=jxn.asarray(isx,dtype=jxn.complex64)
+    isy=jxn.kron(sy,jxn.eye(int(2*Ham.I+1)))
+    isy=jxn.kron(jxn.eye(int(2*Ham.L+1)),isy)
+    isy=jxn.asarray(isy,dtype=jxn.complex64)
+    isz=jxn.kron(sz,jxn.eye(int(2*Ham.I+1)))
+    isz=jxn.kron(jxn.eye(int(2*Ham.L+1)),isz)
+    isz=jxn.asarray(isz,dtype=jxn.complex64)
+    E=Exp.Freq
+    beta=(scic.physical_constants["Bohr magneton"][0]/scic.physical_constants["Planck constant"][0])/1e12
+    betan=(scic.physical_constants["nuclear magneton"][0]/scic.physical_constants["Planck constant"][0])/1e12
+    hzex=jxn.asarray(beta*JHze(sx,sy,sz,Ham.g,[1,0,0],dim),dtype=complex)
+    hzey=jxn.asarray(beta*JHze(sx,sy,sz,Ham.g,[0,1,0],dim),dtype=complex)
+    hzez=jxn.asarray(beta*JHze(sx,sy,sz,Ham.g,[0,0,1],dim),dtype=complex)
+    h1=jxn.zeros((dim,dim),dtype='complex64')
+    if Ham.S>=1:
+        h1=h1+JStevensO(sx,sy,sz,Ham.S,Ham,dim)
+    if Ham.L!=0:
+        h1=h1+JLorbit(sx,sy,sz,Ham.lc,dim,Ham.L)
+    if Ham.I!=0:
+        h1=h1+JHfi(sx,sy,sz,ix,iy,iz,Ham.A,dim)
+        h1=h1+JQii(ix,iy,iz,Ham.Q,dim)
+        gnk=gnfactor(Nucl)
+        nhzex=jxn.asarray(betan*JNhze(Ham.I,ix,iy,iz,dim,gnk,[1,0,0]),dtype=complex)
+        nhzey=jxn.asarray(betan*JNhze(Ham.I,ix,iy,iz,dim,gnk,[0,1,0]),dtype=complex)
+        nhzez=jxn.asarray(betan*JNhze(Ham.I,ix,iy,iz,dim,gnk,[0,0,1]),dtype=complex)
+        hzex-=nhzex
+        hzey-=nhzey
+        hzez-=nhzez
+    h1=jxn.asarray(h1,dtype=complex)
+    Blist1=jxn.linspace(frange0,Exp.Frange[1],1000)
+    dB=(Exp.Frange[1]-Exp.Frange[0])/(Exp.Points-1)
+    Bmin=Exp.Frange[0]
+    for i in len(iwas):
+        Elist,Vlist,h2=APadaptarray(espac,h1,hzex,hzey,hzez,iwas[i],jwas[i],kwas[i])
+        gaps=np.diff(jnp.sort(Elist,axis=-1),axis=-1)
+        print(jnp.min(gaps),jnp.unravel_index(jnp.argmin(gaps),gaps.shape))
