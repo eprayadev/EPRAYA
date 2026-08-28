@@ -46,7 +46,7 @@ from .base_ham import *
 from .base_plot import *
 from .base_rotate import *
 from .base_powd import *
-from matplotlib import cm
+import matplotlib.cm as cm
 
 #Find energy values in function of field
 def EAdaptarray(espac,h1,iser):

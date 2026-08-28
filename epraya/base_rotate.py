@@ -44,9 +44,54 @@ from itertools import product as iterproduct
 from .base_cris import *
 from .base_ham import *
 from .base_powd import *
-
+import matplotlib.cm as cm
 
 def Nrotate(Hamer,Expe,phi=0):
+    '''
+    Studys the variation of the resonant fields in relation to the rotations of the sample by its z axis. Rotations are from 0 to 180 degrees and the inclination between the sample z axis and the lab z axis is defined by the user using the phi variable.
+    
+    Parameters
+    ----------
+    
+    Hamer : Class
+        Container for the hamiltonian parameters of the system.
+    Expe : Class
+        Container for the experimental conditions.
+    phi : float
+        Angle of inclination between the sample z axis and the lab z axis.
+    
+    Returns
+    -------
+    anglex : np.array
+        List of the angles where the spectrum was calculated.
+    fieldey : np.array
+        Array of arrays of the resonant fields calculated for the different angles.
+    intens
+        Array of arrays of the spectrum intensity calculated for the different angles.
+    
+    Example
+    -------
+    >>> import epraya as epr¿
+    >>> Ham,Exp,Vary=epr.Start()
+    >>> Ham.S=1
+    >>> Ham.I=1
+    >>> Ham.Hpp=[10,15]
+    >>> Ham.g=[2.2,2.4,2.2]
+    >>> Ham.A=[500,250,500]
+    >>> Ham.D=[600,100]
+    >>> Exp.Points=4096
+    >>> Exp.Frange=[0,500]
+    >>> epr.Nrotate(Ham,Exp)
+    (array([  0.,   0.,   0., ..., 180., 180., 180.], shape=(4887,)),
+    array([309.49373398, 309.08035546, 308.63672174, ..., 303.06525967,
+    286.79959859, 271.07709288], shape=(4887,)),
+    array([5.53811424e-03, 0.00000000e+00, 2.66113213e-06, ...,
+    5.52709115e-03, 0.00000000e+00, 3.30914362e-06], shape=(4887,)))
+    
+    .. image:: /_static/nrotate.png
+       :alt: Plot of the Nrotate function
+       :align: center
+    '''
     Ham=deepcopy(Hamer)
     Exp=deepcopy(Expe)
     if Exp.Freq<=0:
@@ -160,65 +205,140 @@ def Nrotate(Hamer,Expe,phi=0):
     plt.show()
     return anglex,fieldey,intens
 
-def Pot(espac2,enegria,curvebasis,resonants,lab,espac1):
+def Pot(espac2,enegria,curvebasis,resonants,lab,espac1,Ham,):
+      '''
+      Plotting for the Ori function energy diagrams. 
+      
+          
+      Parameters
+      ----------
+      
+      espac2 : np.array
+        Array of the magnetic field values to calculate the energy diagram.
+      enegria : np.array
+        Array of the energy values.
+      curvebasis : np.array
+        Base of the quantum state.
+      splines : Scipy class
+        Third order polinomium that is use to find the resonant fields.
+      resonants : dictionary
+        Contains transition type and resonant fields information.
+      lab : dictionary
+        Orientations of the energy diagrams.
+      espac1 : np.array
+        Array of the magnetic field values.  
+      Ham : Class
+        Container for the hamiltonian parameters of the system.
+
+      '''
       slit,nlit,llit,transitions=Msmi(Ham.I,Ham.S,Ham.L)
-      import plotly.graph_objects as pgo
-      import plotly.colors as pc
-      graphe=pgo.Figure()
-      elk=0
-      col=pc.sample_colorscale('Viridis',[k/(len(enegria[0])-1) for k in range(len(enegria[0]))])
-      coel=pc.sample_colorscale('Jet',[k/(len(enegria[0])-1) for k in range(len(enegria[0]))])
-      for elk in range(0,len(enegria[0])):
-        basidx=curvebasis[elk]
-        labelr=Getlabel(basidx,slit,nlit,llit,Ham.L,Ham.I)
-        graphe.add_trace(pgo.Scatter(x=espac2,y=enegria[:,elk],mode='lines',line=dict(color=col[elk]),name=labelr,legendgroup="En",legendgrouptitle_text="Energies",legend="legend"))
-      for r in resonants:
-        fv=r['field']
-        idi,idj=r['inx']
-        eni=np.interp(fv,espac2,enegria[:,idi])
-        enj=np.interp(fv,espac2,enegria[:,idj])
-        if r['type']=='Allowed':
-            graphe.add_trace(pgo.Scatter(x=[fv,fv],y=[eni,enj],mode='markers+lines',line=dict(color=coel[idi]),name=f"Field: {fv:.2f} mT",legendgroup="Fir",
-        legendgrouptitle_text="R. Fields",legend="legend2"))
-        else:
-            graphe.add_trace(pgo.Scatter(x=[fv,fv],y=[eni,enj],mode='markers+lines',line=dict(color='gray'),name=f"Field: {fv:.2f} mT",legendgroup="Fi",
-        legendgrouptitle_text="R. Fields",legend="legend2"))
-      graphe.update_layout(
-        title={'text':f'Energy VS Field: {lab} Orientation','xanchor':'center','yanchor':'auto','x':0.40, 'y':0.95,
-               'font': dict(family='Georgia', size=24,color='black')
-               },
-        xaxis=dict(title='Field [mT]',showline=True,linecolor='black',mirror=True,linewidth=2,showgrid=True,gridcolor='black',range=[espac1[0],espac1[-1]+10])
-        ,yaxis=dict(title='Energy [GHz]',showline=True,linecolor='black',mirror=True,linewidth=2,showgrid=True,gridcolor='black'),
-        plot_bgcolor='white',
-        width=1075,
-        height=600,
-        legend=dict(
-            x=1.02,y=1,xanchor='left',yanchor='top',bgcolor='rgba(0,0,0,0)'
-            ,groupclick="toggleitem"
-        ),
-        legend2=dict(
-            x=1.25,y=1,xanchor='left',yanchor='top',bgcolor='rgba(0,0,0,0)'
-            ,groupclick="toggleitem"
-        ),
-        margin=dict(l=50,r=250,b=50,t=70,pad=4),
-        showlegend=True
-      )
-      upbutton=[
-          dict(label="All", method="update", args=[{"visible": [True]*len(graphe.data)}]),
-          dict(label="Fields", method="update", args=[{"visible": [trace.legendgroup!="Fi" for trace in graphe.data],}]),
-          dict(label="Energy", method="update", args=[{"visible": [trace.legendgroup=='En' for trace in graphe.data]}])
-      ]
-      graphe.update_layout(
+      if is_notebook():
+          import plotly.graph_objects as pgo
+          import plotly.colors as pc
+          graphe=pgo.Figure()
+          elk=0
+          col=pc.sample_colorscale('Viridis',[k/(len(enegria[0])-1) for k in range(len(enegria[0]))])
+          coel=pc.sample_colorscale('Jet',[k/(len(enegria[0])-1) for k in range(len(enegria[0]))])
+          for elk in range(0,len(enegria[0])):
+            basidx=curvebasis[elk]
+            labelr=Getlabel(basidx,slit,nlit,llit,Ham.L,Ham.I)
+            graphe.add_trace(pgo.Scatter(x=espac2,y=enegria[:,elk],mode='lines',line=dict(color=col[elk]),name=labelr,legendgroup="En",legendgrouptitle_text="Energies",legend="legend"))
+          for r in resonants:
+            fv=r['field']
+            idi,idj=r['inx']
+            eni=np.interp(fv,espac2,enegria[:,idi])
+            enj=np.interp(fv,espac2,enegria[:,idj])
+            if r['type']=='Allowed':
+                graphe.add_trace(pgo.Scatter(x=[fv,fv],y=[eni,enj],mode='markers+lines',line=dict(color=coel[idi]),name=f"Field: {fv:.2f} mT",legendgroup="Fir",
+            legendgrouptitle_text="R. Fields",legend="legend2"))
+            else:
+                graphe.add_trace(pgo.Scatter(x=[fv,fv],y=[eni,enj],mode='markers+lines',line=dict(color='gray'),name=f"Field: {fv:.2f} mT",legendgroup="Fi",
+            legendgrouptitle_text="R. Fields",legend="legend2"))
+          graphe.update_layout(
+            title={'text':f'Energy VS Field: {lab} Orientation','xanchor':'center','yanchor':'auto','x':0.40, 'y':0.95,
+                   'font': dict(family='Georgia', size=24,color='black')
+                   },
+            xaxis=dict(title='Field [mT]',showline=True,linecolor='black',mirror=True,linewidth=2,showgrid=True,gridcolor='black',range=[espac1[0],espac1[-1]+5])
+            ,yaxis=dict(title='Energy [GHz]',showline=True,linecolor='black',mirror=True,linewidth=2,showgrid=True,gridcolor='black'),
+            plot_bgcolor='white',
+            width=1075,
+            height=600,
+            legend=dict(
+                x=1.02,y=1,xanchor='left',yanchor='top',bgcolor='rgba(0,0,0,0)'
+                ,groupclick="toggleitem"
+            ),
+            legend2=dict(
+                x=1.25,y=1,xanchor='left',yanchor='top',bgcolor='rgba(0,0,0,0)'
+                ,groupclick="toggleitem"
+            ),
+            margin=dict(l=50,r=250,b=50,t=70,pad=4),
+            showlegend=True
+          )
+          upbutton=[
+              dict(label="All", method="update", args=[{"visible": [True]*len(graphe.data)}]),
+              dict(label="Fields", method="update", args=[{"visible": [trace.legendgroup!="Fi" for trace in graphe.data],}]),
+              dict(label="Energy", method="update", args=[{"visible": [trace.legendgroup=='En' for trace in graphe.data]}])
+          ]
+          graphe.update_layout(
 
-          updatemenus=[dict(
-              type="buttons", direction="up",
-              buttons=upbutton,
-              x=0.01, xanchor="auto", y=1, yanchor="auto"
-          )]
-      )
-      graphe.show()
+              updatemenus=[dict(
+                  type="buttons", direction="up",
+                  buttons=upbutton,
+                  x=0.01, xanchor="auto", y=1, yanchor="auto"
+              )]
+          )
+          graphe.show()
+    else:
+        fig,ax=plt.subplots(figsize=(12,6))
+        numlevels=enegria.shape[1]
+        colenergy=cm.viridis(np.linspace(0,1,numlevels))
+        coljet=cm.jet(np.linspace(0,1,numlevels))
+        energye=[]
+        for elk in range(numlevels):
+            basidx=curvebasis[elk]
+            labelr=Getlabel(basidx,slit,nlit,llit,Ham.L,Ham.I)
+            line,=ax.plot(espac2,enegria[:,elk],color=colenergy[elk],label=labelr)
+            energye.append(line)
+        fielde=[]
+        for r in resonants:
+            fv=r['field']
+            idi,idj=r['inx']
+            eni=np.interp(fv,espac2,enegria[:,idi])
+            enj=np.interp(fv,espac2,enegria[:,idj])
+            if r['type']=='Allowed':
+                line,=ax.plot([fv,fv],[eni,enj],color=coljet[idi],marker='o',markersize=4,linestyle='-',label=f"Field: {fv:.2f} mT")
+            else:
+                line,=ax.plot([fv,fv],[eni,enj],color='gray',marker='o',markersize=4,linestyle='-',label=f"Field: {fv:.2f} mT")
+            fieldr.append(line)
 
+        ax.set_title(f'Energy VS Field: {lab} Orientation', fontsize=18)
+        ax.set_xlabel('Field [mT]')
+        ax.set_ylabel('Energy [GHz]')
+        ax.set_xlim(espac1[0],espac1[-1]+5)
+        ax.grid(True,color='black',alpha=0.3,linestyle='-')
+        leg1=ax.legend(handles=energye,title="Energies",bbox_to_anchor=(1.02, 1),loc='upper left')
+        ax.add_artist(leg1)
+        if fielde:
+            ax.legend(handles=fielde,title="R. Fields",bbox_to_anchor=(1.22, 1),loc='upper left')
+        plt.tight_layout()
+        plt.show()
 def Ori(Hamer,Expe):
+    '''
+    Creates the energy diagrams for orientations parallel to the X, Y and Z axis.
+    
+    Parameters
+    ----------
+    
+    Hamer : Class
+        Container for the hamiltonian parameters of the system.
+    Expe : Class
+        Container for the experimental conditions.
+    
+    Example
+    -------
+    
+    
+    '''
     Ham=deepcopy(Hamer)
     Exp=deepcopy(Expe)
     if Exp.Freq<=0:
@@ -316,7 +436,7 @@ def Ori(Hamer,Expe):
                             state2=Getlabel(basis2,slit,nlit,llit,Ham.L,Ham.I)
                             resonants.append({'field': res,'inx': (i, j),'bainx': (basis1,basis2),'type': ttyp,'transition': f"{state1} <-> {state2}"})
 
-        Pot(Blist,Elist,curvebasis,resonants,lab,espac1)
+        Pot(Blist,Elist,curvebasis,resonants,lab,espac1,Ham)
         
 def Spectre(Hamer,Expe,phi,orient='Z'):
     iwas,jwas,kwas,weight,hulk=Delaunay(Expe)

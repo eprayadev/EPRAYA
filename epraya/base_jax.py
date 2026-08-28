@@ -43,9 +43,8 @@ import re
 from itertools import product as iterproduct
 from .base_powd import *
 from .base_ham import *
-from matplotlib import cm
+import matplotlib.cm as cm
 
-jx.config.update("jax_debug_nans", True)
 jx.config.update("jax_enable_x64", True)
 
 @jaxdatclass
@@ -1666,7 +1665,7 @@ def JPowder(Hamer,Expe,Nucl='None',graph=True):
        Exp.Frange=[0,800]
        B,spc=epr.JPowder(Ham,Exp)
        
-    .. image:: /_static/jaxp.PNG
+    .. image:: /_static/jaxp.png
        :alt: Plot of the spectrum of the Jpowder function
        :align: center
     
@@ -1909,15 +1908,15 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None'):
        Exp.Frange=[0,800]
        B,spc=epr.Jresonant(Ham,Exp)
        
-     .. image:: /_static/tabaj.PNG
+     .. image:: /_static/tabaj.png
        :alt: Table of transitions of the Jresonant function
        :align: center
        
-    .. image:: /_static/jreso.PNG
+    .. image:: /_static/jreso.png
        :alt: Plot of the spectrum of the Jresonant function
        :align: center
        
-    .. image:: /_static/diaj.PNG
+    .. image:: /_static/diaj.png
        :alt: Energy diagram of the Jresonant function
        :align: center    
     '''
@@ -2499,7 +2498,7 @@ def JMulpol(maham,Expe,Nucl1='None',Nucl2='None',graph=True):
        Exp.Frange=[0,800]
        B,spc=epr.JMulpol(Ham,Exp)
        
-    .. image:: /_static/jpol.PNG
+    .. image:: /_static/jpol.png
        :alt: Plot of the JMulpol function
        :align: center
     '''
@@ -3058,9 +3057,70 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
         
     Example
     -------
-    
-    
+    >>> import matplotlib.pyplot as plt
+    >>> import epraya as epr
+    >>> import numpy as np
+    >>> #epr.Sload('ZCr5600-300K.dat',4096,[2,3])
+    >>> B,spc=epr.Seek()
+    >>> Ham,Exp,Vary=epr.Jstart()
+    >>> Ham.S=3/2
+    >>> Ham.I=0
+    >>> Ham.Hpp=[0, 30.0]
+    >>> Exp.Freq=9.43
+    >>> Exp.Points=len(B)
+    >>> Exp.Frange=[B[0],B[-1]]
+    >>> Exp.Temperature = 300
+    >>> Ham.g=np.array([2.2,2,2])
+    >>> Ham.D=np.array([500,200])  
+    >>> Vary.g=[1.5,2.5,1.5,2.5,1.5,2.5]
+    >>> Vary.D=[200,1000,0.5,1000]
+    >>> Vary.Hpp=[0.0, 100.0, 2.0, 100.0]
+    >>> de=epr.Briggs(Ham,Exp,Vary,spc,maximal=700,mode='p')    
+    Step   1 | Error: 1.01390e-01 |
+    | gx: 2.1947 | gy: 1.9938 | gz: 1.9938 |
+    | D: 504.7 | E: 204.0 |
+    | Hppg: 0.0 | Hppl: 30.5 |
+    Step  11 | Error: 5.21379e-02 |
+    | gx: 2.1397 | gy: 1.9335 | gz: 1.9335 |
+    | D: 552.9 | E: 248.4 |
+    | Hppg: 0.0 | Hppl: 35.8 |
+    Step  21 | Error: 3.03045e-02 |
+    | gx: 2.0897 | gy: 1.8884 | gz: 1.8880 |
+    | D: 605.4 | E: 301.9 |
+    | Hppg: 0.0 | Hppl: 41.0 |
+    .
+    .
+    .
+    Step 101 | Error: 8.07586e-03 |
+    | gx: 2.1491 | gy: 1.9043 | gz: 1.8446 |
+    | D: 816.8 | E: 576.9 |
+    | Hppg: 0.0 | Hppl: 59.1 |
+    Step 111 | Error: 7.54648e-03 |
+    | gx: 2.1452 | gy: 1.9161 | gz: 1.8336 |
+    | D: 818.1 | E: 586.4 |
+    | Hppg: 0.0 | Hppl: 60.1 |
+    Step 121 | Error: 6.97381e-03 |
+    | gx: 2.1429 | gy: 1.9301 | gz: 1.8228 |
+    | D: 819.6 | E: 597.9 |
+    | Hppg: 0.0 | Hppl: 60.8 |
+    Step 131 | Error: 6.41336e-03 |
+    | gx: 2.1424 | gy: 1.9453 | gz: 1.8139 |
+    | D: 821.3 | E: 611.3 |
+    | Hppg: 0.0 | Hppl: 61.3 |
+
+    ==================================================
+    Process stopped at iteration:140
+    ==================================================
+    Step 141 | Error: 5.93200e-03 |
+    | gx: 2.1404 | gy: 1.9589 | gz: 1.8065 |
+    | D: 822.2 | E: 628.8 |
+    | Hppg: 0.0 | Hppl: 61.6 |
+       
+    .. image:: /_static/briggs.png
+       :alt: Plot of the briggs function
+       :align: center
     '''
+
     if isinstance(Hamer,JHval):
       Ham=deepcopy(Hamer)
       class StaticHam:
@@ -3886,70 +3946,29 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
           plt.show()
           return espc
           
-def APadaptarray(espac,h1,hx,hy,hz,nx,ny,nz):
-
-    h2=nx*hx+ny*hy+nz*hz
-    h3=h1[None,:,:]+h2[None,:,:]*espac[:,None,None]
-    Elist,Vlist=containeigh(h3)
-    return Elist,Vlist,h2
-    
-def Ealpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None'):
-
-    frange0=jxn.where(Expe.Frange[0]<0.0,1e-4,Expe.Frange[0])
-    Ham=Hamer.replace(A=jxn.asarray(Hamer.A)/1000.0,D=jxn.asarray(Hamer.D)/1000.0,Hpp=jxn.asarray(Hamer.Hpp)/1.0,Q=jxn.asarray(Hamer.Q)/1000.0,
-                     Bk2=jxn.asarray(Hamer.Bk2)/1000.0,Bk4=jxn.asarray(Hamer.Bk4)/1000.0,Bk6=jxn.asarray(Hamer.Bk6)/1000.0)
-    etas=Ham.eta
-    etas=jxn.where(Ham.Hpp[1]==0.0,0.0,etas)
-    etas=jxn.where(Ham.Hpp[0]==0.0,1.0,etas)
-    Ham=Ham.replace(eta=etas)
-    dim=int(2*Ham.S+1)*int(2*Ham.I+1)*int(2*Ham.L+1)
-    Exp=Expe
-    Ham=Jchaframe(Ham,Exp)
-    sx,sy,sz=JPauli(Ham.S)
-    ix,iy,iz=JPauli(Ham.I)
-    isx=jxn.kron(sx,jxn.eye(int(2*Ham.I+1)))
-    isx=jxn.kron(jxn.eye(int(2*Ham.L+1)),isx)
-    isx=jxn.asarray(isx,dtype=jxn.complex64)
-    isy=jxn.kron(sy,jxn.eye(int(2*Ham.I+1)))
-    isy=jxn.kron(jxn.eye(int(2*Ham.L+1)),isy)
-    isy=jxn.asarray(isy,dtype=jxn.complex64)
-    isz=jxn.kron(sz,jxn.eye(int(2*Ham.I+1)))
-    isz=jxn.kron(jxn.eye(int(2*Ham.L+1)),isz)
-    isz=jxn.asarray(isz,dtype=jxn.complex64)
-    E=Exp.Freq
-    beta=(scic.physical_constants["Bohr magneton"][0]/scic.physical_constants["Planck constant"][0])/1e12
-    betan=(scic.physical_constants["nuclear magneton"][0]/scic.physical_constants["Planck constant"][0])/1e12
-    hzex=jxn.asarray(beta*JHze(sx,sy,sz,Ham.g,[1,0,0],dim),dtype=complex)
-    hzey=jxn.asarray(beta*JHze(sx,sy,sz,Ham.g,[0,1,0],dim),dtype=complex)
-    hzez=jxn.asarray(beta*JHze(sx,sy,sz,Ham.g,[0,0,1],dim),dtype=complex)
-    h1=jxn.zeros((dim,dim),dtype='complex64')
-    if Ham.S>=1:
-        h1=h1+JStevensO(sx,sy,sz,Ham.S,Ham,dim)
-    if Ham.L!=0:
-        h1=h1+JLorbit(sx,sy,sz,Ham.lc,dim,Ham.L)
-    if Ham.I!=0:
-        h1=h1+JHfi(sx,sy,sz,ix,iy,iz,Ham.A,dim)
-        h1=h1+JQii(ix,iy,iz,Ham.Q,dim)
-        gnk=gnfactor(Nucl)
-        nhzex=jxn.asarray(betan*JNhze(Ham.I,ix,iy,iz,dim,gnk,[1,0,0]),dtype=complex)
-        nhzey=jxn.asarray(betan*JNhze(Ham.I,ix,iy,iz,dim,gnk,[0,1,0]),dtype=complex)
-        nhzez=jxn.asarray(betan*JNhze(Ham.I,ix,iy,iz,dim,gnk,[0,0,1]),dtype=complex)
-        hzex-=nhzex
-        hzey-=nhzey
-        hzez-=nhzez
-    h1=jxn.asarray(h1,dtype=complex)
-    Blist1=jxn.linspace(frange0,Exp.Frange[1],1000)
-    dB=(Exp.Frange[1]-Exp.Frange[0])/(Exp.Points-1)
-    Bmin=Exp.Frange[0]
-    for i in range(0,len(iwas)):
-        Elist,Vlist,h2=APadaptarray(Blist1,h1,hzex,hzey,hzez,iwas[i],jwas[i],kwas[i])
-        gaps=np.diff(jxn.sort(Elist,axis=-1),axis=-1)
-        print(jxn.min(gaps),jxn.unravel_index(jxn.argmin(gaps),gaps.shape))
-        
-        
 
 @partial(jx.custom_jvp,nondiff_argnums=(1,))
 def containeigh(A,eps=1e-5):
+    '''
+    Wrap function for the eignevalues determination using jax and making sure the value doesn't go to infinity by the energy degeneration.
+    
+    Parameters
+    ----------
+    
+    A : jax.numpy.array
+        Total hamiltonian matrix.
+    
+    eps : float
+        Perturbation value in case there is energy degeneration. Default is 1e-5.
+    
+    Returns
+    -------
+    
+    w : jax.numpy.array
+        Energy values of the hamiltonian.
+    v : jax.numpy.array
+        Eigenvectors of the hamiltonian.
+    '''
     w,v=jxn.linalg.eigh(A)
     return w,v
 
