@@ -209,7 +209,6 @@ def Pot(espac2,enegria,curvebasis,resonants,lab,espac1,Ham,):
       '''
       Plotting for the Ori function energy diagrams. 
       
-          
       Parameters
       ----------
       
@@ -336,8 +335,29 @@ def Ori(Hamer,Expe):
     
     Example
     -------
-    
-    
+    >>> import epraya as epr
+    >>> Ham,Exp,Vary=epr.Start()
+    >>> Ham.S=1
+    >>> Ham.I=1
+    >>> Ham.Hpp=[10,15]
+    >>> Ham.g=[2.2,2.4,2.2]
+    >>> Ham.A=[500,250,500]
+    >>> Ham.D=[600,100]
+    >>> Exp.Points=4096
+    >>> Exp.Frange=[0,500]
+    >>> epr.Ori(Ham,Exp)
+
+    .. image:: /_static/orix.png
+       :alt: Plot of the Orix function
+       :align: center
+       
+    .. image:: /_static/oriy.png
+       :alt: Plot of the Oriy function
+       :align: center
+       
+    .. image:: /_static/oriz.png
+       :alt: Plot of the Oriz function
+       :align: center
     '''
     Ham=deepcopy(Hamer)
     Exp=deepcopy(Expe)
@@ -438,7 +458,35 @@ def Ori(Hamer,Expe):
 
         Pot(Blist,Elist,curvebasis,resonants,lab,espac1,Ham)
         
-def Spectre(Hamer,Expe,phi,orient='Z'):
+def Spectre(Hamer,Expe,phi=0,orient='Z'):
+    '''
+    Plotting function for spectrum, energy diagram and angle variation. Three in one function for analysis of the resonant fields and their effects in the spectrum. Resonant fields are marked in the three plots with green lines.
+    
+    Parameters
+    ----------
+        
+    Hamer : Class
+        Container for the hamiltonian parameters of the system.
+    Expe : Class
+        Container for the experimental conditions.
+    phi : float
+        Angle of inclination between the sample z axis and the lab z axis.
+    orient : str
+        X, Y or Z orientation of the sample.
+    
+    Returns
+    -------
+    
+    espac1 : np.array
+        Array of the magnetic field.
+    espectotal : np.array
+        Array of the counts of the spectrum.
+    
+    Example
+    -------
+    
+    
+    '''
     iwas,jwas,kwas,weight,hulk=Delaunay(Expe)
     Ham=deepcopy(Hamer)
     Exp=deepcopy(Expe)
@@ -513,7 +561,7 @@ def Spectre(Hamer,Expe,phi,orient='Z'):
         if np.isclose(weight[omega],0):
             continue
         nx,ny,nz=iwas[omega],jwas[omega],kwas[omega]
-        currenttdo=(nx,ny,nz,Blist1,Blist2,h1,hzex,hzey,hzez,dim,Exp.Freq,Exp.Temperature,isx,isy,isz,espac1,eta)
+        currenttdo=(nx,ny,nz,Blist1,Blist2,h1,hzex,hzey,hzez,dim,Exp.Freq,Exp.Temperature,isx,isy,isz,eta)
         ttdo.append(currenttdo)
     with threadpool_limits(limits=1,user_api='blas'):
         partresult=Parallel(n_jobs=-3,backend="loky")(delayed(Omegaparal)(t) for t in ttdo)
@@ -543,7 +591,7 @@ def Spectre(Hamer,Expe,phi,orient='Z'):
     #Int=1, no resonant field
     kvoigt=Voigtp(kaxis,np.array([1.0]),np.array([0.0]),Ham.Hpp,eta)
     espectotal=scs.fftconvolve(sketch,kvoigt,mode='same')
-    axs[0].plot(espac1, espectotal, color='navy', label='EPR Spectrum')
+    axs[0].plot(espac1,espectotal,color='navy',label='EPR Spectrum')
     formatter=EngFormatter(sep='') 
     axs[0].yaxis.set_major_formatter(formatter)
     axs[0].set_ylabel('Counts [U. A.]',fontsize=14)
