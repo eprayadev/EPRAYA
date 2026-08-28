@@ -8,7 +8,7 @@ Many of the functions have the same names that the powder samples' ones, however
 Intensity and resonant fields functions
 ---------------------------------------
      
-.. currentmodule:: base_powd
+.. currentmodule:: base_cris
 
 .. toctree::
    :caption: Intensity and resonant fields functions
@@ -37,7 +37,7 @@ Intensity and resonant fields functions
 Eigen values and vectors functions
 ----------------------------------
 
-.. currentmodule:: base_powd
+.. currentmodule:: base_cris
 
 .. toctree::
    :caption: Eigen values and vectors functions

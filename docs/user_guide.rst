@@ -12,4 +12,4 @@ Welcome to the EPRAYA user guide. Here you will find a description of the differ
    cwcrystal
    fitting
    jax_impl
-   other
+   special

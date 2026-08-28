@@ -1,5 +1,5 @@
 Jax implementation
-=======================
+==================
 
 Here are the *JAX* function for the simualtion and fitting of EPR cw data. 
 
@@ -102,15 +102,42 @@ Intensity and resonant fields functions
    :caption: Intensity and resonant fields functions
    :hidden:
    
-   Delaunay
-   Powder
-   Calpowder
-   Mulpol
-   Omegaparal
-   Betaparal
-   Nresina
-   Boltfactor
-   Caltriangle
+   
+   JPowder
+   JCalpowder
+   JMulpol
+   Jcalmulta
+   oneori
+   JNresina
+   JBoltfactor
+   JCaltriangle
+   Meshtriangle
+
+.. list-table::
+   :widths: 25 75
+   :header-rows: 1
+
+   * - Name
+     - Description
+   * - :doc:`epraya.JPowder <JPowder>`
+     - Wrap function for the simulation of the EPR spectrum for powder samples.
+   * - :doc:`epraya.JCalpowder <JCalpowder>`
+     - Function for the simulation of the EPR spectrum for powder samples using the JAX functions. 
+   * - :doc:`epraya.JMulpol <JMulpol>`
+     - Wrap function for the simulation of the EPR spectrum for powder samples of two systems.
+   * - :doc:`epraya.Jcalmulta <Jcalmulta>`
+     - Determinates the spectrum for a two paramagnetic centers system.
+   * - :doc:`epraya.oneori <oneori>`
+     - Wrap function to use JPadaptarray and JNresina with the JAX.vmap implementation. 
+   * - :doc:`epraya.JNresina <JNresina>`
+     - Determinates the resonant fields and intensities of the spectrum using the expression for the first order perturbation limit. 
+   * - :doc:`epraya.JBoltfactor <JBoltfactor>`
+     - Calculates the Boltzmann distribution for the intensity, using states *di* and *dj* and their related energies.
+   * - :doc:`epraya.JCaltriangle <JCaltriangle>`
+     - Creates a sketch spectrum using a barycentral mesh of triangles to calculate the contribution of the resonant fields and their intensities in the final spectrum.
+   * - :doc:`epraya.Meshtriangle <Meshtriangle>`
+     - Creates the baricentral mesh of triangles for the JCaltriangle function.
+
 
 Line profile functions
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -121,9 +148,9 @@ Line profile functions
    :caption: Line profile functions
    :hidden:
    
-   Lorentzp
-   Gaussp
-   Voigtp
+   JLorentzp
+   JGaussp
+   JVoigtp
 
 .. list-table::
    :widths: 25 75
@@ -131,11 +158,11 @@ Line profile functions
 
    * - Name
      - Description
-   * - :doc:`epraya.Lorentzp <Lorentzp>`
+   * - :doc:`epraya.JLorentzp <JLorentzp>`
      - Determinates the lorentzian profile of the spectrum.
-   * - :doc:`epraya.Gaussp <Gaussp>`
+   * - :doc:`epraya.JGaussp <JGaussp>`
      - Determinates the gaussian profile of the spectrum.
-   * - :doc:`epraya.Voigtp <Voigtp>`
+   * - :doc:`epraya.JVoigtp <JVoigtp>`
      - Determinates the voigtian profile of the spectrum.
      
 Eigen values and vectors functions
@@ -147,21 +174,59 @@ Eigen values and vectors functions
    :caption: Eigen values and vectors functions
    :hidden:
    
-   Padaptarray
-   Hungorder
-   Getlabel
-
+   JPadaptarray
+   Hungarian
+   Jungarian
+   JPretrack	
+   containeigh
+   
 .. list-table::
    :widths: 25 75
    :header-rows: 1
 
    * - Name
      - Description
-   * - :doc:`epraya.Padaptarray <Padaptarray>`
-     - Finds the energy values and eigenvectors of the total hamiltonian.
-   * - :doc:`epraya.Hungorder <Hungorder>`
+   * - :doc:`epraya.JPadaptarray <JPadaptarray>`
+     - Constructs the Zeeman hamiltonian, adds it to the complete one and finds the energy values and eigenvectors.
+   * - :doc:`epraya.Hungarian <Hungarian>`
      - Solves the assigment problem with the J-V method implemented in Scipy for the eigenvectors and energy values.    
-   * - :doc:`epraya.Pretrack <Pretrack>`
-     - Relates the energy values and eigenvectors to the quantum numbers of the system.
-   * - :doc:`epraya.Getlabel <Getlabel>`
-     - Creates the state ket for the energy level, using the quantum numbers.
+   * - :doc:`epraya.Jungarian <Jungarian>`
+     - Wrap function to call the Scipy J-V method outside of JAX using ShapeDtypeStruct and pure_callback.
+   * - :doc:`epraya.JPretrack <JPretrack>`
+     - Organize the eigenvectors and energies to relate them with the quantum numbers of the system.
+   * - :doc:`epraya.containeigh <containeigh>`
+     - Wrap function for the eignevalues determination using JAX.	
+     
+Monocristal samples
+-------------------
+
+Like its classic counterpart, the process includes the functions for monocristal samples simulation (one fixed orientation), with the implementation of the Stoll *Easyspin* method for the resonant fields determination. Also includes the energy diagrams generator function.
+
+Intensity and resonant fields functions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     
+.. currentmodule:: base_jax
+
+.. toctree::
+   :caption: Intensity and resonant fields functions
+   :hidden:
+   
+   Jresonant
+   Calresonant
+   JMusic
+   Jcalmusic
+   
+.. list-table::
+   :widths: 25 75
+   :header-rows: 1
+
+   * - Name
+     - Description
+   * - :doc:`epraya.Jresonant <Jresonant>`
+     - Wrap function for the simulation of the EPR spectrum for monocrystal samples.
+   * - :doc:`epraya.Calresonant <Calresonant>`
+     - Function for the calculation of the EPR cw spectrum of monocristal systems.
+   * - :doc:`epraya.JMusic <JMusic>`
+     - Wrap function for the simulation of the EPR spectrum for monocristal samples of two systems.
+   * - :doc:`epraya.Jcalmusic <Jcalmusic>`
+     - Determinates the spectrum for a two paramagnetic centers monocristal system..     
