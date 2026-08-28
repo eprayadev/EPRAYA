@@ -45,7 +45,7 @@ from .base_powd import *
 from .base_ham import *
 from matplotlib import cm
 
-
+jx.config.update("jax_debug_nans", True)
 jx.config.update("jax_enable_x64", True)
 
 @jaxdatclass
@@ -3048,7 +3048,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
     maximal : int
         Max. number of iterations to evalue the function.
     eps : float
-        Tolerance value for the error. Default is 1e-10
+        Tolerance value for the error. Default is 1e-11
     mode : str
         Defines the sample type, 'p' for powder and 'c' for monocristal.
     
@@ -3133,7 +3133,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
           return param
       param=initpara(Ham,Vary)
       optimus=optax.adam
-      optimus=optax.chain(optax.clip_by_global_norm(1.0),optax.zero_nans(),optax.adam(learning_rate=0.1))
+      optimus=optax.chain(optax.clip_by_global_norm(1.0),optax.adam(learning_rate=0.1))#,optax.zero_nans(),optax.adam(learning_rate=0.1))
       state=optimus.init(param)
 
       def Errorcost(params,exper):
@@ -3491,7 +3491,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
           return param
       param=initpara(Ham,Vary)
       optimus=optax.adam
-      optimus=optax.chain(optax.clip_by_global_norm(1.0),optax.zero_nans(),optax.adam(learning_rate=0.1))
+      optimus=optax.chain(optax.clip_by_global_norm(1.0),optax.adam(learning_rate=0.1))#,optax.zero_nans(),optax.adam(learning_rate=0.1))
       state=optimus.init(param)
       def Errorcost(params,exper):
           T=4.0

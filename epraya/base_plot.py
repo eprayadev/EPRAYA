@@ -1156,6 +1156,7 @@ def Seek(field=None,counts=None):
         return app.Sdat[1:3]
     else:
         print('Exit application without saving')
+        return [],[]
         
         
         
