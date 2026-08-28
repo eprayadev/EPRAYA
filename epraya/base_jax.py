@@ -3136,7 +3136,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
       optimus=optax.chain(optax.clip_by_global_norm(1.0),optax.adam(learning_rate=0.1))#,optax.zero_nans(),optax.adam(learning_rate=0.1))
       state=optimus.init(param)
 
-      def Errorcost(params,exper):
+      def Errorcost1(params,exper):
           T=4.0
           if 'gx' in params.keys():
               gx=Vary.g[0]+(Vary.g[1]-Vary.g[0])*jnn.sigmoid(params['gx']/T)
@@ -3171,25 +3171,18 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
               HHpp=jxn.array([Hppx,Hppy])
           else:
               HHpp=SHam.Hpp
-          SHam.g=gg
-          SHam.A=AA
-          SHam.D=DD
-          SHam.Q=QQ
-          SHam.Hpp=HHpp
           Hame=SHam.replace(g=gg,A=AA,D=DD,Q=QQ,Hpp=HHpp)
           if mode=='p':
               _,simul=JCalpowder(Hame,dExp,iwas,jwas,kwas,weight,hulk)
           elif mode=='c':
               _,simul=Calresonant(Hame,dExp)
-          maxl=jxn.max(jxn.abs(simul))
-          maxl=jxn.where(maxl==0.0,1.0,maxl)
+          maxl=jxn.maximum(jxn.max(jxn.abs(simul)),1e-8)
           simul=simul/maxl
-          maxe=jxn.max(jxn.abs(exper))
-          maxe=jxn.where(maxe==0.0,1.0,maxe)
+          maxe=jxn.maximum(jxn.max(jxn.abs(exper)),1e-8)
           exper=exper/maxe
           return jxn.mean((simul-exper)**2)
 
-      Degrad=jx.value_and_grad(Errorcost,argnums=0)
+      Degrad=jx.value_and_grad(Errorcost1,argnums=0)
       step=0
       T=4.0
 
@@ -3493,7 +3486,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
       optimus=optax.adam
       optimus=optax.chain(optax.clip_by_global_norm(1.0),optax.adam(learning_rate=0.1))#,optax.zero_nans(),optax.adam(learning_rate=0.1))
       state=optimus.init(param)
-      def Errorcost(params,exper):
+      def Errorcost2(params,exper):
           T=4.0
           if 'gx1' in params.keys():
               gx1=Vary.g1[0]+(Vary.g1[1]-Vary.g1[0])*jnn.sigmoid(params['gx1']/T)
@@ -3555,24 +3548,17 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
               HHpp=jxn.array([Hppx,Hppy])
           else:
               HHpp=SHam.Hpp
-          SHam.g1,SHam.g2=gg1,gg2
-          SHam.A1,SHam.A2=AA1,AA2
-          SHam.D1,SHam.D2=DD1,DD2
-          SHam.Q1,SHam.Q2=QQ1,QQ2
-          SHam.Hpp=HHpp
           Hame=SHam.replace(g1=gg1,g2=gg2,A1=AA1,A2=AA2,D1=DD1,D2=DD2,Q1=QQ1,Q2=QQ2,Hpp=HHpp)
           if mode=='p':
               _,simul=JMulpol(Hame,dExp,graph=False)
           elif mode=='c':
               _,simul=JMusic(Hame,dExp,graph=False)
-          maxl=jxn.max(jxn.abs(simul))
-          maxl=jxn.where(maxl==0.0,1.0,maxl)
+          maxl=jxn.maximum(jxn.max(jxn.abs(simul)),1e-8)
           simul=simul/maxl
-          maxe=jxn.max(jxn.abs(exper))
-          maxe=jxn.where(maxe==0.0,1.0,maxe)
+          maxe=jxn.maximum(jxn.max(jxn.abs(exper)),1e-8)
           exper=exper/maxe
           return jxn.mean((simul-exper)**2)
-      Degrad=jx.value_and_grad(Errorcost,argnums=0)
+      Degrad=jx.value_and_grad(Errorcost2,argnums=0)
       step=0
       T=4.0
 
