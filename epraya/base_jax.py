@@ -1584,7 +1584,8 @@ def JCaltriangle(Bmin,dB,allres,allint,transi,hulk,weight,points):
         Array that contains the resulting spectrum sketch.
     
     '''
-    def Takeonetriangle(trindex):
+def JCaltriangle(Bmin,dB,allres,allint,transi,hulk,weight,points):
+    def Takeonetriangle(trindex,valid):
         i1,i2,i3=trindex[0],trindex[1],trindex[2]
         B1,B2,B3=allres[i1],allres[i2],allres[i3]
         I1,I2,I3=allint[i1],allint[i2],allint[i3]
@@ -1595,15 +1596,12 @@ def JCaltriangle(Bmin,dB,allres,allint,transi,hulk,weight,points):
         diferb=(Bin-Bmin)/dB
         fdiferb=diferb.flatten()
         fIint=Iint.flatten()
-        # Find the neighbours
         vecl=jxn.floor(fdiferb).astype(jxn.int32)
         vecr=vecl+1
-        #Divides the intensity between the neighbours, by percentages 
         fracr=fdiferb-vecl
         fracl=1.0-fracr
         Ilef=fIint*fracl
         Irig=fIint*fracr
-        # Is in range?
         rleft=(vecl>=0)&(vecl<points)
         rright=(vecr>=0)&(vecr<points)
         vecl=jxn.where(rleft,vecl,0)
@@ -1614,17 +1612,21 @@ def JCaltriangle(Bmin,dB,allres,allint,transi,hulk,weight,points):
         sketch1=sketch1.at[vecl].add(Ilef)
         sketch1=sketch1.at[vecr].add(Irig)
         n1,n2,n3=transi[i1],transi[i2],transi[i3]
-        taketrian=(n1==n2)&(n2==n3)&(n1>0)
+        taketrian=(n1==n2)&(n2==n3)&(n1>0)&valid
         return jxn.where(taketrian,sketch1,jxn.zeros_like(sketch1))
     csize=500
-    pad=(csize-(hulk.shape[0]%csize))%csize
+    nreal=hulk.shape[0]
+    pad=(csize-(nreal%csize))%csize
     hulkpad=jxn.pad(hulk,((0,pad),(0,0)),constant_values=0)
+    validpad=jxn.pad(jxn.ones(nreal,dtype=bool),(0,pad),constant_values=False)
     batch=hulkpad.shape[0]//csize
     hulkbatch=hulkpad.reshape((batch,csize,3))
-    def EWsize(carry,batch):
-        bspc=jx.vmap(Takeonetriangle)(batch)
+    validbatch=validpad.reshape((batch,csize)) 
+    def EWsize(carry,xs):
+        batchidx,validb=xs
+        bspc=jx.vmap(Takeonetriangle)(batchidx,validb)
         return carry+jxn.sum(bspc,axis=0),None
-    estotal,_=jx.lax.scan(EWsize,jxn.zeros(points),hulkbatch)
+    estotal,_=jx.lax.scan(EWsize,jxn.zeros(points),(hulkbatch,validbatch))
     return estotal
     
 ww1,ww2,ww3,tpoints=Meshtriangle()
@@ -1864,7 +1866,7 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None'):
     kpoints=1000
     kaxis=jxn.arange(-kpoints//2+1,kpoints//2+1)*dB
     kvoigt=JVoigtp(kaxis,jxn.array([1.0]),jxn.array([0.0]),Ham.Hpp,etas)
-    espectotal=jsig.fftconvolve(sketch,kvoigt,mode='same')*dB
+    espectotal=jsig.fftconvolve(sketch,kvoigt,mode='same')
     Blist2=jxn.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
     return Blist2,espectotal
 @jx.jit
@@ -2761,7 +2763,7 @@ def Jcalmulta(maham,Expe,Nucl1='None',Nucl2='None'):
         kpoints=201 
         kaxis=jxn.arange(-kpoints//2+1,kpoints//2+1)*dB
         kvoigt=JVoigtp(kaxis,jxn.array([1.0]),jxn.array([0.0]),Ham1.Hpp,etas)
-        espectotal=jsig.fftconvolve(sketch,kvoigt,mode='same')*dB
+        espectotal=jsig.fftconvolve(sketch,kvoigt,mode='same')
         Blist2=jxn.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
         fielde,specs=Blist2,espectotal
     return fielde,specs
