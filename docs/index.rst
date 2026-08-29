@@ -10,5 +10,5 @@ Epraya is a python package for EPR (Electron Paramagnetic Resonance) cw data ana
 
    installation
    user_guide
-   tutorials
-   reference
+   getting_started
+   references
