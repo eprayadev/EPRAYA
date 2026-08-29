@@ -1807,7 +1807,7 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None'):
         hzey-=nhzey
         hzez-=nhzez
     h1=jxn.asarray(h1,dtype=complex)
-    Blist1=jxn.linspace(frange0,Exp.Frange[1],1000)
+    Blist1=jxn.linspace(frange0,Exp.Frange[1],3000)
     dB=(Exp.Frange[1]-Exp.Frange[0])/(Exp.Points-1)
     Bmin=Exp.Frange[0]
     
@@ -1863,7 +1863,7 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None'):
     ntrans=ntrans.reshape(-1)[:tlen]
     sketch=JCaltriangle(Bmin,dB,allres,allint,ntrans,hulk,weight,Exp.Points)
     maxlenght=jxn.max(jxn.array(Ham.Hpp))*10
-    kpoints=1000
+    kpoints=501
     kaxis=jxn.arange(-kpoints//2+1,kpoints//2+1)*dB
     kvoigt=JVoigtp(kaxis,jxn.array([1.0]),jxn.array([0.0]),Ham.Hpp,etas)
     espectotal=jsig.fftconvolve(sketch,kvoigt,mode='same')
