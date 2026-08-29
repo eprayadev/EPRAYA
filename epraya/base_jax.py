@@ -1459,44 +1459,15 @@ def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2):
     ntrans : jax.np.array
         Zero dimensional array with the number of possible transitions related to the resonant fields.
     '''
+    
     iidx,jidx=jxn.triu_indices(dim,k=1)
-    Vdag=Vlist.conj().swapaxes(-1,-2)
-    Tx=Vdag@isx@Vlist
-    Ty=Vdag@isy@Vlist
-    Tz=Vdag@isz@Vlist
-    #Interpolate for intensities
-    Txij=Tx[:,iidx,jidx]
-    Tyij=Ty[:,iidx,jidx]
-    Tzij=Tz[:,iidx,jidx]
-    M2=jxn.real(Txij*jxn.conj(Txij))+jxn.real(Tyij*jxn.conj(Tyij))+jxn.real(Tzij*jxn.conj(Tzij))
-    Mn=nx*Txij+ny*Tyij+nz*Tzij
-    prob=M2-jxn.abs(Mn)**2
-    #Frecuency to field
-    h22=jxn.real(Vdag@h2@Vlist)
-    h2diag=jxn.diagonal(h22,axis1=1,axis2=2)
-    dert=h2diag[:,iidx]
-    izrt=h2diag[:,jidx]
-    gma=jxn.abs(izrt-dert)
-    gma=jxn.where(gma<1e-4,1e-4,gma)
-    gema=1.0/gma   
-    #Boltzmann distribution
-    conver=1e9*scc.h
-    Ej=Elist*conver
-    Temp=jxn.where(Tem<=0.0,1.0,Tem)
-    beta=1.0/(scc.k*Temp)
-    Emin=jxn.min(Ej,axis=-1,keepdims=True)
-    boltz=jxn.exp(-beta*(Ej-Emin))
-    Z=jxn.sum(boltz,axis=-1,keepdims=True)
-    boltz=boltz/Z
-    popui=boltz[:,iidx]
-    popuj=boltz[:,jidx]
-    boltzm=popui-popuj
-    intensy=prob*gema*boltzm
-    #FInd resonant fields
-    diffv=jxn.abs(Elist[:,jidx]-Elist[:, iidx])-Freq
+    npairs=iidx.shape[0]
+    parr=jxn.arange(npairs)
+
+    #FInd resonant fields and Search for crossings
+    diffv=jxn.abs(Elist[:,jidx]-Elist[:,iidx])-Freq
     dEl=diffv[:-1,:]
     dEr=diffv[1:,:]
-    #Search for crossings
     cross=(dEl*dEr<=0.0)&(dEl!=dEr)
     denom=dEr-dEl
     denom=jxn.where(denom==0.0,1e-8,denom)
@@ -1505,15 +1476,60 @@ def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2):
     Bl=Blist[:-1,None]
     Br=Blist[1:,None]
     res=Bl+t*(Br-Bl)
-    intle=intensy[:-1,:]
-    intri=intensy[1:,:]
-    eintensy=intle+t*(intri-intle)
+    #Normalize the eigenvectors
+    def safenorm(v,axis,eps=1e-30):
+        n=jxn.linalg.norm(v,axis=axis,keepdims=True)
+        n=jxn.where(n<eps,eps,n)
+        return v/n
+    #(Nfield, dim, npairs)
+    Vi=Vlist[:,:,iidx]          
+    Vj=Vlist[:,:,jidx]
+    Vi0,Vi1=Vi[:-1],Vi[1:]
+    Vj0,Vj1=Vj[:-1],Vj[1:]
+    tb=t[:,None,:]
+    vik=safenorm((1.0-tb)*Vi0+tb*Vi1, axis=1)
+    vjk=safenorm((1.0-tb)*Vj0+tb*Vj1, axis=1)
+
+    #Calculates in the resonant field its intensity
+    isxv=jxn.einsum('ed,fdp->fep',isx,vik)
+    isyv=jxn.einsum('ed,fdp->fep',isy,vik)
+    iszv=jxn.einsum('ed,fdp->fep',isz,vik)
+    Tx=jxn.einsum('fdp,fdp->fp',jxn.conj(vjk),isxv)
+    Ty=jxn.einsum('fdp,fdp->fp',jxn.conj(vjk),isyv)
+    Tz=jxn.einsum('fdp,fdp->fp',jxn.conj(vjk),iszv)
+    M2=jxn.real(Tx*jxn.conj(Tx))+jxn.real(Ty*jxn.conj(Ty))+jxn.real(Tz*jxn.conj(Tz))
+    Mn=nx*Tx+ny*Ty+nz*Tz
+    prob=M2-jxn.abs(Mn)**2
+    #Frequency to field
+    h2vik=jxn.einsum('ed,fdp->fep',h2,vik)
+    h2vjk=jxn.einsum('ed,fdp->fep',h2,vjk)
+    dert=jxn.real(jxn.einsum('fdp,fdp->fp',jxn.conj(vik),h2vik))
+    izrt=jxn.real(jxn.einsum('fdp,fdp->fp',jxn.conj(vjk),h2vjk))
+    gma=jxn.abs(izrt-dert)
+    gma=jxn.where(gma<1e-4,1e-4,gma)
+    gema=1.0/gma
+    #Boltzman distribution
+    El0,El1=Elist[:-1],Elist[1:]
+    Eres=(1.0-t)[:,:,None]*El0[:,None,:]+t[:,:,None]*El1[:,None,:]
+    conver=1e9*scc.h
+    Ej=Eres*conver
+    Temp=jxn.where(Tem<=0.0,1.0,Tem)
+    beta=1.0/(scc.k*Temp)
+    Emin=jxn.min(Ej,axis=-1,keepdims=True)
+    boltz=jxn.exp(-beta*(Ej-Emin))
+    Z=jxn.sum(boltz,axis=-1,keepdims=True)
+    boltz=boltz/Z
+    popui=boltz[:,parr,iidx]
+    popuj=boltz[:,parr,jidx]
+    boltzm=popui-popuj
+    eintensy=prob*gema*boltzm
+
     fres=jxn.where(cross,res,0.0).flatten()
     fint=jxn.where(cross,eintensy,0.0).flatten()
     cross=cross.flatten()
     ntrans=jxn.sum(cross).astype(jxn.float64)
-    Ktra=200
     #Scores for transition possibility
+    Ktra=200
     scores=jxn.where(cross,1.0+fint,-1.0)
     topones,toponesind=jx.lax.top_k(scores,Ktra)
     toponesind=jx.lax.stop_gradient(toponesind)
@@ -1807,36 +1823,12 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None'):
         hzey-=nhzey
         hzez-=nhzez
     h1=jxn.asarray(h1,dtype=complex)
-    Blist1=jxn.linspace(frange0,Exp.Frange[1],3000)
+    Blist1=jxn.linspace(frange0,Exp.Frange[1],1000)
     dB=(Exp.Frange[1]-Exp.Frange[0])/(Exp.Points-1)
     Bmin=Exp.Frange[0]
     
     @jx.jit
     def Oneori(nx,ny,nz):
-        '''
-        Wrap function to use JPadaptarray and JNresina with the JAX.vmap implementation. Vmap vectorizes this two functions, making them work with block of data instead of individual process in a loop. The blocks are divided in parts of csize size, and process with the function Processvmap, that calculates the total values of resonant fields, intenitys and transitions.
-        
-        Parameters
-        ----------
-        
-        nx : jax.np.array
-            Vectors (points in the grid) to consider in the calculation of the spectrum in the x direction.
-        ny : jax.np.array
-            Vectors (points in the grid) to consider in the calculation of the spectrum in the y direction.
-        nz : jax.np.array
-            Vectors (points in the grid) to consider in the calculation of the spectrum in the z direction.
-        
-        Returns
-        -------
-        resfield : jax.np.array 
-            List of the resonant fields of the system.
-        intensy : jax.np.array 
-            List of the intensity of the spectrum, evaluated in the resonant fields.
-        ntrans : jax.np.array
-            Zero dimensional array with the number of possible transitions related to the resonant fields.
-        
-    
-        '''
         Elist,Vlist,h2=JPadaptarray(Blist1,h1,hzex,hzey,hzez,nx,ny,nz)
         resfield,intensy,ntrans=JNresina(Blist1,Elist,Vlist,dim,Exp.Freq,isx,isy,isz,nx,ny,nz,Exp.Temperature,Ham.Hpp,h2)
         return resfield,intensy,ntrans
@@ -4029,3 +4021,42 @@ def containeigh_jvp(eps,primals,tangents):
     F=denom/(denom**2+eps**2)
     dV=v@(F*M)
     return (w,v),(dw,dV)
+    
+def JHermiteUpsample(Bl1,El1,Bl2):
+    '''
+    Interpolación cúbica de Hermite (tipo Catmull-Rom) para sobremuestrear
+    y_coarse (p.ej. Elist calculado en una malla de campo gruesa) a una
+    malla de campo x_fine mucho más densa, de forma diferenciable.
+    Reemplaza a scipy.interpolate.CubicSpline (cubichers) para uso dentro
+    de jax.grad/jit/vmap.
+
+    x_coarse : (Nc,)      malla de campo original, uniforme y ordenada
+    y_coarse : (Nc, ...)  valores a interpolar (Elist, forma (Nc,dim))
+    x_fine   : (Nf,)      malla de campo fina donde se evalúa
+    '''
+    Nc = x_coarse.shape[0]
+    dx = x_coarse[1] - x_coarse[0]     # malla uniforme (igual que Blist1 en el código)
+
+    # Derivadas por diferencias finitas centradas (adelante/atrás en los extremos)
+    dy = jxn.zeros_like(y_coarse)
+    dy = dy.at[1:-1].set((y_coarse[2:] - y_coarse[:-2]) / (2*dx))
+    dy = dy.at[0].set((y_coarse[1] - y_coarse[0]) / dx)
+    dy = dy.at[-1].set((y_coarse[-1] - y_coarse[-2]) / dx)
+
+    # Intervalo e interpolante local para cada punto fino
+    idx = jxn.clip(((x_fine - x_coarse[0]) / dx).astype(jxn.int32), 0, Nc-2)
+    t = (x_fine - x_coarse[idx]) / dx    # parámetro local en [0,1]
+
+    y0, y1 = y_coarse[idx], y_coarse[idx+1]
+    m0, m1 = dy[idx]*dx, dy[idx+1]*dx
+
+    t2, t3 = t**2, t**3
+    h00 = 2*t3 - 3*t2 + 1
+    h10 = t3 - 2*t2 + t
+    h01 = -2*t3 + 3*t2
+    h11 = t3 - t2
+
+    if y_coarse.ndim > 1:
+        h00,h10,h01,h11 = [h[:,None] for h in (h00,h10,h01,h11)]
+
+    return h00*y0 + h10*m0 + h01*y1 + h11*m1
