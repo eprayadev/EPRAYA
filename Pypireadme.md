@@ -5,7 +5,7 @@
 ![GitHub License](https://img.shields.io/github/license/eprayadev/epraya)
 [![PyPI version](https://img.shields.io/pypi/v/epraya.svg)](https://pypi.org/project/epraya/)
 
-EPRAYA offers tools for simulations, fitting and manipulation of EPR (Electron Paramagnetic Resonance) spectroscopic data (cw EPR) in Python. Using only three containers: Ham, Exp and Vary, users can insert hamiltonian parameters, experimental conditions and range for parameters' variation.
+EPRAYA offers tools for simulation, fitting and manipulation of EPR (Electron Paramagnetic Resonance) spectroscopic data (cw EPR) in Python. Using only three containers: Ham, Exp and Vary, users can insert hamiltonian parameters, experimental conditions and range for parameters' variation.
 
 It also offers two modes for simulation: 
 
