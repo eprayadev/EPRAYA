@@ -4022,41 +4022,4 @@ def containeigh_jvp(eps,primals,tangents):
     dV=v@(F*M)
     return (w,v),(dw,dV)
     
-def JHermiteUpsample(Bl1,El1,Bl2):
-    '''
-    Interpolación cúbica de Hermite (tipo Catmull-Rom) para sobremuestrear
-    y_coarse (p.ej. Elist calculado en una malla de campo gruesa) a una
-    malla de campo x_fine mucho más densa, de forma diferenciable.
-    Reemplaza a scipy.interpolate.CubicSpline (cubichers) para uso dentro
-    de jax.grad/jit/vmap.
 
-    x_coarse : (Nc,)      malla de campo original, uniforme y ordenada
-    y_coarse : (Nc, ...)  valores a interpolar (Elist, forma (Nc,dim))
-    x_fine   : (Nf,)      malla de campo fina donde se evalúa
-    '''
-    Nc = x_coarse.shape[0]
-    dx = x_coarse[1] - x_coarse[0]     # malla uniforme (igual que Blist1 en el código)
-
-    # Derivadas por diferencias finitas centradas (adelante/atrás en los extremos)
-    dy = jxn.zeros_like(y_coarse)
-    dy = dy.at[1:-1].set((y_coarse[2:] - y_coarse[:-2]) / (2*dx))
-    dy = dy.at[0].set((y_coarse[1] - y_coarse[0]) / dx)
-    dy = dy.at[-1].set((y_coarse[-1] - y_coarse[-2]) / dx)
-
-    # Intervalo e interpolante local para cada punto fino
-    idx = jxn.clip(((x_fine - x_coarse[0]) / dx).astype(jxn.int32), 0, Nc-2)
-    t = (x_fine - x_coarse[idx]) / dx    # parámetro local en [0,1]
-
-    y0, y1 = y_coarse[idx], y_coarse[idx+1]
-    m0, m1 = dy[idx]*dx, dy[idx+1]*dx
-
-    t2, t3 = t**2, t**3
-    h00 = 2*t3 - 3*t2 + 1
-    h10 = t3 - 2*t2 + t
-    h01 = -2*t3 + 3*t2
-    h11 = t3 - t2
-
-    if y_coarse.ndim > 1:
-        h00,h10,h01,h11 = [h[:,None] for h in (h00,h10,h01,h11)]
-
-    return h00*y0 + h10*m0 + h01*y1 + h11*m1
