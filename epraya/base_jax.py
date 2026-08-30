@@ -1783,7 +1783,7 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None'):
     frange0=jxn.where(Expe.Frange[0]<0.0,1e-4,Expe.Frange[0])
     Ham=Hamer.replace(A=jxn.asarray(Hamer.A)/1000.0,D=jxn.asarray(Hamer.D)/1000.0,Hpp=jxn.asarray(Hamer.Hpp)/1.0,Q=jxn.asarray(Hamer.Q)/1000.0,
                      Bk2=jxn.asarray(Hamer.Bk2)/1000.0,Bk4=jxn.asarray(Hamer.Bk4)/1000.0,Bk6=jxn.asarray(Hamer.Bk6)/1000.0)
-    etas=Ham.etaf
+    etas=Ham.eta
     etas=jxn.where(Ham.Hpp[1]==0.0,0.0,etas)
     etas=jxn.where(Ham.Hpp[0]==0.0,1.0,etas)
     Ham=Ham.replace(eta=etas)
