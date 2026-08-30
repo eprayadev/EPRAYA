@@ -1854,7 +1854,7 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None'):
     allint=allint.reshape(-1,allint.shape[-1])[:tlen]
     ntrans=ntrans.reshape(-1)[:tlen]
     sketch=JCaltriangle(Bmin,dB,allres,allint,ntrans,hulk,weight,Exp.Points)
-    maxlenght=jxn.max(jxn.array(Ham.Hpp))*10
+    maxlenght=jxn.max(jxn.array(Ham.Hpp))*50
     kpoints=int(maxlenght/dB)|1
     kaxis=jxn.arange(-kpoints//2+1,kpoints//2+1)*dB
     kvoigt=JVoigtp(kaxis,jxn.array([1.0]),jxn.array([0.0]),Ham.Hpp,etas)
@@ -2751,7 +2751,7 @@ def Jcalmulta(maham,Expe,Nucl1='None',Nucl2='None'):
         allint=allint.reshape(-1,allint.shape[-1])[:tlen]
         ntrans=ntrans.reshape(-1)[:tlen]
         sketch=JCaltriangle(Bmin,dB,allres,allint,ntrans,hulk,weight,Exp1.Points)
-        maxlenght=jxn.max(jxn.array(Ham1.Hpp))*10
+        maxlenght=jxn.max(jxn.array(Ham1.Hpp))*50
         kpoints=int(maxlenght/dB)|1
         kaxis=jxn.arange(-kpoints//2+1,kpoints//2+1)*dB
         kvoigt=JVoigtp(kaxis,jxn.array([1.0]),jxn.array([0.0]),Ham1.Hpp,etas)
