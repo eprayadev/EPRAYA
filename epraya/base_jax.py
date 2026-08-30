@@ -1855,7 +1855,7 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None'):
     ntrans=ntrans.reshape(-1)[:tlen]
     sketch=JCaltriangle(Bmin,dB,allres,allint,ntrans,hulk,weight,Exp.Points)
     maxlenght=jxn.max(jxn.array(Ham.Hpp))*50
-    kpoints=int(maxlenght/dB)|1
+    kpoints=int(Exp.Points)|1 
     kaxis=jxn.arange(-kpoints//2+1,kpoints//2+1)*dB
     kvoigt=JVoigtp(kaxis,jxn.array([1.0]),jxn.array([0.0]),Ham.Hpp,etas)
     espectotal=jsig.fftconvolve(sketch,kvoigt,mode='same')
@@ -2752,7 +2752,7 @@ def Jcalmulta(maham,Expe,Nucl1='None',Nucl2='None'):
         ntrans=ntrans.reshape(-1)[:tlen]
         sketch=JCaltriangle(Bmin,dB,allres,allint,ntrans,hulk,weight,Exp1.Points)
         maxlenght=jxn.max(jxn.array(Ham1.Hpp))*50
-        kpoints=int(maxlenght/dB)|1
+        kpoints=int(Exp.Points)|1 
         kaxis=jxn.arange(-kpoints//2+1,kpoints//2+1)*dB
         kvoigt=JVoigtp(kaxis,jxn.array([1.0]),jxn.array([0.0]),Ham1.Hpp,etas)
         espectotal=jsig.fftconvolve(sketch,kvoigt,mode='same')
