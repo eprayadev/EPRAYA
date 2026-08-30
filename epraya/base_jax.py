@@ -1,4 +1,4 @@
-import io
+Bimport io
 import numpy as np
 import scipy as sci
 import scipy.constants as scic
@@ -1823,7 +1823,7 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None'):
         hzey-=nhzey
         hzez-=nhzez
     h1=jxn.asarray(h1,dtype=complex)
-    Blist1=jxn.linspace(frange0,Exp.Frange[1],1000)
+    Blist1=jxn.linspace(frange0,Exp.Frange[1],500)
     dB=(Exp.Frange[1]-Exp.Frange[0])/(Exp.Points-1)
     Bmin=Exp.Frange[0]
     
