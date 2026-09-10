@@ -3142,9 +3142,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
     | gx: 2.1424 | gy: 1.9453 | gz: 1.8139 |
     | D: 821.3 | E: 611.3 |
     | Hppg: 0.0 | Hppl: 61.3 |
-
     Process stopped at iteration:140
-    
     Step 141 | Error: 5.93200e-03 |
     | gx: 2.1404 | gy: 1.9589 | gz: 1.8065 |
     | D: 822.2 | E: 628.8 |
