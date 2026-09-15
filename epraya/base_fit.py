@@ -1988,7 +1988,7 @@ def Residuals(point,Hame,Exp,exper,Vary,fname,Mr=70):
     inorm=intena/normi
     return inorm-enorm
 
-def LSquare1(Ham1,Expe,Vary,exper,maximal=1000,mode='p'Mr=70):
+def LSquare1(Ham1,Expe,Vary,exper,maximal=1000,mode='p',Mr=70):
     '''
     Fitting adjutsment of the experimental data using the *scipy.optimize.least_squares* method. This case is for simple systems.
     
