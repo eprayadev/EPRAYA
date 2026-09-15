@@ -7,8 +7,6 @@ import scipy.signal as scs
 import scipy.constants as scc
 from functools import cmp_to_key
 from scipy.interpolate import CubicSpline as cubichers
-from scipy.interpolate import interp1d
-from scipy.spatial import ConvexHull
 from typing import Union, Any, List
 from dataclasses import dataclass, replace
 from dataclasses import field as dcfield
@@ -179,7 +177,7 @@ def Voigtp(field,Int,rfield,Hpp,eta):
     Hpp : list
         Peak to peak distance in mT, for gaussian and lorentzian profiles.
     eta : float
-        Percentage of the voigitan profile that corresponds to a gaussian profile, from 0 to 1.
+        Percentage of the voigitan profile that corresponds to a lorentzian profile, from 0 to 1.
     
     Returns
     -------
@@ -430,7 +428,7 @@ def Boltfactor(Eghz,di,dj,Temp):
 
 # Creates a plane where the triangle is created and then expanded to the surface of a
 #1 radius sphere, with a correction parameter of weight (solid angle projection)
-def Delaunay(Exp,M=35):
+def Delaunay(Exp,M=70):
     '''
     Implementation of a modificated version of the SOPHE method, in which all possible orientations of the system are represented as points over the surface of a radius 1 sphere, that can be divided pendending of the symmetries from the system. The points over the surface can be adapted using the Delaunay triangulation to a triangular grid of lenght *M*, with a weight for every triangle that counts for it's contribution in the spectrum.
     
@@ -460,6 +458,7 @@ def Delaunay(Exp,M=35):
     hulk : array_like
         Smaller convex poligon tha contains all the points require for the simulation.
     '''
+    ij=[]
     vectors=[]
     weights=[]
     for i in range(M+1):
@@ -470,8 +469,20 @@ def Delaunay(Exp,M=35):
                 continue
             vectors.append([i/R,j/R,k/R])
             weights.append(1/(R**3))
+            #Saves the grid coordinates
+            ij.append([i,j])
     vectors=np.asarray(vectors)
     weights=np.asarray(weights)
+    ij=np.asarray(ij)
+    #Makes the triangulation in the 2D space
+    imap={(i,j): n for n,(i,j) in enumerate(map(tuple,ij))}
+    tris=[]
+    for i in range(M):
+        for j in range(M-i):
+            tris.append([imap[(i,j)],imap[(i+1,j)],imap[(i,j+1)]])
+            if j<M-i-1:
+                tris.append([imap[(i+1,j)],imap[(i+1,j+1)],imap[(i,j+1)]])
+    lsimplices=np.array(tris)
     #Symmetries definitions
     gframe=np.asarray(Exp.gframe)
     Dframe=np.asarray(Exp.Dframe)
@@ -488,18 +499,26 @@ def Delaunay(Exp,M=35):
         signs=[np.array([1,1,1]),np.array([-1,1,1]),np.array([1,-1,1]),np.array([-1,-1,1])]
     avector=[]
     aweight=[]
-    for s in signs:
+    atris=[]
+    N=len(vectors)
+    for octidx,s in enumerate(signs):
         avector.append(vectors*s)
         aweight.append(weights)
+        atris.append(lsimplices+octidx*N)
     avector=np.vstack(avector)
     aweight=np.concatenate(aweight)
+    atris=np.vstack(atris)
     #Eliminate the frontier values
-    uvectors,idx=np.unique(np.round(avector,6),axis=0,return_index=True)
+    uvectors,idx,inverse=np.unique(np.round(avector,6),axis=0,return_index=True,return_inverse=True)
     uweight=aweight[idx]
     uweight=uweight/np.sum(uweight)
-    #Convex hull creates the smaller convex polygon which contains the points
-    hulk=ConvexHull(uvectors).simplices
-    return uvectors[:,0],uvectors[:,1],uvectors[:,2],uweight,hulk
+    # Maps the trianglesof delaunay
+    hulk=inverse[atris]
+    #Eliminate degenerated trinagles
+    mask=(hulk[:,0]!=hulk[:,1])&(hulk[:,1]!=hulk[:,2])&(hulk[:,0]!=hulk[:,2])
+    hulk=hulk[mask]
+    return uvectors[:,0],uvectors[:,1],uvectors[:,2],uweight,hulk,uvectors
+
 
 @njit
 def Nresina(Blist,Blist2,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,h2):
@@ -586,8 +605,8 @@ def Nresina(Blist,Blist2,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,h2):
                         dert=np.real(np.dot(np.conj(vik),np.dot(h2,vik)))
                         izrt=np.real(np.dot(np.conj(vjk),np.dot(h2,vjk)))
                         gma=np.abs(izrt-dert)
-                        if gma<1e-4:
-                            gma=1e-4
+                        if gma<1e-6:
+                            gma=1e-6
                         gema=1.0/gma
                         Energz=(1.0-t)*Elist[k]+t*Elist[k+1]
                         boltzman=Boltfactor(Energz,i,j,Tem)
@@ -736,7 +755,7 @@ def Caltriangle(sketch,Bmin,dB,allres,allint,transi,hulk,weight):
                             sketch[igdam]+=Iint*pointweg
 
 
-def Powder(Hamer,Expe,graph=True):  #Method ASG
+def Powder(Hamer,Expe,M=70,graph=True):  #Method ASG
     '''
     Wrap function for the simulation of the EPR spectrum for powder samples.
     
@@ -748,6 +767,9 @@ def Powder(Hamer,Expe,graph=True):  #Method ASG
     
     Expe : Class
         Container for the experimental conditions.
+        
+    M : int
+        Number of divisions for the Delaunay grid.
         
     graph : Bool
         Plots the resulting spectrum.
@@ -786,7 +808,7 @@ def Powder(Hamer,Expe,graph=True):  #Method ASG
        :alt: Plot of the Powder function
        :align: center
     '''
-    iwas,jwas,kwas,weight,hulk=Delaunay(Expe)
+    iwas,jwas,kwas,weight,hulk=Delaunay(Expe,M)
     Bfield,Intensity=Calpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk)
     if graph:
         if is_notebook():
@@ -980,7 +1002,7 @@ def Calpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk):
     Caltriangle(sketch,Bmin,dB,allres,allint,ntrans,hulk,weight)
 
     #Convolution of the function to create the derivated spectrum
-    maxlenght=np.max(Ham.Hpp)*10
+    maxlenght=np.max(Ham.Hpp)*50
     kerpoint=int(maxlenght/dB)*2+1
     kaxis=np.arange(-kerpoint//2+1,kerpoint//2+1)*dB
     #Int=1, no resonant field
@@ -990,7 +1012,7 @@ def Calpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk):
 
 
 
-def Mulpol(Hamer,Expe,graph=True):
+def Mulpol(Hamer,Expe,M=70,graph=True):
     '''
     Function for the simulation of the EPR spectrum for powder samples of multiple interactive or non interactive systems (from 2 to 4 systems). If there is an interaction between the systems (electron-eletron or hiperfine), solves the total hamiltonian. Otherwise, use the function Calpowder and sums the contributions to the total spectrum.
     
@@ -1003,6 +1025,9 @@ def Mulpol(Hamer,Expe,graph=True):
     Expe : Class
         Container for the experimental conditions.
 
+    M : int
+        Number of divisions for the Delaunay grid.
+        
     graph : Bool
         Plots the resulting spectrum.
     
@@ -1043,7 +1068,7 @@ def Mulpol(Hamer,Expe,graph=True):
        :align: center
     '''
     Ham=deepcopy(Hamer)
-    iwas,jwas,kwas,weight,hulk=Delaunay(Expe.Mexp[0])
+    iwas,jwas,kwas,weight,hulk=Delaunay(Expe.Mexp[0],M)
     numberes=len(Ham.Mulham)
     for inka in range(0,numberes):
         Expe.Mexp[inka].Freq=Expe.Mexp[0].Freq

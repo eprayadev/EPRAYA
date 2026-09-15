@@ -8,7 +8,6 @@ import scipy.constants as scc
 from functools import cmp_to_key
 from scipy.interpolate import CubicSpline as cubichers
 from scipy.interpolate import interp1d
-from scipy.spatial import ConvexHull
 from typing import Union, Any, List
 from dataclasses import dataclass, replace
 from dataclasses import field as dcfield
@@ -70,7 +69,7 @@ def CostfNM(exper,intens,metric='rmse'):
             return 1e6
         return 1-pearson
 
-def Nelder1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p'):
+def Nelder1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p',seed=451,Mr=70):
     '''
     Implementation of the Nelder Mead algorithm for fitting data for a single system.
 
@@ -93,7 +92,11 @@ def Nelder1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p')
         Type of data to do the fitting, can be 'data', the data as it's or 'integral', its first integral.
     mode : str
         Defines the sample type, 'p' for powder and 'c' for monocristal.
-    
+    seed : int
+        Seed for the uniform distribution.
+    Mr : int
+        Number of divisions for the Delaunay grid.
+        
     Returns
     -------
     spce : np.array
@@ -137,18 +140,18 @@ def Nelder1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p')
                 return 1e6
             Ham.Hpp=Htp
         if funcname in ['Powder']:
-            spect=Powder(Ham,Exp,graph='False')[1]
+            spect=Powder(Ham,Exp,M=Mr,graph=False)[1]
         elif funcname in ['Eresonant']:
-            spect=Eresonant(Ham,Exp,graph='False',table='False')[1]
+            spect=Eresonant(Ham,Exp,graph=False,table=False)[1]
         wcost=CostfNM(exper,spect)
         return wcost
     Ham=deepcopy(Hamer)
     Exp=deepcopy(Expe)
     Var=deepcopy(Vara)
     if mode=='p':
-        funtiona=Powder#(Ham,Exp,graph='False')
+        funtiona=Powder#(Ham,Exp,graph=False)
     elif mode=='c':
-        funtiona=Eresonant#(Ham,Exp,graph='False',table='False')
+        funtiona=Eresonant#(Ham,Exp,graph=False,table=False)
     else:
         raise ValueError (f'Valid functions are powder (p) or cristal (c).')
     funcname=funtiona.__name__
@@ -204,7 +207,7 @@ def Nelder1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p')
     gamma=1+(2/nparams)
     rho=0.75-(1/(2*nparams))
     sigma=1-(1/nparams)
-
+    np.random.seed(int(seed))
     for la in range(0,nparams):
         npoint=np.copy(pointx)
         change=np.random.uniform(-1,1)
@@ -305,9 +308,9 @@ def Nelder1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p')
         if np.any(Var.Hpp):
             print(f'Hppg={Ham.Hpp[0]} | Hppl={Ham.Hpp[1]}')
         if funcname in ['Powder']:
-            return funtiona(Ham,Exp,graph='False')[1]
+            return funtiona(Ham,Exp,M=Mr,graph=False)[1]
         elif funcname in ['Eresonant']:
-            return funtiona(Ham,Exp,graph='False',table='False')[1]
+            return funtiona(Ham,Exp,graph=False,table=False)[1]
     _=Fincost(melhor,funcname)
     print("\n"+"="*50)
     print(f"Process stopped at iteration: {itera} with best cost: {cmelhor:.5e}")
@@ -323,11 +326,11 @@ def Nelder1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p')
     if np.any(Var.Hpp):
         print(f'Hppg={Ham.Hpp[0]} | Hppl={Ham.Hpp[1]}')
     if funcname in ['Powder']:
-        return funtiona(Ham,Exp,graph='False')[1]
+        return funtiona(Ham,Exp,M=Mr,graph=False)[1]
     elif funcname in ['Eresonant']:
-        return funtiona(Ham,Exp,graph='False',table='False')[1]
+        return funtiona(Ham,Exp,graph=False,table=False)[1]
 
-def Nelder2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p'):
+def Nelder2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p',seed=451,Mr=70):
     '''
     Implementation of the Nelder Mead algorithm for fitting data for multisystems.
 
@@ -350,7 +353,11 @@ def Nelder2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p')
         Type of data to do the fitting, can be 'data', the data as it's or 'integral', its first integral.
     mode : str
         Defines the sample type, 'p' for powder and 'c' for monocristal.
-    
+    seed : int
+        Seed for the uniform distribution.
+    Mr : int
+        Number of divisions for the Delaunay grid.    
+        
     Returns
     -------
     spce : np.array
@@ -395,9 +402,9 @@ def Nelder2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p')
                 jl+=2
         try:
             if funcname in ['Mulpol']:
-                spect=funtiona(Ham,Exp,graph='False')[1]
+                spect=funtiona(Ham,Exp,M=Mr,graph=False)[1]
             elif funcname in ['Music']:
-                spect=funtiona(Ham,Exp,graph='False',table='False')[1]
+                spect=funtiona(Ham,Exp,graph=False,table=False)[1]
             wcost=CostfNM(exper,spect)
             return wcost
         except Exception:
@@ -406,9 +413,9 @@ def Nelder2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p')
     Exp=deepcopy(Expe)
     Var=deepcopy(Vara)
     if mode=='p':
-        funtiona=Mulpol#(Ham,Exp,graph='False')
+        funtiona=Mulpol#(Ham,Exp,graph=False)
     elif mode=='c':
-        funtiona=Music#(Ham,Exp,graph='False',table='False')
+        funtiona=Music#(Ham,Exp,graph=False,table=False)
     else:
         raise ValueError (f'Valid functions are powder (p) or cristal (c).')
     funcname=funtiona.__name__
@@ -466,7 +473,7 @@ def Nelder2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p')
     gamma=1+(2/nparams)
     rho=0.75-(1/(2*nparams))
     sigma=1-(1/nparams)
-
+    np.random.seed(int(seed))
     for la in range(0,nparams):
         npoint=np.copy(pointx)
         change=np.random.uniform(-1,1)
@@ -571,9 +578,9 @@ def Nelder2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p')
             if np.any(Var.Mvary[i].Hpp):
                 print(f'Hppg={Ham.Mulham[i].Hpp[0]:.4f} | Hppl={Ham.Mulham[i].Hpp[1]:.4f}')
         if funcname in ['Mulpol']:
-            return funtiona(Ham,Exp,graph='False')[1]
+            return funtiona(Ham,Exp,M=Mr,graph=False)[1]
         elif funcname in ['Music']:
-            return funtiona(Ham,Exp,graph='False',table='False')[1]
+            return funtiona(Ham,Exp,graph=False,table=False)[1]
     _=Fincost(melhor,funcname)
     print("\n"+"="*50)
     print(f"Process stopped at iteration: {itera} with best cost: {cmelhor:.5e}")
@@ -591,11 +598,11 @@ def Nelder2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p')
         if np.any(Var.Mvary[i].Hpp):
             print(f'Hppg={Ham.Mulham[i].Hpp[0]:.4f} | Hppl={Ham.Mulham[i].Hpp[1]:.4f}')
     if funcname in ['Mulpol']:
-        return funtiona(Ham,Exp,graph='False')[1]
+        return funtiona(Ham,Exp,M=Mr,graph=False)[1]
     elif funcname in ['Music']:
-        return funtiona(Ham,Exp,graph='False',table='False')[1]
+        return funtiona(Ham,Exp,graph=False,table=False)[1]
 
-def Nelder(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p'):
+def Nelder(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p',seed=451,Mr=70):
     '''
     Implementation of the Nelder Mead algorithm for fitting data, based on the code by Hadrien Crassous. Uses the 4 classic possibilities reflection, expansion, contraction and shrink with their respective constants, alpha, gamma, rho and sigma, defined depending in the number of parameters to vary (nparams). With that, their definitions are:
     
@@ -628,6 +635,10 @@ def Nelder(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p'):
         Type of data to do the fitting, can be 'data', the data as it's or 'integral', its first integral.
     mode : str
         Defines the sample type, 'p' for powder and 'c' for monocristal.
+    seed : int
+        Seed for the uniform distribution.
+    Mr : int
+        Number of divisions for the Delaunay grid.    
     
     Returns
     -------
@@ -638,11 +649,11 @@ def Nelder(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p'):
     if type(Hamer)==Multham:
          if Expe.Mexp[0].Points!=len(exper):
             Expe.Mexp[0].Points=len(exper)
-         scpe=Nelder2(Hamer,Expe,Vara,exper,eps,maximal,datype,mode)
+         scpe=Nelder2(Hamer,Expe,Vara,exper,eps,maximal,datype,mode,seed,Mr)
     elif type(Hamer)==Hval:
          if Expe.Points!=len(exper):
             Expe.Points=len(exper)
-         scpe=Nelder1(Hamer,Expe,Vara,exper,eps,maximal,datype,mode)
+         scpe=Nelder1(Hamer,Expe,Vara,exper,eps,maximal,datype,mode,seed,Mr)
     return scpe
 
 def CostfG(exper,intens,metric='rmse'):
@@ -693,7 +704,7 @@ def Mutategauss(fela,lowfron,hifron,proba=0.1,desv=0.05):
                 mutant[ap]=hifron[ap]
     return mutant
 
-def Genio1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p'):
+def Genio1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p',seed=451,Mr=70):
     '''
     Fitting function for the experimental data using the genetic algorithm for a single system.
     
@@ -716,7 +727,11 @@ def Genio1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p'):
         Type of data to do the fitting, can be 'data', the data as it's or 'integral', its first integral.
     mode : str
         Defines the sample type, 'p' for powder and 'c' for monocristal.
-    
+    seed : int
+        Seed for the uniform distribution
+    Mr : int
+        Number of divisions for the Delaunay grid.
+        
     Returns
     -------
     spce : np.array
@@ -759,9 +774,9 @@ def Genio1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p'):
                 return 1e6
             Ham.Hpp=Htp
         if funcname in ['Powder']:
-            spect=Powder(Ham,Exp,graph='False')[1]
+            spect=Powder(Ham,Exp,M=Mr,graph=False)[1]
         elif funcname in ['Eresonant']:
-            spect=Eresonant(Ham,Exp,graph='False',table='False')[1]
+            spect=Eresonant(Ham,Exp,graph=False,table=False)[1]
         wcost=CostfG(exper,spect)
         return wcost
     Ham=deepcopy(Hamer)
@@ -771,9 +786,9 @@ def Genio1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p'):
     hifron=[]
     bplayer=0
     if mode=='p':
-        funtiona=Powder#(Ham,Exp,graph='False')
+        funtiona=Powder#(Ham,Exp,graph=False)
     elif mode=='c':
-        funtiona=Eresonant#(Ham,Exp,graph='False',table='False')
+        funtiona=Eresonant#(Ham,Exp,graph=False,table=False)
     else:
         raise ValueError (f'Valid functions are powder (p) or cristal (c).')
     funcname=funtiona.__name__
@@ -807,6 +822,7 @@ def Genio1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p'):
     if poles%2!=0:
         poles+=1
     population=np.zeros((poles,nparams))
+    np.random.seed(int(seed))
     for ika in range(0,nparams):
         population[:,ika]=np.random.uniform(lowfron[ika],hifron[ika],poles)
     fitprice=np.zeros(poles)
@@ -867,9 +883,9 @@ def Genio1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p'):
         if np.any(Var.Hpp):
             print(f'Hppg={Ham.Hpp[0]} | Hppl={Ham.Hpp[1]}')
         if funcname in ['Powder']:
-            return funtiona(Ham,Exp,graph='False')[1]
+            return funtiona(Ham,Exp,M=Mr,graph=False)[1]
         elif funcname in ['Eresonant']:
-            return funtiona(Ham,Exp,graph='False',table='False')[1]
+            return funtiona(Ham,Exp,graph=False,table=False)[1]
     print("\n"+"="*50)
     print(f"Process stopped at iteration: {itea}, with best cost: {bcost:.5e}")
     print("="*50)
@@ -884,11 +900,11 @@ def Genio1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p'):
     if np.any(Var.Hpp):
         print(f'Hppg={Ham.Hpp[0]} | Hppl={Ham.Hpp[1]}')
     if funcname in ['Powder']:
-        return funtiona(Ham,Exp,graph='False')[1]
+        return funtiona(Ham,Exp,M=Mr,graph=False)[1]
     elif funcname in ['Eresonant']:
-        return funtiona(Ham,Exp,graph='False',table='False')[1]
+        return funtiona(Ham,Exp,graph=False,table=False)[1]
 
-def Genio2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p'):
+def Genio2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p',seed=451,Mr=70):
     '''
     Fitting function for the experimental data using the genetic algorithm for multysystems.
     
@@ -911,7 +927,11 @@ def Genio2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p'):
         Type of data to do the fitting, can be 'data', the data as it's or 'integral', its first integral.
     mode : str
         Defines the sample type, 'p' for powder and 'c' for monocristal.
-    
+    seed : int
+        Seed for the uniform distribution
+    Mr : int
+        Number of divisions for the Delaunay grid.
+        
     Returns
     -------
     spce : np.array
@@ -955,9 +975,9 @@ def Genio2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p'):
                 jl+=2
         try:
             if funcname in ['Mulpol']:
-                spect=funtiona(Ham,Exp,graph='False')[1]
+                spect=funtiona(Ham,Exp,M=Mr,graph=False)[1]
             elif funcname in ['Music']:
-                spect=funtiona(Ham,Exp,graph='False',table='False')[1]
+                spect=funtiona(Ham,Exp,graph=False,table=False)[1]
             wcost=CostfG(exper,spect)
             return wcost
         except Exception:
@@ -969,9 +989,9 @@ def Genio2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p'):
     hifron=[]
     bplayer=0
     if mode=='p':
-        funtiona=Mulpol#(Ham,Exp,graph='False')
+        funtiona=Mulpol#(Ham,Exp,graph=False)
     elif mode=='c':
-        funtiona=Music#(Ham,Exp,graph='False',table='False')
+        funtiona=Music#(Ham,Exp,graph=False,table=False)
     else:
         raise ValueError (f'Valid functions are powder (p) or cristal (c).')
     funcname=funtiona.__name__
@@ -1016,6 +1036,7 @@ def Genio2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p'):
     if poles%2!=0:
         poles+=1
     population=np.zeros((poles,nparams))
+    np.random.seed(int(seed))
     for ika in range(0,nparams):
         population[:,ika]=np.random.uniform(lowfron[ika],hifron[ika],poles)
     fitprice=np.zeros(poles)
@@ -1079,9 +1100,9 @@ def Genio2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p'):
             if np.any(Var.Mvary[i].Hpp):
                 print(f'Hppg={Ham.Mulham[i].Hpp[0]:.4f} | Hppl={Ham.Mulham[i].Hpp[1]:.4f}')
         if funcname in ['Mulpol']:
-            return funtiona(Ham,Exp,graph='False')[1]
+            return funtiona(Ham,Exp,M=Mr,graph=False)[1]
         elif funcname in ['Music']:
-            return funtiona(Ham,Exp,graph='False',table='False')[1]
+            return funtiona(Ham,Exp,graph=False,table=False)[1]
     print("\n"+"="*50)
     print(f"Process stopped at iteration: {itea}, with best cost: {bcost:.5e}")
     print("="*50)
@@ -1099,11 +1120,11 @@ def Genio2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p'):
         if np.any(Var.Mvary[i].Hpp):
             print(f'Hppg={Ham.Mulham[i].Hpp[0]:.4f} | Hppl={Ham.Mulham[i].Hpp[1]:.4f}')
     if funcname in ['Mulpol']:
-        return funtiona(Ham,Exp,graph='False')[1]
+        return funtiona(Ham,Exp,M=Mr,graph=False)[1]
     elif funcname in ['Music']:
-        return funtiona(Ham,Exp,graph='False',table='False')[1]
+        return funtiona(Ham,Exp,graph=False,table=False)[1]
 
-def Genio(Hamer,Expe,Vara,exper,eps=1e-10,maximal=100,datype='data',mode='p'):
+def Genio(Hamer,Expe,Vara,exper,eps=1e-10,maximal=100,datype='data',mode='p',seed=451,Mr=70):
     '''
     Fitting function for the experimental data using the genetic algorithm. Creates a population of 35*N individuals, where N is the number of parameters that will change, that have combinations of the possible values of the parameters. This individuals are evaluated, select and cross to produce a new population. 
     
@@ -1128,7 +1149,11 @@ def Genio(Hamer,Expe,Vara,exper,eps=1e-10,maximal=100,datype='data',mode='p'):
         Type of data to do the fitting, can be 'data', the data as it's or 'integral', its first integral.
     mode : str
         Defines the sample type, 'p' for powder and 'c' for monocristal.
-    
+    seed : int
+        Seed for the uniform distribution
+    Mr : int
+        Number of divisions for the Delaunay grid.
+     
     Returns
     -------
     spce : np.array
@@ -1137,11 +1162,11 @@ def Genio(Hamer,Expe,Vara,exper,eps=1e-10,maximal=100,datype='data',mode='p'):
     if type(Hamer)==Multham:
          if Expe.Mexp[0].Points!=len(exper):
             Expe.Mexp[0].Points=len(exper)
-         scpe=Genio2(Hamer,Expe,Vara,exper,eps,maximal,datype,mode)
+         scpe=Genio2(Hamer,Expe,Vara,exper,eps,maximal,datype,mode,seed,Mr)
     elif type(Hamer)==Hval:
          if Expe.Points!=len(exper):
             Expe.Points=len(exper)
-         scpe=Genio1(Hamer,Expe,Vara,exper,eps,maximal,datype,mode)
+         scpe=Genio1(Hamer,Expe,Vara,exper,eps,maximal,datype,mode,seed,Mr)
 
     return scpe
 
@@ -1164,7 +1189,8 @@ def Costf(exper,intens,metric='rmse'):
             return 1e6
         return 1-pearson
 
-def Metrostair(Hamer,Exp,Var,date,stepsize,ocos,para,variable,funcname,datype='data'):
+def Metrostair(Hamer,Exp,Var,date,stepsize,ocos,para,variable,funcname,datype='data',seed=451):
+    np.random.seed(int(seed))
     Ham=deepcopy(Hamer)
     iwas,jwas,kwas,weight,hulk=Delaunay(Exp)
     if 'g' in variable:
@@ -1202,7 +1228,7 @@ def Metrostair(Hamer,Exp,Var,date,stepsize,ocos,para,variable,funcname,datype='d
     if funcname in ['Calpowder']:
         fielda,intena=Calpowder(Ham,Exp,iwas,jwas,kwas,weight,hulk)
     elif funcname in ['Eresonant']:
-        fielda,intena=Eresonant(Ham,Exp,graph='False',table='False')
+        fielda,intena=Eresonant(Ham,Exp,graph=False,table=False)
     if datype=='data':
         ncos=Costf(date,intena,metric='rmse')
     elif datype=='integral':
@@ -1223,7 +1249,7 @@ def Metrostair(Hamer,Exp,Var,date,stepsize,ocos,para,variable,funcname,datype='d
         else:
             return Hamer,ocos,False
 
-def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p'):
+def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
     '''
     Fitting adjutsment of the experimental data using a modified Metrópolis-Simulated annealing approach for a single system.
     
@@ -1244,7 +1270,11 @@ def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p'):
         Type of data to do the fitting, can be 'data', the data as it's or 'integral', its first integral.
     mode : str
         Defines the sample type, 'p' for powder and 'c' for monocristal.
-    
+    seed : int
+        Seed for the uniform distribution.
+    Mr : int
+        Number of divisions for the Delaunay grid.
+        
     Returns
     -------
     spc : np.array
@@ -1253,9 +1283,9 @@ def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p'):
     Ham1=deepcopy(Hamer)
     iwas,jwas,kwas,weight,hulk=Delaunay(Exp)
     if mode=='p':
-        funtiona=Calpowder#(Ham,Exp,graph='False')
+        funtiona=Calpowder#(Ham,Exp,graph=False)
     elif mode=='c':
-        funtiona=Eresonant#(Ham,Exp,graph='False',table='False')
+        funtiona=Eresonant#(Ham,Exp,graph=False,table=False)
     else:
         raise ValueError (f'Valid functions are powder (p) or cristal (c).')
     funcname=funtiona.__name__
@@ -1263,7 +1293,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p'):
     if funcname in ['Calpowder']:
         fielda,intena=funtiona(Ham1,Exp,iwas,jwas,kwas,weight,hulk)
     elif funcname in ['Eresonant']:
-        fielda,intena=funtiona(Ham1,Exp,graph='False',table='False')
+        fielda,intena=funtiona(Ham1,Exp,graph=False,table=False)
     if datype=='data':
         ct1=Costf(dat,intena)
     if datype=='integral':
@@ -1329,7 +1359,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p'):
                 hemetro=metropa
                 opa=0
                 while opa<pg:
-                    Ham1,ct1,acep=Metrostair(Ham1,Exp,Var,dat,stp,ct1,hemetro,['g'],funcname,datype)
+                    Ham1,ct1,acep=Metrostair(Ham1,Exp,Var,dat,stp,ct1,hemetro,['g'],funcname,datype,seed)
                     if acep:
                         acepv+=1
                     tries+=1
@@ -1344,7 +1374,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p'):
                 hemetro=metropa
                 opa=0
                 while opa<pa:
-                    Ham1,ct1,acep=Metrostair(Ham1,Exp,Var,dat,stp,ct1,hemetro,['A'],funcname,datype)
+                    Ham1,ct1,acep=Metrostair(Ham1,Exp,Var,dat,stp,ct1,hemetro,['A'],funcname,datype,seed)
                     if acep:
                         acepv+=1
                     tries+=1
@@ -1359,7 +1389,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p'):
                 hemetro=metropa
                 opa=0
                 while opa<pq:
-                    Ham1,ct1,acep=Metrostair(Ham1,Exp,Var,dat,stp,ct1,hemetro,['Q'],funcname,datype)
+                    Ham1,ct1,acep=Metrostair(Ham1,Exp,Var,dat,stp,ct1,hemetro,['Q'],funcname,datype,seed)
                     if acep:
                         acepv+=1
                     tries+=1
@@ -1374,7 +1404,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p'):
                 hemetro=metropa
                 opa=0
                 while opa<pdr:
-                    Ham1,ct1,acep=Metrostair(Ham1,Exp,Var,dat,stp,ct1,hemetro,['D'],funcname,datype)
+                    Ham1,ct1,acep=Metrostair(Ham1,Exp,Var,dat,stp,ct1,hemetro,['D'],funcname,datype,seed)
                     if acep:
                         acepv+=1
                     tries+=1
@@ -1389,7 +1419,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p'):
                 hemetro=metropa
                 opa=0
                 while opa<pdr:
-                    Ham1,ct1,acep=Metrostair(Ham1,Exp,Var,dat,stp,ct1,hemetro,['Hpp'],funcname,datype)
+                    Ham1,ct1,acep=Metrostair(Ham1,Exp,Var,dat,stp,ct1,hemetro,['Hpp'],funcname,datype,seed)
                     if acep:
                         acepv+=1
                     tries+=1
@@ -1411,7 +1441,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p'):
                 hemetro=metropa*1.5
                 opa=0
                 while opa<30:
-                    Ham1,ct1,acep=Metrostair(Ham1,Exp,Var,dat,stp,ct1,hemetro,varact,funcname,datype)
+                    Ham1,ct1,acep=Metrostair(Ham1,Exp,Var,dat,stp,ct1,hemetro,varact,funcname,datype,seed)
                     if acep:
                         acepv+=1
                     tries+=1
@@ -1481,9 +1511,9 @@ def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p'):
         if np.any(Var.Hpp):
             print(f'Hppg={bestHam.Hpp[0]},Hppl={bestHam.Hpp[1]}')
         if funcname in ['Calpowder']:
-            return Powder(bestHam,Exp,graph='False')[1]
+            return Powder(bestHam,Exp,M=Mr,graph=False)[1]
         elif funcname in ['Eresonant']:
-            return funtiona(bestHam,Exp,graph='False',table='False')[1]
+            return funtiona(bestHam,Exp,graph=False,table=False)[1]
     print("\n"+"="*50)
     print(f"Process stopped at iteration: {gama}, with best cost {besterror:.5e}")
     print("="*50)
@@ -1498,11 +1528,12 @@ def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p'):
     if np.any(Var.Hpp):
         print(f'Hppg={bestHam.Hpp[0]} | Hppl={bestHam.Hpp[1]}')
     if funcname in ['Calpowder']:
-        return Powder(bestHam,Exp,graph='False')[1]
+        return Powder(bestHam,Exp,M=Mr,graph=False)[1]
     elif funcname in ['Eresonant']:
-        return funtiona(bestHam,Exp,graph='False',table='False')[1]
+        return funtiona(bestHam,Exp,graph=False,table=False)[1]
 
-def Metrostair2(Hamer,Exp,Var,date,stepsize,ocos,para,variable,aktsys,funcname,datype='data'):
+def Metrostair2(Hamer,Exp,Var,date,stepsize,ocos,para,variable,aktsys,funcname,datype='data',seed=451):
+    np.random.seed(int(seed))
     Ham=deepcopy(Hamer)
     vma=Var.Mvary[aktsys]
     hma=Ham.Mulham[aktsys]
@@ -1539,9 +1570,9 @@ def Metrostair2(Hamer,Exp,Var,date,stepsize,ocos,para,variable,aktsys,funcname,d
         if not (vma.Hpp[0]<=hma.Hpp[0]<=vma.Hpp[1] and vma.Hpp[2]<=hma.Hpp[1]<=vma.Hpp[3]):
             return Hamer,ocos,False
     if funcname in ['Mulpol']:
-        fielda,intena=Mulpol(Ham,Exp,graph='False')
+        fielda,intena=Mulpol(Ham,Exp,M=Mr,graph=False)
     elif funcname in ['Music']:
-        fielda,intena=Music(Ham,Exp,graph='False',table='False')
+        fielda,intena=Music(Ham,Exp,graph=False,table=False)
     if datype=='data':
         ncos=Costf(date,intena,metric='rmse')
     elif datype=='integral':
@@ -1562,7 +1593,7 @@ def Metrostair2(Hamer,Exp,Var,date,stepsize,ocos,para,variable,aktsys,funcname,d
         else:
             return Hamer,ocos,False
 
-def Metro2(Hamer,Exp,Var,dat,maximal,datype='data',mode='p'):
+def Metro2(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
     '''
     Fitting adjutsment of the experimental data using a modified Metrópolis-Simulated annealing approach for multiple systems.
     
@@ -1583,7 +1614,11 @@ def Metro2(Hamer,Exp,Var,dat,maximal,datype='data',mode='p'):
         Type of data to do the fitting, can be 'data', the data as it's or 'integral', its first integral.
     mode : str
         Defines the sample type, 'p' for powder and 'c' for monocristal.
-    
+    seed : int
+        Seed for the uniform distribution
+    Mr : int
+        Number of divisions for the Delaunay grid.
+        
     Returns
     -------
     spc : np.array
@@ -1591,17 +1626,17 @@ def Metro2(Hamer,Exp,Var,dat,maximal,datype='data',mode='p'):
     '''
     Ham1=deepcopy(Hamer)
     if mode=='p':
-        funtiona=Mulpol#(Ham,Exp,graph='False')
+        funtiona=Mulpol#(Ham,Exp,graph=False)
     elif mode=='c':
-        funtiona=Music#(Ham,Exp,graph='False',table='False')
+        funtiona=Music#(Ham,Exp,graph=False,table=False)
     else:
         raise ValueError (f'Valid functions are powder (p) or cristal (c).')
     funcname=funtiona.__name__
     #First iteration
     if funcname in ['Mulpol']:
-        fielda,intena=Mulpol(Ham1,Exp,graph='False')
+        fielda,intena=Mulpol(Ham1,Exp,M=Mr,graph=False)
     elif funcname in ['Music']:
-        fielda,intena=Music(Ham1,Exp,graph='False',table='False')
+        fielda,intena=Music(Ham1,Exp,graph=False,table=False)
     if datype=='data':
         ct1=Costf(dat,intena)
     if datype=='integral':
@@ -1655,7 +1690,7 @@ def Metro2(Hamer,Exp,Var,dat,maximal,datype='data',mode='p'):
                     hemetro=metropa
                     opa=0
                     while opa<pg:
-                        Ham1,ct1,acep=Metrostair2(Ham1,Exp,Var,dat,stp,ct1,hemetro,['g'],ira,funcname,datype)
+                        Ham1,ct1,acep=Metrostair2(Ham1,Exp,Var,dat,stp,ct1,hemetro,['g'],ira,funcname,datype,seed)
                         if acep:
                             acepv+=1
                         tries+=1
@@ -1670,7 +1705,7 @@ def Metro2(Hamer,Exp,Var,dat,maximal,datype='data',mode='p'):
                     hemetro=metropa
                     opa=0
                     while opa<pa:
-                        Ham1,ct1,acep=Metrostair2(Ham1,Exp,Var,dat,stp,ct1,hemetro,['A'],ira,funcname,datype)
+                        Ham1,ct1,acep=Metrostair2(Ham1,Exp,Var,dat,stp,ct1,hemetro,['A'],ira,funcname,datype,seed)
                         if acep:
                             acepv+=1
                         tries+=1
@@ -1685,7 +1720,7 @@ def Metro2(Hamer,Exp,Var,dat,maximal,datype='data',mode='p'):
                     hemetro=metropa
                     opa=0
                     while opa<pq:
-                        Ham1,ct1,acep=Metrostair2(Ham1,Exp,Var,dat,stp,ct1,hemetro,['Q'],ira,funcname,datype)
+                        Ham1,ct1,acep=Metrostair2(Ham1,Exp,Var,dat,stp,ct1,hemetro,['Q'],ira,funcname,datype,seed)
                         if acep:
                             acepv+=1
                         tries+=1
@@ -1700,7 +1735,7 @@ def Metro2(Hamer,Exp,Var,dat,maximal,datype='data',mode='p'):
                     hemetro=metropa
                     opa=0
                     while opa<pdr:
-                        Ham1,ct1,acep=Metrostair2(Ham1,Exp,Var,dat,stp,ct1,hemetro,['D'],ira,funcname,datype)
+                        Ham1,ct1,acep=Metrostair2(Ham1,Exp,Var,dat,stp,ct1,hemetro,['D'],ira,funcname,datype,seed)
                         if acep:
                             acepv+=1
                         tries+=1
@@ -1715,7 +1750,7 @@ def Metro2(Hamer,Exp,Var,dat,maximal,datype='data',mode='p'):
                     hemetro=metropa
                     opa=0
                     while opa<pdr:
-                        Ham1,ct1,acep=Metrostair2(Ham1,Exp,Var,dat,stp,ct1,hemetro,['Hpp'],ira,funcname,datype)
+                        Ham1,ct1,acep=Metrostair2(Ham1,Exp,Var,dat,stp,ct1,hemetro,['Hpp'],ira,funcname,datype,seed)
                         if acep:
                             acepv+=1
                         tries+=1
@@ -1742,7 +1777,7 @@ def Metro2(Hamer,Exp,Var,dat,maximal,datype='data',mode='p'):
                     if np.any(Var.Mvary[ira].Hpp):
                         varact.append('Hpp')
                     if len(varact)>0:
-                        Ham1,ct1,acep=Metrostair2(Ham1,Exp,Var,dat,stp,ct1,hemetro,varact,ira,funcname,datype)
+                        Ham1,ct1,acep=Metrostair2(Ham1,Exp,Var,dat,stp,ct1,hemetro,varact,ira,funcname,datype,seed)
                         if acep:
                             acepv+=1
                         tries+=1
@@ -1816,9 +1851,9 @@ def Metro2(Hamer,Exp,Var,dat,maximal,datype='data',mode='p'):
             if np.any(Var.Mvary[i].Hpp):
                 print(f'Hppg={Ham.Mulham[i].Hpp[0]:.4f} | Hppl={Ham.Mulham[i].Hpp[1]:.4f}')
         if funcname in ['Mulpol']:
-            return funtiona(bestHam,Exp,graph='False')[1]
+            return funtiona(bestHam,Exp,M=Mr,graph=False)[1]
         elif funcname in ['Music']:
-            return funtiona(bestHam,Exp,graph='False',table='False')[1]
+            return funtiona(bestHam,Exp,graph=False,table=False)[1]
     print("\n"+"="*50)
     print(f"Process stopped at iteration: {gama}, with best cost {besterror:.5e}")
     print("="*50)
@@ -1835,11 +1870,11 @@ def Metro2(Hamer,Exp,Var,dat,maximal,datype='data',mode='p'):
         if np.any(Var.Mvary[i].Hpp):
             print(f'Hppg={bestHam.Mulham[i].Hpp[0]:.4f} | Hppl={bestHam.Mulham[i].Hpp[1]:.4f}')
     if funcname in ['Mulpol']:
-        return funtiona(bestHam,Exp,graph='False')[1]
+        return funtiona(bestHam,Exp,M=Mr,graph=False)[1]
     elif funcname in ['Music']:
-        return funtiona(bestHam,Exp,graph='False',table='False')[1]
+        return funtiona(bestHam,Exp,graph=False,table=False)[1]
 
-def Metro(Hamer,Exp,Var,exper,maximal=2000,datype='data',mode='p'):
+def Metro(Hamer,Exp,Var,exper,maximal=2000,datype='data',mode='p',seed=451,Mr=70):
     '''
     Fitting adjutsment of the experimental data using a modified Metrópolis-Simulated annealing approach. First, the parameters in the Vary container are evaluated in range, one by one, using a gaussian distribution and then, all are varied at the same time. With every evaluation, the difference between the simulation and the data is calculated as a cost.
     
@@ -1862,7 +1897,11 @@ def Metro(Hamer,Exp,Var,exper,maximal=2000,datype='data',mode='p'):
         Type of data to do the fitting, can be 'data', the data as it's or 'integral', its first integral.
     mode : str
         Defines the sample type, 'p' for powder and 'c' for monocristal.
-    
+    seed : int
+        Seed for the uniform distribution.
+    Mr : int
+        Number of divisions for the Delaunay grid.
+        
     Returns
     -------
     scpe : np.array
@@ -1871,11 +1910,11 @@ def Metro(Hamer,Exp,Var,exper,maximal=2000,datype='data',mode='p'):
     if type(Hamer)==Multham:
          if Exp.Mexp[0].Points!=len(exper):
             Exp.Mexp[0].Points=len(exper)
-         scpe=Metro2(Hamer,Exp,Var,exper,maximal,datype,mode)
+         scpe=Metro2(Hamer,Exp,Var,exper,maximal,datype,mode,seed,Mr)
     elif type(Hamer)==Hval:
          if Exp.Points!=len(exper):
             Exp.Points=len(exper)
-         scpe=Metro1(Hamer,Exp,Var,exper,maximal,datype,mode)
+         scpe=Metro1(Hamer,Exp,Var,exper,maximal,datype,mode,seed,Mr)
     return scpe
 
 def Packtoscipy(Ham,Var):
@@ -1932,15 +1971,15 @@ def UnpackHam(point,Hamer,Var):
 class Stopall(Exception):
     pass
 
-def Residuals(point,Hame,Exp,exper,Vary,fname):
+def Residuals(point,Hame,Exp,exper,Vary,fname,Mr=70):
 
     if stopvar.is_set():
         raise Stopall()
     Ham1=UnpackHam(point,Hame,Vary)
     if fname in ['Powder']:
-        fielda,intena=Powder(Ham1,Exp,graph='False')
+        fielda,intena=Powder(Ham1,Exp,M=Mr,graph=False)
     elif fname in ['Eresonant']:
-        fielda,intena=Eresonant(Ham1,Exp,graph='False',table='False')
+        fielda,intena=Eresonant(Ham1,Exp,graph=False,table=False)
     normi=np.linalg.norm(intena)
     if normi==0 or np.isnan(normi):
         return exper*1e6
@@ -1949,7 +1988,7 @@ def Residuals(point,Hame,Exp,exper,Vary,fname):
     inorm=intena/normi
     return inorm-enorm
 
-def LSquare1(Ham1,Expe,Vary,exper,maximal=1000,mode='p'):
+def LSquare1(Ham1,Expe,Vary,exper,maximal=1000,mode='p'Mr=70):
     '''
     Fitting adjutsment of the experimental data using the *scipy.optimize.least_squares* method. This case is for simple systems.
     
@@ -1968,7 +2007,9 @@ def LSquare1(Ham1,Expe,Vary,exper,maximal=1000,mode='p'):
         Max. number of evaluations of the function.
     mode : str
         Defines the sample type, 'p' for powder and 'c' for monocristal.
-    
+    Mr : int
+        Number of divisions for the Delaunay grid.
+        
     Returns
     -------
     
@@ -1976,9 +2017,9 @@ def LSquare1(Ham1,Expe,Vary,exper,maximal=1000,mode='p'):
         Best adjusted spectrum using the Powder or Eresonant functions.
     '''
     if mode=='p':
-        funtiona=Powder#(Ham,Exp,graph='False')
+        funtiona=Powder#(Ham,Exp,graph=False)
     elif mode=='c':
-        funtiona=Eresonant#(Ham,Exp,graph='False',table='False')
+        funtiona=Eresonant#(Ham,Exp,graph=False,table=False)
     else:
         raise ValueError (f'Valid functions are powder (p) or cristal (c).')
     funcname=funtiona.__name__
@@ -1988,7 +2029,7 @@ def LSquare1(Ham1,Expe,Vary,exper,maximal=1000,mode='p'):
     pointx=np.clip(pointx,lowfron+eps,hifron-eps)
     leasts
     try:
-        result=leasts(fun=Residuals,args=(Ham1,Expe,exper,Vary,funcname),x0=pointx,bounds=frontier,method='trf',max_nfev=maximal,verbose=2,diff_step=1e-3,xtol=1e-10,ftol=1e-10,gtol=1e-10)
+        result=leasts(fun=Residuals,args=(Ham1,Expe,exper,Vary,funcname,Mr),x0=pointx,bounds=frontier,method='trf',max_nfev=maximal,verbose=2,diff_step=1e-3,xtol=1e-10,ftol=1e-10,gtol=1e-10)
         bestone=result.x
     except Stopall:
         bestone=pointx
@@ -2007,9 +2048,9 @@ def LSquare1(Ham1,Expe,Vary,exper,maximal=1000,mode='p'):
     if np.any(Vary.Hpp):
         print(f'Hppg={bHam.Hpp[0]} | Hppl={bHam.Hpp[1]}')
     if funcname in ['Powder']:
-        return Powder(bHam,Expe,graph='False')[1]
+        return Powder(bHam,Expe,M=Mr,graph=False)[1]
     elif funcname in ['Eresonant']:
-        return Eresonant(bHam,Expe,graph='False',table='False')[1]
+        return Eresonant(bHam,Expe,graph=False,table=False)[1]
 
 def Packtoscipy2(Ham,Var):
     pointx=[]
@@ -2066,15 +2107,15 @@ def UnpackHam2(point,Hamer,Var):
             idx+=2
     return Ham
 
-def Residuals2(point,Hame,Exp,exper,Vary,fname):
+def Residuals2(point,Hame,Exp,exper,Vary,fname,Mr=70):
     if stopvar.is_set():
         raise Stopall()
     Ham1=UnpackHam2(point,Hame,Vary)
     try:
         if fname in ['Mulpol']:
-            fielda,intena=Mulpol(Ham1,Exp,graph='False')
+            fielda,intena=Mulpol(Ham1,Exp,M=Mr,graph=False)
         elif fname in ['Music']:
-            fielda,intena=Music(Ham1,Exp,graph='False',table='False')
+            fielda,intena=Music(Ham1,Exp,graph=False,table=False)
         normi=np.linalg.norm(intena)
         if normi==0 or np.isnan(normi):
             return exper*1e6
@@ -2085,7 +2126,7 @@ def Residuals2(point,Hame,Exp,exper,Vary,fname):
     except Exception:
         return exper*1e6
 
-def LSquare2(Ham1,Expe,Vary,exper,maximal=1000,mode='p'):
+def LSquare2(Ham1,Expe,Vary,exper,maximal=1000,mode='p',Mr=70):
     '''
     Fitting adjutsment of the experimental data using the *scipy.optimize.least_squares* method. This case is for multiple systems.
     
@@ -2104,7 +2145,9 @@ def LSquare2(Ham1,Expe,Vary,exper,maximal=1000,mode='p'):
         Max. number of evaluations of the function.
     mode : str
         Defines the sample type, 'p' for powder and 'c' for monocristal.
-    
+    Mr : int
+        Number of divisions for the Delaunay grid.
+        
     Returns
     -------
     
@@ -2112,9 +2155,9 @@ def LSquare2(Ham1,Expe,Vary,exper,maximal=1000,mode='p'):
         Best adjusted spectrum using the Mulpol or Music functions.
     '''
     if mode=='p':
-        funtiona=Mulpol#(Ham,Exp,graph='False')
+        funtiona=Mulpol#(Ham,Exp,graph=False)
     elif mode=='c':
-        funtiona=Music#(Ham,Exp,graph='False',table='False')
+        funtiona=Music#(Ham,Exp,graph=False,table=False)
     else:
         raise ValueError (f'Valid functions are powder (p) or cristal (c).')
     funcname=funtiona.__name__
@@ -2124,7 +2167,7 @@ def LSquare2(Ham1,Expe,Vary,exper,maximal=1000,mode='p'):
     pointx=np.clip(pointx,lowfron+eps,hifron-eps)
     leasts
     try:
-        result=leasts(fun=Residuals,args=(Ham1,Expe,exper,Vary,funcname),x0=pointx,bounds=frontier,method='trf',max_nfev=maximal,verbose=2,diff_step=1e-3,xtol=1e-10,ftol=1e-10,gtol=1e-10)
+        result=leasts(fun=Residuals,args=(Ham1,Expe,exper,Vary,funcname,Mr),x0=pointx,bounds=frontier,method='trf',max_nfev=maximal,verbose=2,diff_step=1e-3,xtol=1e-10,ftol=1e-10,gtol=1e-10)
         bestone=result.x
     except Stopall:
         bestone=pointx
@@ -2145,11 +2188,11 @@ def LSquare2(Ham1,Expe,Vary,exper,maximal=1000,mode='p'):
         if np.any(Vary.Mvary[i].Hpp):
             print(f'Hppg={bHam.Mulham[i].Hpp[0]:.4f} | Hppl={bHam.Mulham[i].Hpp[1]:.4f}')
     if funcname in ['Mulpol']:
-        return Mulpol(bHam,Expe,graph='False')[1]
+        return Mulpol(bHam,Expe,M=Mr,graph=False)[1]
     elif funcname in ['Music']:
-        return Music(bHam,Expe,graph='False',table='False')[1]
+        return Music(bHam,Expe,graph=False,table=False)[1]
 
-def LSquare(Ham1,Expe,Vary,exper,maximal=1000,mode='p'):
+def LSquare(Ham1,Expe,Vary,exper,maximal=1000,mode='p',Mr=70):
     '''
     Fitting adjutsment of the experimental data using the *scipy.optimize.least_squares* method. The Trust Region Reflective algorithm is use, with a tolerance for the change of variables (xtol, ftol, gtol) of 1e-10 and a maximun number of evaluations defined with the variable *maximal*. The documentation of the function can be consulted in https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html.
     
@@ -2168,7 +2211,9 @@ def LSquare(Ham1,Expe,Vary,exper,maximal=1000,mode='p'):
         Max. number of evaluations of the function.
     mode : str
         Defines the sample type, 'p' for powder and 'c' for monocristal.
-    
+    Mr : int
+        Number of divisions for the Delaunay grid.
+        
     Returns
     -------
     
@@ -2178,11 +2223,11 @@ def LSquare(Ham1,Expe,Vary,exper,maximal=1000,mode='p'):
     if type(Ham1)==Multham:
          if Expe.Mexp[0].Points!=len(exper):
             Expe.Mexp[0].Points=len(exper)
-         scpe=LSquare2(Ham1,Expe,Vary,exper,maximal,mode)
+         scpe=LSquare2(Ham1,Expe,Vary,exper,maximal,mode,Mr)
     elif type(Ham1)==Hval:
          if Expe.Points!=len(exper):
             Expe.Points=len(exper)
-         scpe=LSquare1(Ham1,Expe,Vary,exper,maximal,mode)
+         scpe=LSquare1(Ham1,Expe,Vary,exper,maximal,mode,Mr)
     return scpe
 
 def Fitting(Hamer,Exper,Vara,datexp):
@@ -2252,6 +2297,12 @@ def Fitting(Hamer,Exper,Vara,datexp):
     lbl5=Label('Max. error (10^x) [Input Exponent]:')
     wdg5=IntText(value=-10,step=1,layout=Layout(width='200px'))
     frvar5=VBox([lbl5,wdg5])
+    lbl8=Label('Seed for distributions [Int]:')
+    wdg8=IntText(value=451,step=1,layout=Layout(width='200px'))
+    frvar8=VBox([lbl8,wdg8])
+    lbl9=Label('Grid resolution:')
+    wdg9=IntText(value=70,step=1,layout=Layout(width='200px'))
+    frvar9=VBox([lbl9,wdg9])
     frvar6=Button(description='Start',button_style='success',icon='play',layout=Layout(border='2px solid blue'))
     frvar7=Button(description='Stop (Interrupt)',button_style='danger',icon='stop',layout=Layout(border='2px solid red'))
     tapts=HBox([frvar6,frvar7])
@@ -2265,6 +2316,8 @@ def Fitting(Hamer,Exper,Vara,datexp):
             csample=wdg3.value
             numtr=wdg4.value
             erroreps=10**float(wdg5.value)
+            seeds=wdg8.value
+            mr=wdg9.value
             if cdtype=='Spectrum':
                 cdtype='data'
             elif cdtype=='First Integral':
@@ -2282,13 +2335,13 @@ def Fitting(Hamer,Exper,Vara,datexp):
                 try:
                     resultexper=None
                     if Chmet=='Nelder-Mead':
-                        resultexper=Nelder(Hamer,Exper,Vara,datexp,eps=erroreps,maximal=numtr,datype=cdtype,mode=csample)
+                        resultexper=Nelder(Hamer,Exper,Vara,datexp,eps=erroreps,maximal=numtr,datype=cdtype,mode=csample,seed=seeds,Mr=mr)
                     elif Chmet=='Genetic algorithm':
-                        resultexper=Genio(Hamer,Exper,Vara,datexp,eps=erroreps,maximal=numtr,datype=cdtype,mode=csample)
+                        resultexper=Genio(Hamer,Exper,Vara,datexp,eps=erroreps,maximal=numtr,datype=cdtype,mode=csample,seed=seeds,Mr=mr)
                     elif Chmet=='Metropolis':
-                        resultexper=Metro(Hamer,Exper,Vara,datexp,maximal=numtr,datype=cdtype,mode=csample)
+                        resultexper=Metro(Hamer,Exper,Vara,datexp,maximal=numtr,datype=cdtype,mode=csample,seed=seeds,Mr=mr)
                     elif Chmet=='Least squares':
-                        resultexper=LSquare(Hamer,Exper,Vara,datexp,maximal=numtr,mode=csample)
+                        resultexper=LSquare(Hamer,Exper,Vara,datexp,maximal=numtr,mode=csample,seed=seeds,Mr=mr)
                     #To show the graph
                     fig=Figure(figsize=(8,10))
                     formatter=EngFormatter(sep='') 

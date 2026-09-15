@@ -8,7 +8,6 @@ import scipy.constants as scc
 from functools import cmp_to_key
 from scipy.interpolate import CubicSpline as cubichers
 from scipy.interpolate import interp1d
-from scipy.spatial import ConvexHull
 from typing import Union, Any, List
 from dataclasses import dataclass, replace
 from dataclasses import field as dcfield

@@ -8,7 +8,6 @@ import scipy.constants as scc
 from functools import cmp_to_key
 from scipy.interpolate import CubicSpline as cubichers
 from scipy.interpolate import interp1d
-from scipy.spatial import ConvexHull
 from typing import Union, Any, List
 from dataclasses import dataclass, replace
 from dataclasses import field as dcfield
@@ -1506,7 +1505,7 @@ def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2):
     dert=jxn.real(jxn.einsum('fdp,fdp->fp',jxn.conj(vik),h2vik))
     izrt=jxn.real(jxn.einsum('fdp,fdp->fp',jxn.conj(vjk),h2vjk))
     gma=jxn.abs(izrt-dert)
-    gma=jxn.where(gma<1e-4,1e-4,gma)
+    gma=jxn.where(gma<1e-6,1e-6,gma)
     gema=1.0/gma
     #Boltzman distribution
     El0,El1=Elist[:-1],Elist[1:]
@@ -1529,7 +1528,7 @@ def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2):
     cross=cross.flatten()
     ntrans=jxn.sum(cross).astype(jxn.float64)
     #Scores for transition possibility
-    Ktra=200
+    Ktra=500
     scores=jxn.where(cross,1.0+fint,-1.0)
     topones,toponesind=jx.lax.top_k(scores,Ktra)
     toponesind=jx.lax.stop_gradient(toponesind)
@@ -1647,7 +1646,7 @@ def JCaltriangle(Bmin,dB,allres,allint,transi,hulk,weight,points):
     
 ww1,ww2,ww3,tpoints=Meshtriangle()
 
-def JPowder(Hamer,Expe,Nucl='None',graph=True):
+def JPowder(Hamer,Expe,Nucl='None',M=70,graph=True):
     '''
     Wrap function for the simulation of the EPR spectrum for powder samples. It also use the SOPHE modified method to create the triangular grid and its weights.
     
@@ -1662,7 +1661,10 @@ def JPowder(Hamer,Expe,Nucl='None',graph=True):
         
     Nucl : str
         Isotope of the sample. Can be the quantum number and the element or only the element ('55Mn' or 'Mn') 
-
+    
+    M : int
+        Number of divisions for the Delaunay grid.
+        
     graph : Bool
         Plots the resulting spectrum.
 
@@ -1700,7 +1702,7 @@ def JPowder(Hamer,Expe,Nucl='None',graph=True):
        :align: center
     
     '''
-    iwas,jwas,kwas,weight,hulk=Delaunay(Expe)
+    iwas,jwas,kwas,weight,hulk=Delaunay(Expe,M)
     iwas,jwas,kwas,weight,hulk=jxn.array(iwas),jxn.array(jwas),jxn.array(kwas),jxn.array(weight),jxn.array(hulk)
     Blist,epc=JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl)
     if graph:
@@ -1901,7 +1903,6 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None'):
     
     Hamer : Class
         Container for the hamiltonian parameters of the system.
-    
     Expe : Class
         Container for the experimental conditions.
     graph : Bool
@@ -2190,7 +2191,7 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False):
     dert=h2diag[:,iidx]
     izrt=h2diag[:,jidx]
     gma=jxn.abs(izrt-dert)
-    gma=jxn.where(gma<1e-4,1e-4,gma)
+    gma=jxn.where(gma<1e-6,1e-6,gma)
     gema=1.0/gma
     #Boltzmann distribution
     conver=1e9*scc.h
@@ -2203,7 +2204,7 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False):
     boltz=boltz/Z
     popui=boltz[:,iidx]
     popuj=boltz[:,jidx]
-    boltzm=popui-popuj
+    boltzm=np.abs(popui-popuj)
     intensy=prob*gema*boltzm
     deltaE=jxn.abs(Elist[:,jidx]-Elist[:,iidx])
     dfe=deltaE-Exp.Freq
@@ -2483,7 +2484,7 @@ def Jmstart():
     Ham,Exp,Vary=Mjhval(),JEmco(),JEmva()
     return Ham,Exp,Vary
 
-def JMulpol(maham,Expe,Nucl1='None',Nucl2='None',graph=True):
+def JMulpol(maham,Expe,Nucl1='None',Nucl2='None',M=70,graph=True):
     '''
     Wrap function for the simulation of the EPR spectrum for powder samples of two systems. If there is an interaction between the systems (electron-eletron or hiperfine), solves the total hamiltonian. Otherwise, sums the contributions to the total spectrum.
     
@@ -2537,7 +2538,7 @@ def JMulpol(maham,Expe,Nucl1='None',Nucl2='None',graph=True):
        :alt: Plot of the JMulpol function
        :align: center
     '''
-    Blist,epc=Jcalmulta(maham,Expe,Nucl1,Nucl2)
+    Blist,epc=Jcalmulta(maham,Expe,Nucl1,Nucl2,M)
     if graph:
         plt.figure(figsize=(10,6))
         plt.plot(Blist,epc,color='navy',label='Spectrum')
@@ -2552,7 +2553,7 @@ def JMulpol(maham,Expe,Nucl1='None',Nucl2='None',graph=True):
     return Blist,epc
     
 
-def Jcalmulta(maham,Expe,Nucl1='None',Nucl2='None'):
+def Jcalmulta(maham,Expe,Nucl1='None',Nucl2='None',M=70):
     '''
     Determinates the spectrum for a two paramagnetic centers system. Follows the same logic from the function Jpowder, but adapted to the two centers system.
     
@@ -2615,7 +2616,7 @@ def Jcalmulta(maham,Expe,Nucl1='None',Nucl2='None'):
     Ham2.S,Ham2.g,Ham2.I,Ham2.L,Ham2.A,Ham2.Q,Ham2.D,Ham2.lc,Ham2.Hpp,Ham2.eta=maham.S2,maham.g2,maham.I2,maham.L2,maham.A2,maham.Q2,maham.D2,maham.lc2,maham.Hpp,maham.eta
     Exp1.Freq,Exp1.Points,Exp1.Temperature,Exp1.Fdirection,Exp1.Frange,Exp1.Sampleframe,Exp1.Molframe,Exp1.gframe,Exp1.Aframe,Exp1.Dframe,Exp1.Qframe=Expe.Freq,Expe.Points,Expe.Temperature,Expe.Fdirection,Expe.Frange,Expe.Sampleframe1,Expe.Molframe1,Expe.gframe1,Expe.Aframe1,Expe.Dframe1,Expe.Qframe1
     Exp2.Freq,Exp2.Points,Exp2.Temperature,Exp2.Fdirection,Exp2.Frange,Exp2.Sampleframe,Exp2.Molframe,Exp2.gframe,Exp2.Aframe,Exp2.Dframe,Exp2.Qframe=Expe.Freq,Expe.Points,Expe.Temperature,Expe.Fdirection,Expe.Frange,Expe.Sampleframe2,Expe.Molframe2,Expe.gframe2,Expe.Aframe2,Expe.Dframe2,Expe.Qframe2
-    iwas,jwas,kwas,weight,hulk=Delaunay(Exp1)
+    iwas,jwas,kwas,weight,hulk=Delaunay(Exp1,M)
     iwas,jwas,kwas,weight,hulk=jxn.array(iwas),jxn.array(jwas),jxn.array(kwas),jxn.array(weight),jxn.array(hulk)
     if np.allclose(maham.X1_2,0.0) and np.allclose(maham.A1_2,0.0) and np.allclose(maham.A2_1,0.0):
         fielde,specs1=JCalpowder(Ham1,Exp1,iwas,jwas,kwas,weight,hulk,Nucl1)
@@ -3027,7 +3028,7 @@ def Jcalmusic(maham,Expe,Nucl1='None',Nucl2='None'):
         dert=h2diag[:,iidx]
         izrt=h2diag[:,jidx]
         gma=jxn.abs(izrt-dert)
-        gma=jxn.where(gma<1e-4,1e-4,gma)
+        gma=jxn.where(gma<1e-6,1e-6,gma)
         gema=1.0/gma
         #Boltzmann distribution
         conver=1e9*scc.h
@@ -3061,7 +3062,7 @@ def Jcalmusic(maham,Expe,Nucl1='None',Nucl2='None'):
         specs=spc
     return fielde,specs
     
-def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
+def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70):
     '''
     Fitting function for the experimental data using the ADAM Algorithm. Uses the *Optax* (part of the Deepmind proyect) ADAM algorithm implementation with a learning rate of 0.1. The parameters are changed and evaluated using a normalized sigmoid function in the range from the *Vary* container. 
     
@@ -3075,7 +3076,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
         Container for the experimental conditions.
     Vary : Class
         Container for the range and parameters to vary.
-
+    
     exper : np.array
         Experimental spectrum data to fit.
     maximal : int
@@ -3084,7 +3085,8 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
         Tolerance value for the error. Default is 1e-11
     mode : str
         Defines the sample type, 'p' for powder and 'c' for monocristal.
-    
+    M : int
+        Number of divisions for the Delaunay grid.
     Returns
     -------
     espc : np.array
@@ -3165,7 +3167,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p'):
       class StaticExp:
           pass
       if mode=='p':
-          iwas,jwas,kwas,weight,hulk=Delaunay(Exp)
+          iwas,jwas,kwas,weight,hulk=Delaunay(Exp,M)
           iwas,jwas,kwas,weight,hulk=jxn.array(iwas),jxn.array(jwas),jxn.array(kwas),jxn.array(weight),jxn.array(hulk)
       SHam=StaticHam()
       SHam.S=float(Ham.S)
