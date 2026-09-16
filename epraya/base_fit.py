@@ -374,7 +374,7 @@ def Nelder1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p',
             print(f'D={Ham.D[0]} | E={Ham.D[1]}')
         if np.any(Var.Hpp):
             print(f'Hppg={Ham.Hpp[0]} | Hppl={Ham.Hpp[1]}')
-        fitresult=Buildres(melhor,Ham,Exp,exper,Var,funcname,Mr,method='Nelder-Mead',success=False,message='Converged with Nelder-Mead',iterations=itera)
+        fitresult=Buildres(melhor,Ham,Exp,exper,Var,funcname,Mr,method='Nelder-Mead',success=False,message='Nelder-Mead stopped by user',iterations=itera)
         return fitresult.Ham,fitresult
     _=Fincost(melhor,funcname)
     print("\n"+"="*50)
@@ -640,7 +640,7 @@ def Nelder2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p',
                 print(f'D={Ham.Mulham[i].D[0]:.4f} | E={Ham.Mulham[i].D[1]:.4f}')
             if np.any(Var.Mvary[i].Hpp):
                 print(f'Hppg={Ham.Mulham[i].Hpp[0]:.4f} | Hppl={Ham.Mulham[i].Hpp[1]:.4f}')
-        fitresult=Buildres(melhor,Ham,Exp,exper,Var,funcname,Mr,method='Nelder-Mead',success=False,message='Converged with Nelder-Mead'iterations=itera)
+        fitresult=Buildres(melhor,Ham,Exp,exper,Var,funcname,Mr,method='Nelder-Mead',success=False,message='Nelder-Mead stopped by user',iterations=itera)
         return fitresult.Ham,fitresult
     _=Fincost(melhor,funcname)
     print("\n"+"="*50)
@@ -658,7 +658,7 @@ def Nelder2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p',
             print(f'D={Ham.Mulham[i].D[0]:.4f} | E={Ham.Mulham[i].D[1]:.4f}')
         if np.any(Var.Mvary[i].Hpp):
             print(f'Hppg={Ham.Mulham[i].Hpp[0]:.4f} | Hppl={Ham.Mulham[i].Hpp[1]:.4f}')
-    fitresult=Buildres(melhor,Ham,Exp,exper,Var,funcname,Mr,method='Nelder-Mead',success=(itera<maximal),message='Converged with Nelder-Mead'iterations=itera)
+    fitresult=Buildres(melhor,Ham,Exp,exper,Var,funcname,Mr,method='Nelder-Mead',success=(itera<maximal),message='Converged with Nelder-Mead',iterations=itera)
     return fitresult.Ham,fitresult
 
 def Nelder(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p',seed=451,Mr=70):
@@ -940,7 +940,7 @@ def Genio1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p',see
             print(f'D={Ham.D[0]} | E={Ham.D[1]}')
         if np.any(Var.Hpp):
             print(f'Hppg={Ham.Hpp[0]} | Hppl={Ham.Hpp[1]}')
-        fitresult=Buildres(bplayer,Ham,Exp,exper,Var,funcname,Mr,method='Genethic A',success=False,message='Converged with the genetic algorithm',iterations=itea)
+        fitresult=Buildres(bplayer,Ham,Exp,exper,Var,funcname,Mr,method='Genethic A',success=False,message='Genetic algorithm stopped by user',iterations=itea)
         return fitresult.Ham,fitresult
     print("\n"+"="*50)
     print(f"Process stopped at iteration: {itea}, with best cost: {bcost:.5e}")
@@ -955,7 +955,7 @@ def Genio1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p',see
         print(f'D={Ham.D[0]} | E={Ham.D[1]}')
     if np.any(Var.Hpp):
         print(f'Hppg={Ham.Hpp[0]} | Hppl={Ham.Hpp[1]}')
-    fitresult=Buildres(bplayer,Ham,Exp,exper,Var,funcname,Mr,method='Genethic A',success=(itea<maximal),message='Converged with the genetic algorithm'iterations=itea)
+    fitresult=Buildres(bplayer,Ham,Exp,exper,Var,funcname,Mr,method='Genethic A',success=(itea<maximal),message='Converged with the genetic algorithm',iterations=itea)
     return fitresult.Ham,fitresult
 
 def Genio2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p',seed=451,Mr=70):
@@ -1153,7 +1153,7 @@ def Genio2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p',see
                 print(f'D={Ham.Mulham[i].D[0]:.4f} | E={Ham.Mulham[i].D[1]:.4f}')
             if np.any(Var.Mvary[i].Hpp):
                 print(f'Hppg={Ham.Mulham[i].Hpp[0]:.4f} | Hppl={Ham.Mulham[i].Hpp[1]:.4f}')
-        fitresult=Buildres(bplayer,Ham,Exp,exper,Var,funcname,Mr,method='Genethic A',success=False,message='Converged with the genetic algorithm',iterations=itea)
+        fitresult=Buildres(bplayer,Ham,Exp,exper,Var,funcname,Mr,method='Genethic A',success=False,message='Genetic algorithm stopped by user',iterations=itea)
         return fitresult.Ham,fitresult
     print("\n"+"="*50)
     print(f"Process stopped at iteration: {itea}, with best cost: {bcost:.5e}")
@@ -1559,7 +1559,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
             print(f'D={bestHam.D[0]},E={bestHam.D[1]}')
         if np.any(Var.Hpp):
             print(f'Hppg={bestHam.Hpp[0]},Hppl={bestHam.Hpp[1]}')
-        fitresult=Buildres(bestpoint,Ham,Exp,dat,Var,funcname,Mr,method='Metropolis',success=False,message='Converged with Metropolis',iterations=gama)
+        fitresult=Buildres(bestpoint,Ham,Exp,dat,Var,funcname,Mr,method='Metropolis',success=False,message='Metropolis stopped by user',iterations=gama)
         return fitresult.Ham, fitresult
     bestpoint,_,_=Packtoscipy(bestHam,Var)
     print("\n"+"="*50)
@@ -1897,7 +1897,7 @@ def Metro2(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
                 print(f'D={bestHam.Mulham[i].D[0]:.4f} | E={bestHam.Mulham[i].D[1]:.4f}')
             if np.any(Var.Mvary[i].Hpp):
                 print(f'Hppg={Ham.Mulham[i].Hpp[0]:.4f} | Hppl={Ham.Mulham[i].Hpp[1]:.4f}')
-        fitresult=Buildres(bestpoint,Ham,Exp,dat,Var,funcname,Mr,method='Metropolis',success=False,message='Converged with Metropolis',iterations=gama)
+        fitresult=Buildres(bestpoint,Ham,Exp,dat,Var,funcname,Mr,method='Metropolis',success=False,message='Metropolis stopped by user',iterations=gama)
         return fitresult.Ham, fitresult
     bestpoint,_,_=Packtoscipy2(bestHam,Var)
     print("\n"+"="*50)
@@ -2074,13 +2074,15 @@ def LSquare1(Ham1,Expe,Vary,exper,maximal=1000,mode='p',Mr=70):
     try:
         res=leasts(fun=Residuals,args=(Ham1,Expe,exper,Vary,funcname,Mr),x0=pointx,bounds=frontier,method='trf',max_nfev=maximal,verbose=2,diff_step=1e-3,xtol=1e-10,ftol=1e-10,gtol=1e-10)
         bestone=res.x
+        cost=res.cost
         success,message,iterations,J=res.success,res.message,res.nfev,res.jac          
     except Stopall:
+        cost=float('nan')
         bestone=pointx
         success,message,iterations,J=False,"Stopped by user",None,None    
     bHam=UnpackHam(bestone,Ham1,Vary)
-    print(f"Final cost: {res.cost:.5f}")
-    print(f"Message: {res.message}")
+    print(f"Final cost: {cost:.5f}")
+    print(f"Message: {message}")
     if Vary.g!=0.0:
         print(f'gx={bHam.g[0]} | gy={bHam.g[1]} | gz={bHam.g[2]}')
     if Vary.A!=0.0:
@@ -2211,15 +2213,17 @@ def LSquare2(Ham1,Expe,Vary,exper,maximal=1000,mode='p',Mr=70):
     try:
         res=leasts(fun=Residuals,args=(Ham1,Expe,exper,Vary,funcname,Mr),x0=pointx,bounds=frontier,method='trf',max_nfev=maximal,verbose=2,diff_step=1e-3,xtol=1e-10,ftol=1e-10,gtol=1e-10)
         bestone=res.x
+        cost=res.cost
         success,message,iterations,J=res.success,res.message,res.nfev,res.jac       
     except Stopall:
         bestone=pointx
+        cost=float('nan')
         success,message,iterations,J=False,"Stopped by user",None,None  
     bHam=UnpackHam2(bestone,Ham1,Vary)
 
-    print(f"Final cost: {res.cost:.5f}")
-    print(f"Message: {res.message}")
-    for i in range(len(Ham.Mulham)):
+    print(f"Final cost: {cost:.5f}")
+    print(f"Message: {message}")
+    for i in range(len(Ham1.Mulham)):
         print(f"--- System {i+1} ---")
         if Vary.Mvary[i].g!=0.0:
             print(f'gx={bHam.Mulham[i].g[0]:.4f} | gy={bHam.Mulham[i].g[1]:.4f} | gz={bHam.Mulham[i].g[2]:.4f}')
@@ -2385,13 +2389,13 @@ def Fitting(Hamer,Exper,Vara,datexp):
                         Hamf,fitres=LSquare(Hamer,Exper,Vara,datexp,maximal=numtr,mode=csample,Mr=mr)
 
                     global result
-                    result['Ham']=Ham_final
+                    result['Ham']=Hamf
                     result['fit']=fitres
                     print(f"\n chi2 = {fitres.chi2:.5e} | chi2 residual = {fitres.redchi2:.5e}")
-                    if fitres.param_errors is not None:
+                    if fitres.paramerrors is not None:
                         print(f"Parameter error (1 sigma): {fitres.paramerrors}")
 
-                    resultexper=fitres.spectrum
+                    resultexper=fitres.spc
                     #To show the graph
                     fig=Figure(figsize=(8,10))
                     formatter=EngFormatter(sep='') 
