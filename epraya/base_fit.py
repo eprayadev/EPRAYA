@@ -85,7 +85,9 @@ def Jacobian(fx,x0,args=(),eps=1e-6):
         J[:,i]=(f1-f2)/(2*dx[i])
     return J
 #Establish the difference between multisystems and single systems.
-fitfunctions={Hval: dict(unpack=UnpackHam,res=Residuals),Multham: dict(unpack=UnpackHam2,res=Residuals2)}
+def findtypeham(Ham2):
+    fitfunctions={Hval: dict(unpack=UnpackHam,res=Residuals),Multham: dict(unpack=UnpackHam2,res=Residuals2)}
+    return fitfunctions.get(type(Ham2))
 
 def Buildres(bestpoint,Ham1,Exp,exper,Vary,functiona,Mr,method,J=None,success=True,message='',iterations=None):
     back=fitfunctions.get(type(Ham1))
