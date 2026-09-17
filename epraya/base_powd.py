@@ -517,8 +517,7 @@ def Delaunay(Exp,M=70):
     #Eliminate degenerated trinagles
     mask=(hulk[:,0]!=hulk[:,1])&(hulk[:,1]!=hulk[:,2])&(hulk[:,0]!=hulk[:,2])
     hulk=hulk[mask]
-    return uvectors[:,0],uvectors[:,1],uvectors[:,2],uweight,hulk,uvectors
-
+    return uvectors[:,0],uvectors[:,1],uvectors[:,2],uweight,hulk
 
 @njit
 def Nresina(Blist,Blist2,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,h2):
