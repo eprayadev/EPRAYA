@@ -2447,5 +2447,5 @@ def Fitting(Hamer,Exper,Vara,datexp):
     frvar6.on_click(Evalfunc)
     frvar7.on_click(Stopfunc)
 
-    centerone=HBox([VBox([frvar1,frvar2,frvar3]),VBox([frvar4,frvar5])])
+    centerone=HBox([VBox([frvar1,frvar2,frvar3]),VBox([frvar4,frvar5]),VBox([frvar8,frvar9])])
     display(VBox([centerone,tapts,outside]))
