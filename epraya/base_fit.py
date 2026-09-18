@@ -122,7 +122,7 @@ def Buildres(bestpoint,Ham1,Exp,exper,Vary,functiona,Mr,method,J=None,success=Tr
             perr=np.sqrt(np.diag(variance))
     except np.linalg.LinAlgError:
         variance,perr=None,None
-    print(f"[{method}] cond(J^T J) = {np.linalg.cond(J.T@J):.3e}")
+    
     return Fitresult(Ham=besHam,spc=spect,params=bestpoint,method=method,chi2=chi2,redchi2=redchi2,residuals=residuals,denochi=deno,variance=variance,paramerrors=perr,success=success,message=message,iterations=iterations)
 
     
@@ -907,7 +907,20 @@ def Genio1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p',see
             fitprice=fitprice[orden]
             bcost=fitprice[0]
             bplayer=np.copy(population[0])
-            print(f"Generation: {itea} | Best cost: {bcost:.5e}")
+            if itea%5==0:
+                print(f"Generation: {itea} | Best cost: {bcost:.5e}")
+                print("="*50)
+                if Var.g!=0.0:
+                    print(f'gx={Ham.g[0]} | gy={Ham.g[1]} | gz={Ham.g[2]}')
+                if Var.A!=0.0:
+                    print(f'Ax={Ham.A[0]} | Ay={Ham.A[1]} | Az={Ham.A[2]}')
+                if Var.Q!=0.0:
+                    print(f'Qx={Ham.Q[0]} | Qy={Ham.Q[1]} | Qz={Ham.Q[2]}')
+                if Var.D!=0.0:
+                    print(f'D={Ham.D[0]} | E={Ham.D[1]}')
+                if np.any(Var.Hpp):
+                    print(f'Hppg={Ham.Hpp[0]} | Hppl={Ham.Hpp[1]}')
+            
 
             if bcost<eps:
                 print("Data converged.")
@@ -935,23 +948,11 @@ def Genio1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p',see
                     fitprice[jae]=bcost
                 else:
                     fitprice[jae]=Fincost(population[jae],funcname)
-            if itea%5==0:
-                print(f"Iteration: {itea} | Best cost: {bcost:.5e}")
-                print("="*50)
-                if Var.g!=0.0:
-                    print(f'gx={Ham.g[0]} | gy={Ham.g[1]} | gz={Ham.g[2]}')
-                if Var.A!=0.0:
-                    print(f'Ax={Ham.A[0]} | Ay={Ham.A[1]} | Az={Ham.A[2]}')
-                if Var.Q!=0.0:
-                    print(f'Qx={Ham.Q[0]} | Qy={Ham.Q[1]} | Qz={Ham.Q[2]}')
-                if Var.D!=0.0:
-                    print(f'D={Ham.D[0]} | E={Ham.D[1]}')
-                if np.any(Var.Hpp):
-                    print(f'Hppg={Ham.Hpp[0]} | Hppl={Ham.Hpp[1]}')
+            
             itea+=1
     except KeyboardInterrupt:
         print("\n"+"="*50)
-        print(f"Process stopped at iteration: {itea}, with best cost: {bcost:.5e}")
+        print(f"Process stopped at generation: {itea}, with best cost: {bcost:.5e}")
         print("="*50)
         if Var.g!=0.0:
             print(f'gx={Ham.g[0]} | gy={Ham.g[1]} | gz={Ham.g[2]}')
@@ -966,7 +967,7 @@ def Genio1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p',see
         fitresult=Buildres(bplayer,Ham,Exp,exper,Var,funcname,Mr,method='Genethic A',success=False,message='Genetic algorithm stopped by user',iterations=itea)
         return fitresult.Ham,fitresult
     print("\n"+"="*50)
-    print(f"Process stopped at iteration: {itea}, with best cost: {bcost:.5e}")
+    print(f"Process stopped at generation: {itea}, with best cost: {bcost:.5e}")
     print("="*50)
     if Var.g!=0.0:
         print(f'gx={Ham.g[0]} | gy={Ham.g[1]} | gz={Ham.g[2]}')
@@ -1130,8 +1131,20 @@ def Genio2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p',see
             fitprice=fitprice[orden]
             bcost=fitprice[0]
             bplayer=np.copy(population[0])
-            print(f"Generation: {itea} | Best cost: {bcost:.5e}")
-
+            if itea%5==0:
+                print(f"Generation: {itea} | Best cost: {bcost:.5e}")
+                for i in range(len(Ham.Mulham)):
+                    print(f"--- System {i+1} ---")
+                    if Var.Mvary[i].g!=0.0:
+                        print(f'gx={Ham.Mulham[i].g[0]:.4f} | gy={Ham.Mulham[i].g[1]:.4f} | gz={Ham.Mulham[i].g[2]:.4f}')
+                    if Var.Mvary[i].A!=0.0:
+                        print(f'Ax={Ham.Mulham[i].A[0]:.4f} | Ay={Ham.Mulham[i].A[1]:.4f} | Az={Ham.Mulham[i].A[2]:.4f}')
+                    if Var.Mvary[i].Q!=0.0:
+                        print(f'Qx={Ham.Mulham[i].Q[0]:.4f} | Qy={Ham.Mulham[i].Q[1]:.4f} | Qz={Ham.Mulham[i].Q[2]:.4f}')
+                    if Var.Mvary[i].D!=0.0:
+                        print(f'D={Ham.Mulham[i].D[0]:.4f} | E={Ham.Mulham[i].D[1]:.4f}')
+                    if np.any(Var.Mvary[i].Hpp):
+                        print(f'Hppg={Ham.Mulham[i].Hpp[0]:.4f} | Hppl={Ham.Mulham[i].Hpp[1]:.4f}')
             if bcost<eps:
                 print("Data converged.")
                 break
@@ -1158,24 +1171,10 @@ def Genio2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p',see
                     fitprice[jae]=bcost
                 else:
                     fitprice[jae]=Fincost(population[jae],funcname)
-            if itea%5==0:
-                print(f"Iteration: {itea} | Best cost: {bcost:.5e}")
-                for i in range(len(Ham.Mulham)):
-                    print(f"--- System {i+1} ---")
-                    if Var.Mvary[i].g!=0.0:
-                        print(f'gx={Ham.Mulham[i].g[0]:.4f} | gy={Ham.Mulham[i].g[1]:.4f} | gz={Ham.Mulham[i].g[2]:.4f}')
-                    if Var.Mvary[i].A!=0.0:
-                        print(f'Ax={Ham.Mulham[i].A[0]:.4f} | Ay={Ham.Mulham[i].A[1]:.4f} | Az={Ham.Mulham[i].A[2]:.4f}')
-                    if Var.Mvary[i].Q!=0.0:
-                        print(f'Qx={Ham.Mulham[i].Q[0]:.4f} | Qy={Ham.Mulham[i].Q[1]:.4f} | Qz={Ham.Mulham[i].Q[2]:.4f}')
-                    if Var.Mvary[i].D!=0.0:
-                        print(f'D={Ham.Mulham[i].D[0]:.4f} | E={Ham.Mulham[i].D[1]:.4f}')
-                    if np.any(Var.Mvary[i].Hpp):
-                        print(f'Hppg={Ham.Mulham[i].Hpp[0]:.4f} | Hppl={Ham.Mulham[i].Hpp[1]:.4f}')
             itea+=1
     except KeyboardInterrupt:
         print("\n"+"="*50)
-        print(f"Process stopped at iteration: {itea}, with best cost: {bcost:.5e}")
+        print(f"Process stopped at generation: {itea}, with best cost: {bcost:.5e}")
         print("="*50)
         _=Fincost(bplayer,funcname)
         for i in range(len(Ham.Mulham)):
@@ -1193,7 +1192,7 @@ def Genio2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p',see
         fitresult=Buildres(bplayer,Ham,Exp,exper,Var,funcname,Mr,method='Genethic A',success=False,message='Genetic algorithm stopped by user',iterations=itea)
         return fitresult.Ham,fitresult
     print("\n"+"="*50)
-    print(f"Process stopped at iteration: {itea}, with best cost: {bcost:.5e}")
+    print(f"Process stopped at generation: {itea}, with best cost: {bcost:.5e}")
     print("="*50)
     _=Fincost(bplayer,funcname)
     for i in range(len(Ham.Mulham)):
@@ -1274,10 +1273,8 @@ def Costf(exper,intens,metric='rmse'):
             return 1e6
         return 1-pearson
 
-def Metrostair(Hamer,Exp,Var,date,stepsize,ocos,para,variable,funcname,datype='data',seed=451):
-    np.random.seed(int(seed))
+def Metrostair(Hamer,Exp,Var,date,stepsize,ocos,para,variable,funcname,iwas,jwas,kwas,weight,hulk,datype='data'):    
     Ham=deepcopy(Hamer)
-    iwas,jwas,kwas,weight,hulk=Delaunay(Exp)
     if 'g' in variable:
         Ham.g[0]+=np.random.normal(0,stepsize['gx'])
         Ham.g[1]+=np.random.normal(0,stepsize['gy'])
@@ -1365,6 +1362,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
     spc : np.array
         Best adjusted spectrum using the Powder or Eresonant functions.
     '''
+    np.random.seed(int(seed))
     Ham1=deepcopy(Hamer)
     iwas,jwas,kwas,weight,hulk=Delaunay(Exp)
     if mode=='p':
@@ -1444,7 +1442,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
                 hemetro=metropa
                 opa=0
                 while opa<pg:
-                    Ham1,ct1,acep=Metrostair(Ham1,Exp,Var,dat,stp,ct1,hemetro,['g'],funcname,datype,seed)
+                    Ham1,ct1,acep=Metrostair(Ham1,Exp,Var,dat,stp,ct1,hemetro,['g'],funcname,iwas,jwas,kwas,weight,hulk,datype)
                     if acep:
                         acepv+=1
                     tries+=1
@@ -1459,7 +1457,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
                 hemetro=metropa
                 opa=0
                 while opa<pa:
-                    Ham1,ct1,acep=Metrostair(Ham1,Exp,Var,dat,stp,ct1,hemetro,['A'],funcname,datype,seed)
+                    Ham1,ct1,acep=Metrostair(Ham1,Exp,Var,dat,stp,ct1,hemetro,['A'],funcname,iwas,jwas,kwas,weight,hulk,datype)
                     if acep:
                         acepv+=1
                     tries+=1
@@ -1474,7 +1472,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
                 hemetro=metropa
                 opa=0
                 while opa<pq:
-                    Ham1,ct1,acep=Metrostair(Ham1,Exp,Var,dat,stp,ct1,hemetro,['Q'],funcname,datype,seed)
+                    Ham1,ct1,acep=Metrostair(Ham1,Exp,Var,dat,stp,ct1,hemetro,['Q'],funcname,iwas,jwas,kwas,weight,hulk,datype)
                     if acep:
                         acepv+=1
                     tries+=1
@@ -1489,7 +1487,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
                 hemetro=metropa
                 opa=0
                 while opa<pdr:
-                    Ham1,ct1,acep=Metrostair(Ham1,Exp,Var,dat,stp,ct1,hemetro,['D'],funcname,datype,seed)
+                    Ham1,ct1,acep=Metrostair(Ham1,Exp,Var,dat,stp,ct1,hemetro,['D'],funcname,iwas,jwas,kwas,weight,hulk,datype)
                     if acep:
                         acepv+=1
                     tries+=1
@@ -1504,7 +1502,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
                 hemetro=metropa
                 opa=0
                 while opa<pdr:
-                    Ham1,ct1,acep=Metrostair(Ham1,Exp,Var,dat,stp,ct1,hemetro,['Hpp'],funcname,datype,seed)
+                    Ham1,ct1,acep=Metrostair(Ham1,Exp,Var,dat,stp,ct1,hemetro,['Hpp'],funcname,iwas,jwas,kwas,weight,hulk,datype)
                     if acep:
                         acepv+=1
                     tries+=1
@@ -1526,7 +1524,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
                 hemetro=metropa*1.5
                 opa=0
                 while opa<30:
-                    Ham1,ct1,acep=Metrostair(Ham1,Exp,Var,dat,stp,ct1,hemetro,varact,funcname,datype,seed)
+                    Ham1,ct1,acep=Metrostair(Ham1,Exp,Var,dat,stp,ct1,hemetro,varact,funcname,iwas,jwas,kwas,weight,hulk,datype)
                     if acep:
                         acepv+=1
                     tries+=1
@@ -1616,8 +1614,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
     fitresult=Buildres(bestpoint,Ham1,Exp,dat,Var,funcname,Mr,method='Metropolis',success=(gama<maximal),message='Converged with Metropolis',iterations=gama)
     return fitresult.Ham, fitresult
 
-def Metrostair2(Hamer,Exp,Var,date,stepsize,ocos,para,variable,aktsys,funcname,datype='data',seed=451,Mr=70):
-    np.random.seed(int(seed))
+def Metrostair2(Hamer,Exp,Var,date,stepsize,ocos,para,variable,aktsys,funcname,datype='data',Mr=70):
     Ham=deepcopy(Hamer)
     vma=Var.Mvary[aktsys]
     hma=Ham.Mulham[aktsys]
@@ -1774,7 +1771,7 @@ def Metro2(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
                     hemetro=metropa
                     opa=0
                     while opa<pg:
-                        Ham1,ct1,acep=Metrostair2(Ham1,Exp,Var,dat,stp,ct1,hemetro,['g'],ira,funcname,datype,seed,Mr)
+                        Ham1,ct1,acep=Metrostair2(Ham1,Exp,Var,dat,stp,ct1,hemetro,['g'],ira,funcname,datype,Mr)
                         if acep:
                             acepv+=1
                         tries+=1
@@ -1789,7 +1786,7 @@ def Metro2(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
                     hemetro=metropa
                     opa=0
                     while opa<pa:
-                        Ham1,ct1,acep=Metrostair2(Ham1,Exp,Var,dat,stp,ct1,hemetro,['A'],ira,funcname,datype,seed,Mr)
+                        Ham1,ct1,acep=Metrostair2(Ham1,Exp,Var,dat,stp,ct1,hemetro,['A'],ira,funcname,datype,Mr)
                         if acep:
                             acepv+=1
                         tries+=1
@@ -1804,7 +1801,7 @@ def Metro2(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
                     hemetro=metropa
                     opa=0
                     while opa<pq:
-                        Ham1,ct1,acep=Metrostair2(Ham1,Exp,Var,dat,stp,ct1,hemetro,['Q'],ira,funcname,datype,seed,Mr)
+                        Ham1,ct1,acep=Metrostair2(Ham1,Exp,Var,dat,stp,ct1,hemetro,['Q'],ira,funcname,datype,Mr)
                         if acep:
                             acepv+=1
                         tries+=1
@@ -1819,7 +1816,7 @@ def Metro2(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
                     hemetro=metropa
                     opa=0
                     while opa<pdr:
-                        Ham1,ct1,acep=Metrostair2(Ham1,Exp,Var,dat,stp,ct1,hemetro,['D'],ira,funcname,datype,seed,Mr)
+                        Ham1,ct1,acep=Metrostair2(Ham1,Exp,Var,dat,stp,ct1,hemetro,['D'],ira,funcname,datype,Mr)
                         if acep:
                             acepv+=1
                         tries+=1
@@ -1834,7 +1831,7 @@ def Metro2(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
                     hemetro=metropa
                     opa=0
                     while opa<pdr:
-                        Ham1,ct1,acep=Metrostair2(Ham1,Exp,Var,dat,stp,ct1,hemetro,['Hpp'],ira,funcname,datype,seed,Mr)
+                        Ham1,ct1,acep=Metrostair2(Ham1,Exp,Var,dat,stp,ct1,hemetro,['Hpp'],ira,funcname,datype,Mr)
                         if acep:
                             acepv+=1
                         tries+=1
@@ -1861,7 +1858,7 @@ def Metro2(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
                     if np.any(Var.Mvary[ira].Hpp):
                         varact.append('Hpp')
                     if len(varact)>0:
-                        Ham1,ct1,acep=Metrostair2(Ham1,Exp,Var,dat,stp,ct1,hemetro,varact,ira,funcname,datype,seed,Mr)
+                        Ham1,ct1,acep=Metrostair2(Ham1,Exp,Var,dat,stp,ct1,hemetro,varact,ira,funcname,datype,Mr)
                         if acep:
                             acepv+=1
                         tries+=1
