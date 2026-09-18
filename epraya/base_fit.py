@@ -97,7 +97,7 @@ def Buildres(bestpoint,Ham1,Exp,exper,Vary,functiona,Mr,method,J=None,success=Tr
     resfu=back['res']
     besHam=unpack(bestpoint,Ham1,Vary)
     residuals=resfu(bestpoint,Ham1,Exp,exper,Vary,functiona,Mr)
-    if functiona in ['Powder']:
+    if functiona in ['Powder','Calpowder']:
         spect=Powder(besHam,Exp,M=Mr,graph=False)[1]
     elif functiona in ['Eresonant']:
         spect=Eresonant(besHam,Exp,graph=False,table=False)[1]
@@ -2022,7 +2022,7 @@ def Residuals(point,Hame,Exp,exper,Vary,fname,Mr=70):
     if stopvar.is_set():
         raise Stopall()
     Ham1=UnpackHam(point,Hame,Vary)
-    if fname in ['Powder']:
+    if fname in ['Powder','Calpowder']:
         fielda,intena=Powder(Ham1,Exp,M=Mr,graph=False)
     elif fname in ['Eresonant']:
         fielda,intena=Eresonant(Ham1,Exp,graph=False,table=False)
