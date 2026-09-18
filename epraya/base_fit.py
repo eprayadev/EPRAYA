@@ -90,12 +90,13 @@ def findtypeham(Ham2):
     return fitfunctions.get(type(Ham2))
 
 def Buildres(bestpoint,Ham1,Exp,exper,Vary,functiona,Mr,method,J=None,success=True,message='',iterations=None):
-    back=fitfunctions.get(type(Ham1))
+    back=findtypeham(Ham1)
     if back is None:
         raise TypeError(f'Wrong Hamiltoinan type: {type(Ham1)}.')
     unpack=back['unpack']
     resfu=back['res']
     besHam=unpack(bestpoint,Ham1,Vary)
+    residuals=resfu(bestpoint,Ham1,Exp,exper,Vary,functiona,Mr)
     if functiona in ['Powder']:
         spect=Powder(besHam,Exp,M=Mr,graph=False)[1]
     elif functiona in ['Eresonant']:
@@ -104,7 +105,7 @@ def Buildres(bestpoint,Ham1,Exp,exper,Vary,functiona,Mr,method,J=None,success=Tr
         spect=Mulpol(besHam,Exp,M=Mr,graph=False)[1]
     elif functiona in ['Music']:
         spect=Music(besHam,Exp,graph=False,table=False)[1]
-    residuals=resfu(bestpoint,Ham1,Exp,exper,Vary,functiona,Mr)
+    
     n,p=len(residuals),len(bestpoint)
     deno=max(n-p,1)
     chi2=float(np.sum(residuals**2))
