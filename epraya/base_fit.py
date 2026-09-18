@@ -846,6 +846,7 @@ def Genio1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p',see
     lowfron=[]
     hifron=[]
     bplayer=0
+    bcost=60
     if mode=='p':
         funtiona=Powder#(Ham,Exp,graph=False)
     elif mode=='c':
@@ -928,6 +929,19 @@ def Genio1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p',see
                     fitprice[jae]=bcost
                 else:
                     fitprice[jae]=Fincost(population[jae],funcname)
+            if itea%5==0:
+                print(f"Iteration: {itea} | Best cost: {bcost:.5e}")
+                print("="*50)
+                if Var.g!=0.0:
+                    print(f'gx={Ham.g[0]} | gy={Ham.g[1]} | gz={Ham.g[2]}')
+                if Var.A!=0.0:
+                    print(f'Ax={Ham.A[0]} | Ay={Ham.A[1]} | Az={Ham.A[2]}')
+                if Var.Q!=0.0:
+                    print(f'Qx={Ham.Q[0]} | Qy={Ham.Q[1]} | Qz={Ham.Q[2]}')
+                if Var.D!=0.0:
+                    print(f'D={Ham.D[0]} | E={Ham.D[1]}')
+                if np.any(Var.Hpp):
+                    print(f'Hppg={Ham.Hpp[0]} | Hppl={Ham.Hpp[1]}')
             itea+=1
     except KeyboardInterrupt:
         print("\n"+"="*50)
@@ -1138,12 +1152,26 @@ def Genio2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p',see
                     fitprice[jae]=bcost
                 else:
                     fitprice[jae]=Fincost(population[jae],funcname)
+            if itea%5==0:
+                print(f"Iteration: {itea} | Best cost: {bcost:.5e}")
+                for i in range(len(Ham.Mulham)):
+                    print(f"--- System {i+1} ---")
+                    if Var.Mvary[i].g!=0.0:
+                        print(f'gx={Ham.Mulham[i].g[0]:.4f} | gy={Ham.Mulham[i].g[1]:.4f} | gz={Ham.Mulham[i].g[2]:.4f}')
+                    if Var.Mvary[i].A!=0.0:
+                        print(f'Ax={Ham.Mulham[i].A[0]:.4f} | Ay={Ham.Mulham[i].A[1]:.4f} | Az={Ham.Mulham[i].A[2]:.4f}')
+                    if Var.Mvary[i].Q!=0.0:
+                        print(f'Qx={Ham.Mulham[i].Q[0]:.4f} | Qy={Ham.Mulham[i].Q[1]:.4f} | Qz={Ham.Mulham[i].Q[2]:.4f}')
+                    if Var.Mvary[i].D!=0.0:
+                        print(f'D={Ham.Mulham[i].D[0]:.4f} | E={Ham.Mulham[i].D[1]:.4f}')
+                    if np.any(Var.Mvary[i].Hpp):
+                        print(f'Hppg={Ham.Mulham[i].Hpp[0]:.4f} | Hppl={Ham.Mulham[i].Hpp[1]:.4f}')
             itea+=1
     except KeyboardInterrupt:
         print("\n"+"="*50)
         print(f"Process stopped at iteration: {itea}, with best cost: {bcost:.5e}")
         print("="*50)
-        _=Fincost(bplayer, funcname)
+        _=Fincost(bplayer,funcname)
         for i in range(len(Ham.Mulham)):
             print(f"--- System {i+1} ---")
             if Var.Mvary[i].g!=0.0:
@@ -1536,17 +1564,18 @@ def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
                     stp[k]*=2.0
                 Ham1=deepcopy(bestHam)
                 print(f"|---Process heated up---|")
-            print(f"Step {gama} | Error: {ct1:.5e} | Best one: {besterror:.5e} | Rate: {arate:.1f}% | T: {metropa:.4e}")
-            if Var.g!=0.0:
-                print(f'gx={bestHam.g[0]} | gy={bestHam.g[1]} | gz={bestHam.g[2]}')
-            if Var.A!=0.0:
-                print(f'Ax={bestHam.A[0]} | Ay={bestHam.A[1]} | Az={bestHam.A[2]}')
-            if Var.Q!=0.0:
-                print(f'Qx={bestHam.Q[0]} | Qy={bestHam.Q[1]} | Qz={bestHam.Q[2]}')
-            if Var.D!=0.0:
-                print(f'D={bestHam.D[0]},E={bestHam.D[1]}')
-            if np.any(Var.Hpp):
-                print(f'Hppg={bestHam.Hpp[0]},Hppl={bestHam.Hpp[1]}')
+            if gama%10==0:
+                print(f"Step {gama} | Error: {ct1:.5e} | Best one: {besterror:.5e} | Rate: {arate:.1f}% | T: {metropa:.4e}")
+                if Var.g!=0.0:
+                    print(f'gx={bestHam.g[0]} | gy={bestHam.g[1]} | gz={bestHam.g[2]}')
+                if Var.A!=0.0:
+                    print(f'Ax={bestHam.A[0]} | Ay={bestHam.A[1]} | Az={bestHam.A[2]}')
+                if Var.Q!=0.0:
+                    print(f'Qx={bestHam.Q[0]} | Qy={bestHam.Q[1]} | Qz={bestHam.Q[2]}')
+                if Var.D!=0.0:
+                    print(f'D={bestHam.D[0]},E={bestHam.D[1]}')
+                if np.any(Var.Hpp):
+                    print(f'Hppg={bestHam.Hpp[0]},Hppl={bestHam.Hpp[1]}')
     except KeyboardInterrupt:
         bestpoint,_,_=Packtoscipy(bestHam,Var)
         print("\n"+"="*50)
@@ -1870,19 +1899,20 @@ def Metro2(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
                     stp[k]*=2.0
                 Ham1=deepcopy(bestHam)
                 print(f"|---Process heated up---|")
-            print(f"Step {gama} | Error: {ct1:.5e} | Best one: {besterror:.5e} | Rate: {arate:.1f}% | T: {metropa:.4e}")
-            for i in range(len(Ham1.Mulham)):
-                print(f"--- System {i+1} ---")
-                if Var.Mvary[i].g!=0.0:
-                    print(f'gx={bestHam.Mulham[i].g[0]:.4f} | gy={bestHam.Mulham[i].g[1]:.4f} | gz={bestHam.Mulham[i].g[2]:.4f}')
-                if Var.Mvary[i].A!=0.0:
-                    print(f'Ax={bestHam.Mulham[i].A[0]:.4f} | Ay={bestHam.Mulham[i].A[1]:.4f} | Az={bestHam.Mulham[i].A[2]:.4f}')
-                if Var.Mvary[i].Q!=0.0:
-                    print(f'Qx={bestHam.Mulham[i].Q[0]:.4f} | Qy={bestHam.Mulham[i].Q[1]:.4f} | Qz={bestHam.Mulham[i].Q[2]:.4f}')
-                if Var.Mvary[i].D!=0.0:
-                    print(f'D={bestHam.Mulham[i].D[0]:.4f} | E={bestHam.Mulham[i].D[1]:.4f}')
-                if np.any(Var.Mvary[i].Hpp):
-                    print(f'Hppg={Ham.Mulham[i].Hpp[0]:.4f} | Hppl={Ham.Mulham[i].Hpp[1]:.4f}')
+            if gama%10==0:
+                print(f"Step {gama} | Error: {ct1:.5e} | Best one: {besterror:.5e} | Rate: {arate:.1f}% | T: {metropa:.4e}")
+                for i in range(len(Ham1.Mulham)):
+                    print(f"--- System {i+1} ---")
+                    if Var.Mvary[i].g!=0.0:
+                        print(f'gx={bestHam.Mulham[i].g[0]:.4f} | gy={bestHam.Mulham[i].g[1]:.4f} | gz={bestHam.Mulham[i].g[2]:.4f}')
+                    if Var.Mvary[i].A!=0.0:
+                        print(f'Ax={bestHam.Mulham[i].A[0]:.4f} | Ay={bestHam.Mulham[i].A[1]:.4f} | Az={bestHam.Mulham[i].A[2]:.4f}')
+                    if Var.Mvary[i].Q!=0.0:
+                        print(f'Qx={bestHam.Mulham[i].Q[0]:.4f} | Qy={bestHam.Mulham[i].Q[1]:.4f} | Qz={bestHam.Mulham[i].Q[2]:.4f}')
+                    if Var.Mvary[i].D!=0.0:
+                        print(f'D={bestHam.Mulham[i].D[0]:.4f} | E={bestHam.Mulham[i].D[1]:.4f}')
+                    if np.any(Var.Mvary[i].Hpp):
+                        print(f'Hppg={Ham.Mulham[i].Hpp[0]:.4f} | Hppl={Ham.Mulham[i].Hpp[1]:.4f}')
     except KeyboardInterrupt:
         bestpoint,_,_=Packtoscipy2(bestHam,Var)
         print("\n"+"="*50)
