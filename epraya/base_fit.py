@@ -113,10 +113,16 @@ def Buildres(bestpoint,Ham1,Exp,exper,Vary,functiona,Mr,method,J=None,success=Tr
     if J is None:
         J=Jacobian(resfu,bestpoint,args=(Ham1,Exp,exper,Vary,functiona,Mr))
     try:
-        variance=np.linalg.inv(J.T@J)*redchi2
-        perr=np.sqrt(np.diag(variance))
+        JTJ=J.T@J
+        cond=np.linalg.cond(JTJ)
+        if not np.isfinite(cond) or cond>1e10:
+            variance,perr=None,None
+        else:
+            variance=np.linalg.inv(JTJ)*redchi2
+            perr=np.sqrt(np.diag(variance))
     except np.linalg.LinAlgError:
         variance,perr=None,None
+    print(f"[{method}] cond(J^T J) = {np.linalg.cond(J.T@J):.3e}")
     return Fitresult(Ham=besHam,spc=spect,params=bestpoint,method=method,chi2=chi2,redchi2=redchi2,residuals=residuals,denochi=deno,variance=variance,paramerrors=perr,success=success,message=message,iterations=iterations)
 
     
@@ -2404,12 +2410,13 @@ def Fitting(Hamer,Exper,Vara,datexp):
                 csample='p'
             elif csample=='Cristal':
                 csample='c'
-            print(f'Starting process: {Chmet}...')
+            
             def functiontorun():
                 if in_notebook:
                     oldout=sys.stdout
                     sys.stdout=OutputRedirector(outside)
                 try:
+                    print(f'Starting process: {Chmet}...')
                     fitres=None
                     if Chmet=='Nelder-Mead':
                         Hamf,fitres=Nelder(Hamer,Exper,Vara,datexp,eps=erroreps,maximal=numtr,datype=cdtype,mode=csample,seed=seeds,Mr=mr)
