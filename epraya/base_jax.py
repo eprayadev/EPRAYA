@@ -1637,6 +1637,7 @@ def JCaltriangle(Bmin,dB,allres,allint,transi,hulk,weight,points):
     batch=hulkpad.shape[0]//csize
     hulkbatch=hulkpad.reshape((batch,csize,3))
     validbatch=validpad.reshape((batch,csize)) 
+    @jx.checkpoint
     def EWsize(carry,xs):
         batchidx,validb=xs
         bspc=jx.vmap(Takeonetriangle)(batchidx,validb)
