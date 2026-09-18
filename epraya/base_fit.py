@@ -1562,7 +1562,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
             print(f'D={bestHam.D[0]},E={bestHam.D[1]}')
         if np.any(Var.Hpp):
             print(f'Hppg={bestHam.Hpp[0]},Hppl={bestHam.Hpp[1]}')
-        fitresult=Buildres(bestpoint,Ham,Exp,dat,Var,funcname,Mr,method='Metropolis',success=False,message='Metropolis stopped by user',iterations=gama)
+        fitresult=Buildres(bestpoint,Ham1,Exp,dat,Var,funcname,Mr,method='Metropolis',success=False,message='Metropolis stopped by user',iterations=gama)
         return fitresult.Ham, fitresult
     bestpoint,_,_=Packtoscipy(bestHam,Var)
     print("\n"+"="*50)
@@ -1578,7 +1578,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
         print(f'D={bestHam.D[0]} | E={bestHam.D[1]}')
     if np.any(Var.Hpp):
         print(f'Hppg={bestHam.Hpp[0]} | Hppl={bestHam.Hpp[1]}')
-    fitresult=Buildres(bestpoint,Ham,Exp,dat,Var,funcname,Mr,method='Metropolis',success=(gama<maximal),message='Converged with Metropolis',iterations=gama)
+    fitresult=Buildres(bestpoint,Ham1,Exp,dat,Var,funcname,Mr,method='Metropolis',success=(gama<maximal),message='Converged with Metropolis',iterations=gama)
     return fitresult.Ham, fitresult
 
 def Metrostair2(Hamer,Exp,Var,date,stepsize,ocos,para,variable,aktsys,funcname,datype='data',seed=451,Mr=70):
@@ -1899,8 +1899,8 @@ def Metro2(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
             if Var.Mvary[i].D!=0.0:
                 print(f'D={bestHam.Mulham[i].D[0]:.4f} | E={bestHam.Mulham[i].D[1]:.4f}')
             if np.any(Var.Mvary[i].Hpp):
-                print(f'Hppg={Ham.Mulham[i].Hpp[0]:.4f} | Hppl={Ham.Mulham[i].Hpp[1]:.4f}')
-        fitresult=Buildres(bestpoint,Ham,Exp,dat,Var,funcname,Mr,method='Metropolis',success=False,message='Metropolis stopped by user',iterations=gama)
+                print(f'Hppg={bestHam.Mulham[i].Hpp[0]:.4f} | Hppl={bestHam.Mulham[i].Hpp[1]:.4f}')
+        fitresult=Buildres(bestpoint,Ham1,Exp,dat,Var,funcname,Mr,method='Metropolis',success=False,message='Metropolis stopped by user',iterations=gama)
         return fitresult.Ham, fitresult
     bestpoint,_,_=Packtoscipy2(bestHam,Var)
     print("\n"+"="*50)
@@ -1918,7 +1918,7 @@ def Metro2(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
             print(f'D={bestHam.Mulham[i].D[0]:.4f} | E={bestHam.Mulham[i].D[1]:.4f}')
         if np.any(Var.Mvary[i].Hpp):
             print(f'Hppg={bestHam.Mulham[i].Hpp[0]:.4f} | Hppl={bestHam.Mulham[i].Hpp[1]:.4f}')
-    fitresult=Buildres(bestpoint,Ham,Exp,dat,Var,funcname,Mr,method='Metropolis',success=(gama<maximal),message='Converged with Metropolis',iterations=gama)
+    fitresult=Buildres(bestpoint,Ham1,Exp,dat,Var,funcname,Mr,method='Metropolis',success=(gama<maximal),message='Converged with Metropolis',iterations=gama)
     return fitresult.Ham, fitresult
 
 def Metro(Hamer,Exp,Var,exper,maximal=2000,datype='data',mode='p',seed=451,Mr=70):
@@ -2326,7 +2326,7 @@ def Fitting(Hamer,Exper,Vara,datexp):
             self.output_widget.append_stdout(string)
         def flush(self):
             pass
-            
+    in_notebook=is_notebook()
     stopvar.clear()
     global result
     result={}
@@ -2376,7 +2376,6 @@ def Fitting(Hamer,Exper,Vara,datexp):
                 csample='c'
             print(f'Starting process: {Chmet}...')
             def functiontorun():
-                in_notebook=is_notebook()
                 if in_notebook:
                     oldout=sys.stdout
                     sys.stdout=OutputRedirector(outside)
