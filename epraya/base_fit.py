@@ -2398,9 +2398,14 @@ def Fitting(Hamer,Exper,Vara,datexp):
     outside=Output()
     partoeval=None
     def Evalfunc(b):
+        nonlocal partoeval
+        if partoeval is not None and partoeval.is_alive():
+            with outside:
+                print("\n[!] The last process is still running. Wait a moment and try again.")
+            return
         stopvar.clear()
         with outside:
-            outside.clear_output()
+            outside.clear_output(wait=True)
             Chmet=wdg1.value
             cdtype=wdg2.value
             csample=wdg3.value
@@ -2422,7 +2427,7 @@ def Fitting(Hamer,Exper,Vara,datexp):
                     oldout=sys.stdout
                     sys.stdout=OutputRedirector(outside)
                 try:
-                    print(f'Starting process: {Chmet}...')
+                    print(f'Starting process: {Chmet}...\n')
                     fitres=None
                     if Chmet=='Nelder-Mead':
                         Hamf,fitres=Nelder(Hamer,Exper,Vara,datexp,eps=erroreps,maximal=numtr,datype=cdtype,mode=csample,seed=seeds,Mr=mr)
@@ -2436,7 +2441,7 @@ def Fitting(Hamer,Exper,Vara,datexp):
                     global result
                     result['Ham']=Hamf
                     result['fit']=fitres
-                    print(f"\n chi2 = {fitres.chi2:.5e} | chi2 residual = {fitres.redchi2:.5e}")
+                    print(f"\nchi2 = {fitres.chi2:.5e} | chi2 residual = {fitres.redchi2:.5e}")
                     if fitres.paramerrors is not None:
                         print(f"Parameter error (1 sigma): {fitres.paramerrors}")
 
