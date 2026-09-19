@@ -3292,7 +3292,7 @@ def BuildresJax(pravals,Ham,Exp,expr,Vary,mode,method,iwas=None,jwas=None,kwas=N
     deno=max(n-p,1)
     chi2=float(jxn.sum(residuals**2))
     redchi2=chi2/deno
-    J=np.asarray(jx.jacobian(ResidualsJax)(pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk))
+    J=np.asarray(jx.jacfwd(ResidualsJax)(pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk))
     try:
         JTJ=J.T@J
         cond=np.linalg.cond(JTJ)
@@ -3329,7 +3329,7 @@ def BuildresJax2(pravals,Ham,Exp,expr,Vary,mode,method,success=True,message='',i
     deno=max(n-p,1)
     chi2=float(jxn.sum(residuals**2))
     redchi2=chi2/deno
-    J=np.asarray(jx.jacobian(ResidualsJax2)(pflat,unrav,Ham,Exp,expr,mode))
+    J=np.asarray(jx.jacfwd(ResidualsJax2)(pflat,unrav,Ham,Exp,expr,mode))
     try:
         JTJ=J.T@J
         cond=np.linalg.cond(JTJ)
