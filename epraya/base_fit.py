@@ -96,8 +96,10 @@ def Buildres(bestpoint,Ham1,Exp,exper,Vary,functiona,Mr,method,J=None,success=Tr
     unpack=back['unpack']
     resfu=back['res']
     besHam=unpack(bestpoint,Ham1,Vary)
-    residuals=resfu(bestpoint,Ham1,Exp,exper,Vary,functiona,Mr)
     if functiona in ['Powder','Calpowder']:
+        functiona='Powder'
+    residuals=resfu(bestpoint,Ham1,Exp,exper,Vary,functiona,Mr)
+    if functiona in ['Powder']:
         spect=Powder(besHam,Exp,M=Mr,graph=False)[1]
     elif functiona in ['Eresonant']:
         spect=Eresonant(besHam,Exp,graph=False,table=False)[1]
@@ -277,7 +279,7 @@ def Nelder1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p',
     price=np.zeros(nparams+1)
     simplex[0]=pointx
     price[0]=Fincost(pointx,funcname)
-
+    melhor=20
     #Iteration parameters
     alpha=1
     gamma=1+(2/nparams)
@@ -554,6 +556,7 @@ def Nelder2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p',
         simplex[la+1]=npoint
         price[la+1]=Fincost(npoint,funcname)
     itera=0
+    melhor=20
     restarts=0
     mrestarts=5
     try:
@@ -1086,7 +1089,7 @@ def Genio2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p',see
         exper=scii.cumulative_trapezoid(exper,fielda,initial=0)
     else:
         raise ValueError(f"Data type {datype} is not supported. Use integral or data instead.")
-    iwas,jwas,kwas,weight,hulk=Delaunay(Exp)
+    iwas,jwas,kwas,weight,hulk=Delaunay(Exp.Mexp[0])
     numberes=len(Ham.Mulham)
     for lke in range(0,numberes):
         if Var.Mvary[lke].g!=0.0:
@@ -1506,7 +1509,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
             if np.any(Var.Hpp):
                 hemetro=metropa
                 opa=0
-                while opa<pdr:
+                while opa<php:
                     Ham1,ct1,acep=Metrostair(Ham1,Exp,Var,dat,stp,ct1,hemetro,['Hpp'],funcname,iwas,jwas,kwas,weight,hulk,datype)
                     if acep:
                         acepv+=1
@@ -1836,7 +1839,7 @@ def Metro2(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
                 if np.any(Var.Mvary[ira].Hpp):
                     hemetro=metropa
                     opa=0
-                    while opa<pdr:
+                    while opa<php:
                         Ham1,ct1,acep=Metrostair2(Ham1,Exp,Var,dat,stp,ct1,hemetro,['Hpp'],ira,funcname,datype,Mr)
                         if acep:
                             acepv+=1
@@ -2057,7 +2060,6 @@ class Stopall(Exception):
     pass
 
 def Residuals(point,Hame,Exp,exper,Vary,fname,Mr=70):
-
     if stopvar.is_set():
         raise Stopall()
     Ham1=UnpackHam(point,Hame,Vary)
