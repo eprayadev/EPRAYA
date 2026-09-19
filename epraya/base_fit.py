@@ -2345,14 +2345,14 @@ def Fitting(Hamer,Exper,Vara,datexp):
        Ham,Exp,Vary=epr.Start()
        Ham.S=1/2
        Ham.g=[2.003,2.003,2.003]
-       Ham.Hpp=[0,3]
+       Ham.Hpp=[0,0.3]
        Exp.Points=4096
        Exp.Frange=[B[0],B[-1]]
        Vary.g=[2.,2.2,2,2.2,2.,2.2]
        epr.Fitting(Ham,Exp,Vary,spc)
 
        
-    .. image:: /_static/fit1.PNG
+    .. image:: /_static/fit1.png
        :alt: Plot of the Fit1 function.
        :align: center
     
@@ -2370,7 +2370,7 @@ def Fitting(Hamer,Exper,Vara,datexp):
     in_notebook=is_notebook()
     stopvar.clear()
     global result
-    result={}
+    result.clear()
     lbl1=Label('Method:')
     wdg1=Dropdown(options=['Nelder-Mead','Genetic algorithm','Metropolis','Least squares'],index=2)
     frvar1=HBox([lbl1,wdg1])
