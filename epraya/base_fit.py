@@ -297,6 +297,7 @@ def Nelder1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p',
         while itera<maximal:
             if stopvar.is_set():
                 print("Process stopped by user.")
+                stopvar.clear()
                 break
             simplex=simplex[np.argsort(price)]
             price=price[np.argsort(price)]
@@ -559,6 +560,7 @@ def Nelder2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p',
         while itera<maximal:
             if stopvar.is_set():
                 print("Process stopped by user.")
+                stopvar.clear()
                 break    
             simplex=simplex[np.argsort(price)]
             price=price[np.argsort(price)]
@@ -901,6 +903,7 @@ def Genio1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p',see
         while itea<maximal:
             if stopvar.is_set():
                 print("Process stopped by user.")
+                stopvar.clear()
                 break
             orden=np.argsort(fitprice)
             population=population[orden]
@@ -1125,6 +1128,7 @@ def Genio2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p',see
         while itea<maximal:
             if stopvar.is_set():
                 print("Process stopped by user.")
+                stopvar.clear()
                 break
             orden=np.argsort(fitprice)
             population=population[orden]
@@ -1435,6 +1439,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
     try:
         for gama in range(0,maximal):
             if stopvar.is_set():
+                stopvar.clear()
                 break
             acepv=0
             tries=0
@@ -1763,6 +1768,7 @@ def Metro2(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
     try:
         for gama in range(0,maximal):
             if stopvar.is_set():
+                stopvar.clear()
                 break
             acepv=0
             tries=0
@@ -2113,6 +2119,7 @@ def LSquare1(Ham1,Expe,Vary,exper,maximal=1000,mode='p',Mr=70):
         cost=res.cost
         success,message,iterations,J=res.success,res.message,res.nfev,res.jac          
     except Stopall:
+        stopvar.clear()
         cost=float('nan')
         bestone=pointx
         success,message,iterations,J=False,"Stopped by user",None,None    
@@ -2252,6 +2259,7 @@ def LSquare2(Ham1,Expe,Vary,exper,maximal=1000,mode='p',Mr=70):
         cost=res.cost
         success,message,iterations,J=res.success,res.message,res.nfev,res.jac       
     except Stopall:
+        stopvar.clear()
         bestone=pointx
         cost=float('nan')
         success,message,iterations,J=False,"Stopped by user",None,None  
@@ -2388,6 +2396,7 @@ def Fitting(Hamer,Exper,Vara,datexp):
     frvar7=Button(description='Stop (Interrupt)',button_style='danger',icon='stop',layout=Layout(border='2px solid red'))
     tapts=HBox([frvar6,frvar7])
     outside=Output()
+    partoeval=None
     def Evalfunc(b):
         stopvar.clear()
         with outside:
