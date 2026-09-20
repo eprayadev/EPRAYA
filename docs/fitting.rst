@@ -1,6 +1,6 @@
 Fitting
 =======
-Here can be find the functions to load and fit experimental data. EPRAYA has 5 methods for EPR data fitting: Nelder-Mead, Genetic Algorithm, Metrópolis, Least Squares and the use of the ADAM Algorithm. 
+Here can be find the functions to load and fit experimental data. EPRAYA has 5 methods for EPR data fitting: Nelder-Mead, Genetic Algorithm, Metrópolis, Least Squares and the use of the ADAM Algorithm. The results of the fitting are print in the screen and are also contain in epr.restult.
 
 Data load functions
 -------------------
