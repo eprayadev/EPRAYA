@@ -1600,7 +1600,6 @@ def JCaltriangle(Bmin,dB,allres,allint,transi,hulk,weight,points):
         Array that contains the resulting spectrum sketch.
     
     '''
-def JCaltriangle(Bmin,dB,allres,allint,transi,hulk,weight,points):
     def Takeonetriangle(trindex,valid):
         i1,i2,i3=trindex[0],trindex[1],trindex[2]
         B1,B2,B3=allres[i1],allres[i2],allres[i3]
@@ -1630,7 +1629,7 @@ def JCaltriangle(Bmin,dB,allres,allint,transi,hulk,weight,points):
         n1,n2,n3=transi[i1],transi[i2],transi[i3]
         taketrian=(n1==n2)&(n2==n3)&(n1>0)&valid
         return jxn.where(taketrian,sketch1,jxn.zeros_like(sketch1))
-    csize=500
+    csize=200
     nreal=hulk.shape[0]
     pad=(csize-(nreal%csize))%csize
     hulkpad=jxn.pad(hulk,((0,pad),(0,0)),constant_values=0)
