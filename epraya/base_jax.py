@@ -3552,7 +3552,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70):
           fitres,Blis=BuildresJax(praval,Hat,Exp,expr,Vary,mode,method='Adam',iwas=iwas,jwas=jwas,kwas=kwas,weight=weight,hulk=hulk,
                                 success=False,message='Interrupted by user',iterations=step)
           Plotbriggs(Blis,expr,fitres.spc)
-          global result
+
           result['Ham']=fitres.Ham
           result['fit']=fitres
           print(f"\nchi2 = {fitres.chi2:.5e} | chi2 residual = {fitres.redchi2:.5e}")
@@ -3566,7 +3566,6 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70):
       fitres,Blis=BuildresJax(praval,Hat,Exp,expr,Vary,mode,method='Adam',iwas=iwas,jwas=jwas,kwas=kwas,weight=weight,hulk=hulk,
                                 success=False,message='Converged',iterations=step)
       Plotbriggs(Blis,expr,fitres.spc)
-      global result
       result['Ham']=fitres.Ham
       result['fit']=fitres
       print(f"\nchi2 = {fitres.chi2:.5e} | chi2 residual = {fitres.redchi2:.5e}")
@@ -3698,7 +3697,6 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70):
           fitres,Blis=BuildresJax2(praval,Hat,Exp,expr,Vary,mode,method='Adam',
                                 success=False,message='Interrupted by user',iterations=step)
           Plotbriggs(Blis,expr,fitres.spc)
-          global result
           result['Ham']=fitres.Ham
           result['fit']=fitres
           print(f"\nchi2 = {fitres.chi2:.5e} | chi2 residual = {fitres.redchi2:.5e}")
@@ -3712,7 +3710,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70):
       fitres,Blis=BuildresJax2(praval,Hat,Exp,expr,Vary,mode,method='Adam',
                                 success=False,message='Converged',iterations=step)
       Plotbriggs(Blis,expr,fitres.spc)
-      global result
+
       result['Ham']=fitres.Ham
       result['fit']=fitres
       print(f"\nchi2 = {fitres.chi2:.5e} | chi2 residual = {fitres.redchi2:.5e}")
