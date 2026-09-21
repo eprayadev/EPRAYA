@@ -42,7 +42,7 @@ import re
 from itertools import product as iterproduct
 from .base_powd import *
 from .base_ham import *
-from .base_fit import Fitresult,result
+from .base_fit import Fitresult,result,Selectvarian
 import matplotlib.cm as cm
 
 jx.config.update("jax_enable_x64", True)
@@ -3292,17 +3292,8 @@ def BuildresJax(pravals,Ham,Exp,expr,Vary,mode,method,iwas=None,jwas=None,kwas=N
     deno=max(n-p,1)
     chi2=float(jxn.sum(residuals**2))
     redchi2=chi2/deno
-    J=np.asarray(jx.jacfwd(ResidualsJax)(pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk))
-    try:
-        JTJ=J.T@J
-        cond=np.linalg.cond(JTJ)
-        if not np.isfinite(cond) or cond>1e10:
-            variance,perr=None,None
-        else:
-            variance=np.linalg.inv(JTJ)*redchi2
-            perr=np.sqrt(np.diag(variance))
-    except np.linalg.LinAlgError:
-        variance,perr=None,None
+    J=np.asarray(jx.jacfwd(ResidualsJax2)(pflat,unrav,Ham,Exp,expr,mode))
+    variance,perr,identificable=Selectvarian(J,redchi2)
     errdict=unrav(perr) if perr is not None else None
     
     return Fitresult(Ham=Hat,spc=espc,params=np.asarray(pflat),method=method,chi2=chi2,redchi2=redchi2,residuals=np.asarray(residuals),denochi=deno,variance=variance,paramerrors=perr,paramerrorsdict=errdict,success=success,message=message,iterations=iterations),Blis
@@ -3332,16 +3323,7 @@ def BuildresJax2(pravals,Ham,Exp,expr,Vary,mode,method,success=True,message='',i
     chi2=float(jxn.sum(residuals**2))
     redchi2=chi2/deno
     J=np.asarray(jx.jacfwd(ResidualsJax2)(pflat,unrav,Ham,Exp,expr,mode))
-    try:
-        JTJ=J.T@J
-        cond=np.linalg.cond(JTJ)
-        if not np.isfinite(cond) or cond>1e10:
-            variance,perr=None,None
-        else:
-            variance=np.linalg.inv(JTJ)*redchi2
-            perr=np.sqrt(np.diag(variance))
-    except np.linalg.LinAlgError:
-        variance,perr=None,None
+    variance,perr,identificable=Selectvarian(J,redchi2)
     errdict=unrav(perr) if perr is not None else None
     
     return Fitresult(Ham=Hat,spc=espc,params=np.asarray(pflat),method=method,chi2=chi2,redchi2=redchi2,residuals=np.asarray(residuals),denochi=deno,variance=variance,paramerrors=perr,paramerrorsdict=errdict,success=success,message=message,iterations=iterations),Blis
@@ -3780,5 +3762,8 @@ def Jformaterrors(ed):
         arr=np.atleast_1d(np.asarray(arr))
         names=labels.get(key,[f'{key}{i}' for i in range(len(arr))])
         for name,val in zip(names,arr):
-            parts.append(f"{name}: {val:.4g}")
+            if np.isnan(val):
+                parts.append(f"{name}: Undeterminated")
+            else:
+                parts.append(f"{name}: {val:.4g}")
     return " | ".join(parts)

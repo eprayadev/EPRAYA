@@ -124,7 +124,13 @@ def Formatvar(Ham,Var):
 def Formaterrors(perr,labels):
     if perr is None:
         return None
-    return " | ".join(f"{n}: {v:.4g}" for n,v in zip(labels,perr))
+    partes=[]
+    for n,v in zip(labels,perr):
+        if np.isnan(v):
+            partes.append(f"{n}: Undefined")
+        else:
+            partes.append(f"{n}: {v:.4g}")
+    return " | ".join(partes)
 
 def Buildres(bestpoint,Ham1,Exp,exper,Vary,functiona,Mr,method,J=None,success=True,message='',iterations=None):
     back=findtypeham(Ham1)
@@ -150,18 +156,8 @@ def Buildres(bestpoint,Ham1,Exp,exper,Vary,functiona,Mr,method,J=None,success=Tr
     deno=max(n-p,1)
     chi2=float(np.sum(residuals**2))
     redchi2=chi2/deno
-    if J is None:
-        J=Jacobian(resfu,bestpoint,args=(Ham1,Exp,exper,Vary,functiona,Mr))
-    try:
-        JTJ=J.T@J
-        cond=np.linalg.cond(JTJ)
-        if not np.isfinite(cond) or cond>1e10:
-            variance,perr=None,None
-        else:
-            variance=np.linalg.inv(JTJ)*redchi2
-            perr=np.sqrt(np.diag(variance))
-    except np.linalg.LinAlgError:
-        variance,perr=None,None
+    J=Jacobian(resfu,bestpoint,args=(Ham1,Exp,exper,Vary,functiona,Mr))
+    variance,perr=CovarianzaSelectiva(J,redchi2)
     
     return Fitresult(Ham=besHam,spc=spect,params=bestpoint,method=method,chi2=chi2,redchi2=redchi2,residuals=residuals,denochi=deno,variance=variance,paramerrors=perr,paramlabels=labels,success=success,message=message,iterations=iterations)
 
@@ -2537,3 +2533,34 @@ def Fitting(Hamer,Exper,Vara,datexp):
 
     centerone=HBox([VBox([frvar1,frvar2,frvar3]),VBox([frvar4,frvar5]),VBox([frvar8,frvar9])])
     display(VBox([centerone,tapts,outside]))
+    
+    
+def Selectvarian(J,redchi2,tolrel=1e-6,condmax=1e10):
+    '''
+    Discart values where the variance cannot be calculated because it derivative is null or is lost in the numerical approximation.
+    '''
+    p=J.shape[1]
+    colnorms=np.linalg.norm(J,axis=0)
+    refnorm=np.max(colnorms) if np.max(colnorms)>0 else 1.0
+    survive=[i for i in range(p) if colnorms[i]>tolrel*refnorm]
+    while len(survive)>0:
+        Jr=J[:,survive]
+        cond=np.linalg.cond(Jr.T@Jr)
+        if np.isfinite(cond) and cond<=condmax:
+            break
+        _,_,Vt=np.linalg.svd(Jr,full_matrices=False)
+        worst=np.argmax(np.abs(Vt[-1,:]))
+        survive.pop(worst)
+    #When all fails
+    if len(survive)==0:
+        return variance,perr,np.zeros(p,dtype=bool)
+        
+    Jr=J[:,survive]
+    varr=np.linalg.inv(Jr.T@Jr)*redchi2
+    for ar,er in enumerate(survive):
+        perr[er]=np.sqrt(varr[ar,ar])
+        for eb,ib in enumerate(survive):
+            variance[er,ib]=varr[ar,eb]
+    identification=np.zeros(p,dtype=bool)
+    identification[survive]=True
+    return variance,perr,identification
