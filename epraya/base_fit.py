@@ -67,6 +67,8 @@ class Fitresult:
     message : str=''
     variance : np.ndarray=None
     paramerrors : np.ndarray=None
+    paramerrorsdict:dict=None
+    paramlabels:list=None 
     success : bool=True
     iterations : int=None
     
@@ -89,6 +91,53 @@ def findtypeham(Ham2):
     fitfunctions={Hval: dict(unpack=UnpackHam,res=Residuals),Multham: dict(unpack=UnpackHam2,res=Residuals2)}
     return fitfunctions.get(type(Ham2))
 
+def Formatvar(Ham,Var):
+    if isinstance(Hamer,Hval):
+        labels=[]
+        if Var.g!=0.0:
+            labels+=['gx','gy','gz']
+        if Var.A!=0.0:
+            labels+=['Ax','Ay','Az']
+        if Var.Q!=0.0:
+            labels+=['Qx','Qy','Qz']
+        if Var.D!=0.0:
+            labels+=['D','E']
+        if np.any(Var.Hpp):
+            labels+=['Hppg','Hppl']
+        return labels
+    else:
+        labels=[]
+        for ar in range(len(Var.Mvary)):
+            vmi=Var.Mvary[ar]
+            if vmi.g!=0.0:
+                labels+=[f'gx_{ar+1}',f'gy_{ar+1}',f'gz_{ar+1}']
+            if vmi.A!=0.0:
+                labels+=[f'Ax_{ar+1}',f'Ay_{ar+1}',f'Az_{ar+1}']
+            if vmi.Q!=0.0:
+                labels+=[f'Qx_{ar+1}',f'Qy_{ar+1}',f'Qz_{ar+1}']
+            if vmi.D!=0.0:
+                labels+=[f'D_{ar+1}',f'E_{ar+1}']
+            if np.any(vmi.Hpp):
+                labels+=[f'Hppg_{ar+1}',f'Hppl_{ar+1}']
+        return labels
+    
+def Formaterrors(ed):
+    if ed is None:
+        return None
+    labels={'g':['gx','gy','gz'],'A':['Ax','Ay','Az'],'D':['D','E'],
+            'Q':['Qx','Qy','Qz'],'Hpp':['Hppg','Hppl'],
+            'g1':['gx_1','gy_1','gz_1'],'g2':['gx_2','gy_2','gz_2'],
+            'A1':['Ax_1','Ay_1','Az_1'],'A2':['Ax_2','Ay_2','Az_2'],
+            'D1':['D_1','E_1'],'D2':['D_2','E_2'],
+            'Q1':['Qx_1','Qy_1','Qz_1'],'Q2':['Qx_2','Qy_2','Qz_2']}
+    parts=[]
+    for key,arr in ed.items():
+        arr=np.atleast_1d(np.asarray(arr))
+        names=labels.get(key,[f'{key}{i}' for i in range(len(arr))])
+        for name,val in zip(names,arr):
+            parts.append(f"{name}: {val:.4g}")
+    return " | ".join(parts)
+
 def Buildres(bestpoint,Ham1,Exp,exper,Vary,functiona,Mr,method,J=None,success=True,message='',iterations=None):
     back=findtypeham(Ham1)
     if back is None:
@@ -96,6 +145,7 @@ def Buildres(bestpoint,Ham1,Exp,exper,Vary,functiona,Mr,method,J=None,success=Tr
     unpack=back['unpack']
     resfu=back['res']
     besHam=unpack(bestpoint,Ham1,Vary)
+    labels=Formatvar(Ham1,Vary)
     if functiona in ['Powder','Calpowder']:
         functiona='Powder'
     residuals=resfu(bestpoint,Ham1,Exp,exper,Vary,functiona,Mr)
@@ -125,7 +175,7 @@ def Buildres(bestpoint,Ham1,Exp,exper,Vary,functiona,Mr,method,J=None,success=Tr
     except np.linalg.LinAlgError:
         variance,perr=None,None
     
-    return Fitresult(Ham=besHam,spc=spect,params=bestpoint,method=method,chi2=chi2,redchi2=redchi2,residuals=residuals,denochi=deno,variance=variance,paramerrors=perr,success=success,message=message,iterations=iterations)
+    return Fitresult(Ham=besHam,spc=spect,params=bestpoint,method=method,chi2=chi2,redchi2=redchi2,residuals=residuals,denochi=deno,variance=variance,paramerrors=perr,paramlabels=labels,success=success,message=message,iterations=iterations)
 
     
 def CostfNM(exper,intens,metric='rmse'):
@@ -2323,7 +2373,7 @@ def LSquare(Ham1,Expe,Vary,exper,maximal=1000,mode='p',Mr=70):
 
 def Fitting(Hamer,Exper,Vara,datexp):
     '''
-    Wrap function for the data fitting process. Creates a interactive display where the user can select the fitting method, data and sample type, max. number of iterations and reference error.
+    Wrap function for the data fitting process. Creates a interactive display where the user can select the fitting method, data and sample type, max. number of iterations and reference error. The function print the fitting results and spectrum, but they can also be access with epraya.Result.
     
     Parameters
     ----------
@@ -2445,7 +2495,7 @@ def Fitting(Hamer,Exper,Vara,datexp):
                     result['fit']=fitres
                     print(f"\nchi2 = {fitres.chi2:.5e} | chi2 residual = {fitres.redchi2:.5e}")
                     if fitres.paramerrors is not None:
-                        print(f"Parameter error (1 sigma): {fitres.paramerrors}")
+                        print(f"Parameters error (1 sigma): {Formaterrors(fitres.paramerrors,fitres.paramlabels)}")
 
                     resultexper=fitres.spc
                     #To show the graph

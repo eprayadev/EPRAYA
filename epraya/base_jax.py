@@ -3070,7 +3070,7 @@ def Showparam(param,Vary):
         gxf1=Vary.g[0]+(Vary.g[1]-Vary.g[0])*jnn.sigmoid(param['gx']/T)
         gyf1=Vary.g[2]+(Vary.g[3]-Vary.g[2])*jnn.sigmoid(param['gy']/T)
         gzf1=Vary.g[4]+(Vary.g[5]-Vary.g[4])*jnn.sigmoid(param['gz']/T)
-        print(f"| gx: {gxf1:.4f} | gy1: {gyf1:.4f} | gz: {gzf1:.4f} |")
+        print(f"| gx: {gxf1:.4f} | gy: {gyf1:.4f} | gz: {gzf1:.4f} |")
     if 'Ax' in param.keys():
         Axf1=Vary.A[0]+(Vary.A[1]-Vary.A[0])*jnn.sigmoid(param['Ax']/T)
         Ayf1=Vary.A[2]+(Vary.A[3]-Vary.A[2])*jnn.sigmoid(param['Ay']/T)
@@ -3551,26 +3551,26 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70):
           Showparam(param,Vary)
           fitres,Blis=BuildresJax(praval,Hat,Exp,expr,Vary,mode,method='Adam',iwas=iwas,jwas=jwas,kwas=kwas,weight=weight,hulk=hulk,
                                 success=False,message='Interrupted by user',iterations=step)
-          Plotbriggs(Blis,expr,fitres.spc)
-
           result['Ham']=fitres.Ham
           result['fit']=fitres
           print(f"\nchi2 = {fitres.chi2:.5e} | chi2 residual = {fitres.redchi2:.5e}")
           if fitres.paramerrors is not None:
                         print(f"Parameter error (1 sigma): {fitres.paramerrors}")
+          Plotbriggs(Blis,expr,fitres.spc)
           return fitres.Ham,fitres
 
       print(f"Process ended at step {step+1:3d}, with error: {error:.5e} |")
       Hat,praval=Fromsigtophy(param,Ham,Vary)
       Showparam(param,Vary)
       fitres,Blis=BuildresJax(praval,Hat,Exp,expr,Vary,mode,method='Adam',iwas=iwas,jwas=jwas,kwas=kwas,weight=weight,hulk=hulk,
-                                success=False,message='Converged',iterations=step)
-      Plotbriggs(Blis,expr,fitres.spc)
+                                success=True,message='Converged',iterations=step)
+      
       result['Ham']=fitres.Ham
       result['fit']=fitres
       print(f"\nchi2 = {fitres.chi2:.5e} | chi2 residual = {fitres.redchi2:.5e}")
       if fitres.paramerrors is not None:
         print(f"Parameter error (1 sigma): {fitres.paramerrors}")
+      Plotbriggs(Blis,expr,fitres.spc)
       return fitres.Ham,fitres
     else:
       Ham=deepcopy(Hamer)
@@ -3696,26 +3696,27 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70):
           Showparam2(param,Vary)
           fitres,Blis=BuildresJax2(praval,Hat,Exp,expr,Vary,mode,method='Adam',
                                 success=False,message='Interrupted by user',iterations=step)
-          Plotbriggs(Blis,expr,fitres.spc)
           result['Ham']=fitres.Ham
           result['fit']=fitres
           print(f"\nchi2 = {fitres.chi2:.5e} | chi2 residual = {fitres.redchi2:.5e}")
           if fitres.paramerrors is not None:
                         print(f"Parameter error (1 sigma): {fitres.paramerrors}")
+          Plotbriggs(Blis,expr,fitres.spc)
           return fitres.Ham,fitres
       
       print(f"Process ended at step {step+1:3d}, with error: {error:.5e}")
       Hat,praval=Fromsigtophy2(param,Ham,Vary)
       Showparam2(param,Vary)
       fitres,Blis=BuildresJax2(praval,Hat,Exp,expr,Vary,mode,method='Adam',
-                                success=False,message='Converged',iterations=step)
-      Plotbriggs(Blis,expr,fitres.spc)
+                                success=True,message='Converged',iterations=step)
+      
 
       result['Ham']=fitres.Ham
       result['fit']=fitres
       print(f"\nchi2 = {fitres.chi2:.5e} | chi2 residual = {fitres.redchi2:.5e}")
       if fitres.paramerrors is not None:
         print(f"Parameter error (1 sigma): {fitres.paramerrors}")
+      Plotbriggs(Blis,expr,fitres.spc)
       return fitres.Ham,fitres
           
 
