@@ -92,7 +92,7 @@ def findtypeham(Ham2):
     return fitfunctions.get(type(Ham2))
 
 def Formatvar(Ham,Var):
-    if isinstance(Hamer,Hval):
+    if isinstance(Ham,Hval):
         labels=[]
         if Var.g!=0.0:
             labels+=['gx','gy','gz']
