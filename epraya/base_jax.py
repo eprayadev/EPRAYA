@@ -3303,7 +3303,9 @@ def BuildresJax(pravals,Ham,Exp,expr,Vary,mode,method,iwas=None,jwas=None,kwas=N
             perr=np.sqrt(np.diag(variance))
     except np.linalg.LinAlgError:
         variance,perr=None,None
-    return Fitresult(Ham=Hat,spc=espc,params=np.asarray(pflat),method=method,chi2=chi2,redchi2=redchi2,residuals=np.asarray(residuals),denochi=deno,variance=variance,paramerrors=perr,success=success,message=message,iterations=iterations),Blis
+    errdict=unrav(perr) if perr is not None else None
+    
+    return Fitresult(Ham=Hat,spc=espc,params=np.asarray(pflat),method=method,chi2=chi2,redchi2=redchi2,residuals=np.asarray(residuals),denochi=deno,variance=variance,paramerrors=perr,paramerrorsdict=errdict,success=success,message=message,iterations=iterations),Blis
 
 def ResidualsJax2(pflat,unrav,Ham,Exp,expr,mode):
     pravals=unrav(pflat)
@@ -3340,7 +3342,9 @@ def BuildresJax2(pravals,Ham,Exp,expr,Vary,mode,method,success=True,message='',i
             perr=np.sqrt(np.diag(variance))
     except np.linalg.LinAlgError:
         variance,perr=None,None
-    return Fitresult(Ham=Hat,spc=espc,params=np.asarray(pflat),method=method,chi2=chi2,redchi2=redchi2,residuals=np.asarray(residuals),denochi=deno,variance=variance,paramerrors=perr,success=success,message=message,iterations=iterations),Blis
+    errdict=unrav(perr) if perr is not None else None
+    
+    return Fitresult(Ham=Hat,spc=espc,params=np.asarray(pflat),method=method,chi2=chi2,redchi2=redchi2,residuals=np.asarray(residuals),denochi=deno,variance=variance,paramerrors=perr,paramerrorsdict=errdict,success=success,message=message,iterations=iterations),Blis
 
 
 
@@ -3700,7 +3704,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70):
           result['fit']=fitres
           print(f"\nchi2 = {fitres.chi2:.5e} | chi2 residual = {fitres.redchi2:.5e}")
           if fitres.paramerrors is not None:
-                        print(f"Parameter error (1 sigma): {fitres.paramerrors}")
+            print(f"Parameters error (1 sigma): {Jformaterrors(fitres.paramerrors,fitres.paramlabels)}")
           Plotbriggs(Blis,expr,fitres.spc)
           return fitres.Ham,fitres
       
@@ -3715,7 +3719,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70):
       result['fit']=fitres
       print(f"\nchi2 = {fitres.chi2:.5e} | chi2 residual = {fitres.redchi2:.5e}")
       if fitres.paramerrors is not None:
-        print(f"Parameter error (1 sigma): {fitres.paramerrors}")
+        print(f"Parameters error (1 sigma): {Jformaterrors(fitres.paramerrors,fitres.paramlabels)}")
       Plotbriggs(Blis,expr,fitres.spc)
       return fitres.Ham,fitres
           
@@ -3761,4 +3765,20 @@ def containeigh_jvp(eps,primals,tangents):
     dV=v@(F*M)
     return (w,v),(dw,dV)
     
-
+    
+def Jformaterrors(ed):
+    if ed is None:
+        return None
+    labels={'g':['gx','gy','gz'],'A':['Ax','Ay','Az'],'D':['D','E'],
+            'Q':['Qx','Qy','Qz'],'Hpp':['Hppg','Hppl'],
+            'g1':['gx_1','gy_1','gz_1'],'g2':['gx_2','gy_2','gz_2'],
+            'A1':['Ax_1','Ay_1','Az_1'],'A2':['Ax_2','Ay_2','Az_2'],
+            'D1':['D_1','E_1'],'D2':['D_2','E_2'],
+            'Q1':['Qx_1','Qy_1','Qz_1'],'Q2':['Qx_2','Qy_2','Qz_2']}
+    parts=[]
+    for key,arr in ed.items():
+        arr=np.atleast_1d(np.asarray(arr))
+        names=labels.get(key,[f'{key}{i}' for i in range(len(arr))])
+        for name,val in zip(names,arr):
+            parts.append(f"{name}: {val:.4g}")
+    return " | ".join(parts)
