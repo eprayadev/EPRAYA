@@ -3704,7 +3704,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70):
           result['fit']=fitres
           print(f"\nchi2 = {fitres.chi2:.5e} | chi2 residual = {fitres.redchi2:.5e}")
           if fitres.paramerrors is not None:
-            print(f"Parameters error (1 sigma): {Jformaterrors(fitres.paramerrors,fitres.paramlabels)}")
+            print(f"Parameters error (1 sigma): {Jformaterrors(fitres.paramerrors)}")
           Plotbriggs(Blis,expr,fitres.spc)
           return fitres.Ham,fitres
       
@@ -3719,7 +3719,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70):
       result['fit']=fitres
       print(f"\nchi2 = {fitres.chi2:.5e} | chi2 residual = {fitres.redchi2:.5e}")
       if fitres.paramerrors is not None:
-        print(f"Parameters error (1 sigma): {Jformaterrors(fitres.paramerrors,fitres.paramlabels)}")
+        print(f"Parameters error (1 sigma): {Jformaterrors(fitres.paramerrors)}")
       Plotbriggs(Blis,expr,fitres.spc)
       return fitres.Ham,fitres
           

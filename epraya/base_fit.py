@@ -121,22 +121,10 @@ def Formatvar(Ham,Var):
                 labels+=[f'Hppg_{ar+1}',f'Hppl_{ar+1}']
         return labels
     
-def Formaterrors(ed):
-    if ed is None:
+def Formaterrors(perr,labels):
+    if perr is None:
         return None
-    labels={'g':['gx','gy','gz'],'A':['Ax','Ay','Az'],'D':['D','E'],
-            'Q':['Qx','Qy','Qz'],'Hpp':['Hppg','Hppl'],
-            'g1':['gx_1','gy_1','gz_1'],'g2':['gx_2','gy_2','gz_2'],
-            'A1':['Ax_1','Ay_1','Az_1'],'A2':['Ax_2','Ay_2','Az_2'],
-            'D1':['D_1','E_1'],'D2':['D_2','E_2'],
-            'Q1':['Qx_1','Qy_1','Qz_1'],'Q2':['Qx_2','Qy_2','Qz_2']}
-    parts=[]
-    for key,arr in ed.items():
-        arr=np.atleast_1d(np.asarray(arr))
-        names=labels.get(key,[f'{key}{i}' for i in range(len(arr))])
-        for name,val in zip(names,arr):
-            parts.append(f"{name}: {val:.4g}")
-    return " | ".join(parts)
+    return " | ".join(f"{n}: {v:.4g}" for n,v in zip(labels,perr))
 
 def Buildres(bestpoint,Ham1,Exp,exper,Vary,functiona,Mr,method,J=None,success=True,message='',iterations=None):
     back=findtypeham(Ham1)
