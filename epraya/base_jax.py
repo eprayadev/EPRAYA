@@ -3292,13 +3292,13 @@ def BuildresJax(pravals,Ham,Exp,expr,Vary,mode,method,iwas=None,jwas=None,kwas=N
     deno=max(n-p,1)
     chi2=float(jxn.sum(residuals**2))
     redchi2=chi2/deno
-    J=np.asarray(jx.jacfwd(ResidualsJax)(pflat,unrav,Ham,Exp,expr,mode))
+    J=np.asarray(jx.jacfwd(ResidualsJax)(pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk))
     variance,perr,identificable=Selectvarian(J,redchi2)
     errdict=unrav(perr) if perr is not None else None
     
     return Fitresult(Ham=Hat,spc=espc,params=np.asarray(pflat),method=method,chi2=chi2,redchi2=redchi2,residuals=np.asarray(residuals),denochi=deno,variance=variance,paramerrors=perr,paramerrorsdict=errdict,success=success,message=message,iterations=iterations),Blis
 
-def ResidualsJax2(pflat,unrav,Ham,Exp,expr,mode):
+def Residualsjax2(pflat,unrav,Ham,Exp,expr,mode):
     pravals=unrav(pflat)
     Hat=Ham.replace(g1=pravals.get('g1',Ham.g1),g2=pravals.get('g2',Ham.g2),A1=pravals.get('A1',Ham.A1),A2=pravals.get('A2',Ham.A2),D1=pravals.get('D1',Ham.D1),D2=pravals.get('D2',Ham.D2),Q1=pravals.get('Q1',Ham.Q1),Q2=pravals.get('Q2',Ham.Q2),Hpp=pravals.get('Hpp',Ham.Hpp))
     if mode=='p':
@@ -3317,12 +3317,12 @@ def BuildresJax2(pravals,Ham,Exp,expr,Vary,mode,method,success=True,message='',i
         Blis,espc=JMulpol(Hat,Exp,graph=False)
     else:
         Blis,espc=JMusic(Hat,Exp,graph=False)
-    residuals=ResidualsJax2(pflat,unrav,Ham,Exp,expr,mode)
+    residuals=Residualsjax2(pflat,unrav,Ham,Exp,expr,mode)
     n,p=len(residuals),len(pflat)
     deno=max(n-p,1)
     chi2=float(jxn.sum(residuals**2))
     redchi2=chi2/deno
-    J=np.asarray(jx.jacfwd(ResidualsJax2)(pflat,unrav,Ham,Exp,expr,mode))
+    J=np.asarray(jx.jacfwd(Residualsjax2)(pflat,unrav,Ham,Exp,expr,mode))
     variance,perr,identificable=Selectvarian(J,redchi2)
     errdict=unrav(perr) if perr is not None else None
     
