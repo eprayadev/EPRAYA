@@ -2540,6 +2540,8 @@ def Selectvarian(J,redchi2,tolrel=1e-6,condmax=1e10):
     Discart values where the variance cannot be calculated because it derivative is null or is lost in the numerical approximation.
     '''
     p=J.shape[1]
+    perr=np.full(p,np.nan)
+    variance=np.full((p,p),np.nan)
     colnorms=np.linalg.norm(J,axis=0)
     refnorm=np.max(colnorms) if np.max(colnorms)>0 else 1.0
     survive=[i for i in range(p) if colnorms[i]>tolrel*refnorm]
