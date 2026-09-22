@@ -3757,13 +3757,13 @@ def Jformaterrors(ed):
             'A1':['Ax_1','Ay_1','Az_1'],'A2':['Ax_2','Ay_2','Az_2'],
             'D1':['D_1','E_1'],'D2':['D_2','E_2'],
             'Q1':['Qx_1','Qy_1','Qz_1'],'Q2':['Qx_2','Qy_2','Qz_2']}
-    parts=[]
+    paramer=[]
     for key,arr in ed.items():
         arr=np.atleast_1d(np.asarray(arr))
         names=labels.get(key,[f'{key}{i}' for i in range(len(arr))])
         for name,val in zip(names,arr):
             if np.isnan(val):
-                parts.append(f"{name}: Undeterminated")
+                paramer.append(f"{name}: Undeterminated")
             else:
-                parts.append(f"{name}: {val:.4g}")
-    return " | ".join(parts)
+                paramer.append(f"{name}: {val:.4g}")
+    return " | ".join(paramer)
