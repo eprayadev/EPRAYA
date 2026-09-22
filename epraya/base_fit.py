@@ -124,13 +124,13 @@ def Formatvar(Ham,Var):
 def Formaterrors(perr,labels):
     if perr is None:
         return None
-    partes=[]
+    parame=[]
     for n,v in zip(labels,perr):
         if np.isnan(v):
-            partes.append(f"{n}: Undefined")
+            parame.append(f"{n}: Undefined")
         else:
-            partes.append(f"{n}: {v:.4g}")
-    return " | ".join(partes)
+            parame.append(f"{n}: {v:.4g}")
+    return " | ".join(parame)
 
 def Buildres(bestpoint,Ham1,Exp,exper,Vary,functiona,Mr,method,J=None,success=True,message='',iterations=None):
     back=findtypeham(Ham1)
