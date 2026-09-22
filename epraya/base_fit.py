@@ -157,8 +157,7 @@ def Buildres(bestpoint,Ham1,Exp,exper,Vary,functiona,Mr,method,J=None,success=Tr
     chi2=float(np.sum(residuals**2))
     redchi2=chi2/deno
     J=Jacobian(resfu,bestpoint,args=(Ham1,Exp,exper,Vary,functiona,Mr))
-    variance,perr=CovarianzaSelectiva(J,redchi2)
-    
+    variance,perr=Selectvarian(J,redchi2)
     return Fitresult(Ham=besHam,spc=spect,params=bestpoint,method=method,chi2=chi2,redchi2=redchi2,residuals=residuals,denochi=deno,variance=variance,paramerrors=perr,paramlabels=labels,success=success,message=message,iterations=iterations)
 
     
