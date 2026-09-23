@@ -1415,7 +1415,7 @@ def JBoltfactor(Eghz,di,dj,Temp):
     popuj=boltz[dj]/Z
     return jxn.abs(popui-popuj)
 
-@partial(jx.jit,static_argnames=['dim'])
+@partial(jx.jit,static_argnames=['dim','hifi'])
 def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2,hifi=False):
     '''
     Determinates the resonant fields and intensities of the spectrum using the expression for the first order perturbation limit. The intensity is calculated as the product of the transition rate (probability of transition), the Boltzmann factor (Boltzmann distribution) and a frecuency to field conversion factor. 
