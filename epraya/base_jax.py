@@ -1532,6 +1532,7 @@ def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2,hifi=Fal
     ntrans=jxn.sum(cross).astype(jxn.float64)
     #Scores for transition possibility
     Ktra=None if hifi else 500
+    scores=jxn.where(cross,1.0+fint,-1.0)
     if hifi:
         ffres,ffint=fres,fint
     else:
