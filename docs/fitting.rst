@@ -51,13 +51,29 @@ Fitting functions
 
 This methods can be use directly or with the wrap function *Fitting*, however, the *Briggs* function for the ADAM method requieres the use of the *JAX* framework of EPRAYA, described in :doc:`jax_impl`.  
 
+The variance calculated for the fitted parameters is statistical and avoids the calculation for parameters that have a high jacobian correlation number. 
+
+.. note:: 
+   
+   The resolution of the grid for powder samples (M=70) converges for the majority of EPR solid cw spectrum, making it related discretation error (DE) negligible for the calculation of the variance. However, it is recommended to change M to a higher resolution (M=90 or M=120) in the following cases:
+   
+   
+   * High anisotropies or low Hpp: Where the gradients of tensores g and A require higher resolutions.
+   * High frequency spectrums.
+   * Verification of convergence: To prove the fit validity.
+   
+
+
 .. currentmodule:: base_fit
 
 .. toctree::
    :caption: Fitting functions
    :hidden:
    
+   
    Fitting
+   Fitresult
+   Selectvarian
    Nelder
    Nelder1
    Nelder2
@@ -80,6 +96,10 @@ This methods can be use directly or with the wrap function *Fitting*, however, t
      - Description
    * - :doc:`epraya.Fitting <Fitting>`
      - Wrap function for the data fitting process.  
+   * - :doc:`epraya.Fitresult <Fitresult>`
+     - Container for the results of the Fitting function.
+   * - :doc:`epraya.Selectvarian <Selectvarian>`
+     - Calculates the variance of the fit using the Jacobian matrix of the residuals.  
    * - :doc:`epraya.Nelder <Nelder>`
      - Implementation of the Nelder Mead algorithm for fitting data.   
    * - :doc:`epraya.Nelder1 <Nelder1>`
