@@ -1290,7 +1290,7 @@ def JPadaptarray(espac,h1,hx,hy,hz,nx,ny,nz,hifi=False):
     h2=nx*hx+ny*hy+nz*hz
     h3=h1[None,:,:]+h2[None,:,:]*espac[:,None,None]
 
-    Elist,Vlist=containeigh1(h3,hifi=hifi)
+    Elist,Vlist=containeigh(h3,hifi=hifi)
     return Elist,Vlist,h2
     
 # Makes the approximation by the assigment problem solution
@@ -2175,7 +2175,7 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
     Blist=jxn.linspace(frange0,Expe.Frange[1],Expe.Points)
     def Jdiagop(B):
         h5=h1+B*hze
-        Elist,Vlist=containeigh1(h5,hifi)
+        Elist,Vlist=containeigh(h5,hifi)
         return Elist,Vlist
     Elist,Vlist=jx.vmap(Jdiagop)(Blist)
     spc=jxn.zeros(Expe.Points)
@@ -3015,7 +3015,7 @@ def Jcalmusic(maham,Expe,Nucl1='None',Nucl2='None',hifi=False):
         Blist=jxn.linspace(frange0,Exp1.Frange[1],Exp1.Points)
         def Jdiagop(B):
             h5=h1+B*hze
-            Elist,Vlist=containeigh1(h5,hifi)
+            Elist,Vlist=containeigh(h5,hifi)
             return Elist,Vlist
         Elist,Vlist=jx.vmap(Jdiagop)(Blist)
         spc=jxn.zeros(Exp1.Points)
@@ -3730,7 +3730,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70):
           
 
 @partial(jx.custom_jvp,nondiff_argnums=(1,2))
-def containeigh(A,epse=50,hifi=False):
+def containeigh(A,hifi=False,epse=50):
     '''
     Wrap function for the eignevalues determination using JAX and making sure the value doesn't go to infinity by the energy degeneration.
     
@@ -3757,7 +3757,7 @@ def containeigh(A,epse=50,hifi=False):
     return w,v
 
 @containeigh.defjvp
-def containeigh_jvp(epse,hifi,primals,tangents):
+def containeigh_jvp(hifi,epse,primals,tangents):
     (A,),(dA,)=primals,tangents
     w,v=containeigh(A,epse,hifi)
     scale=jxn.linalg.norm(A)
@@ -3775,9 +3775,7 @@ def containeigh_jvp(epse,hifi,primals,tangents):
     F=denom/(denom**2+eps**2)
     dV=v@(F*M)
     return (w,v),(dw,dV)
-    
-def containeigh1(A,epse=50,hifi=False):
-    return containeigh(A,epse,hifi)    
+     
     
 def Jformaterrors(ed):
     if ed is None:
