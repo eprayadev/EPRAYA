@@ -1251,7 +1251,7 @@ def JVoigtp(field,Int,rfield,Hpp,eta):
     return espec
 
 #Find energy values in function of field
-@jx.jit
+@partial(jx.jit, static_argnames=['hifi'])
 def JPadaptarray(espac,h1,hx,hy,hz,nx,ny,nz,hifi=False):
     '''
     Constructs the Zeeman hamiltonian, adds it to the complete one and finds the energy values and eigenvectors.
@@ -3764,7 +3764,7 @@ def containeigh_jvp(hifi,epse,primals,tangents):
     scale=jxn.linalg.norm(A)
     #Scale of the perturbation, lower than the hamiltonian 
     eps1=epse*scale*jxn.finfo(A.dtype).eps
-    eps=eps1*1e-2 if hifi else eps1*1.0
+    eps=jxn.where(hifi,eps1*1e-2,eps1*1.0)
     #Hermitic condition
     dAh=0.5*(dA+jxn.swapaxes(dA,-1,-2).conj())
     vH=jxn.swapaxes(v,-1,-2).conj()
