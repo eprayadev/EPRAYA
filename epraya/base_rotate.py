@@ -737,6 +737,6 @@ def Spectre(Hamer,Expe,phi=0,orient='Z'):
             axs[2].vlines(x=fv,ymin=eni,ymax=enj,color='green',linewidth=2.5,zorder=15)
         else:
             axs[2].vlines(fv,ymin=eni,ymax=enj,color='grey')
-    fig.subplots_adjust(hspace=0.02)
+    fig.subplots_adjust(hspace=0.04)
     plt.show()
     return espac1,espectotal
