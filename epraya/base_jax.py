@@ -1252,7 +1252,7 @@ def JVoigtp(field,Int,rfield,Hpp,eta):
 
 #Find energy values in function of field
 @jx.jit
-def JPadaptarray(espac,h1,hx,hy,hz,nx,ny,nz):
+def JPadaptarray(espac,h1,hx,hy,hz,nx,ny,nz,hifi=False):
     '''
     Constructs the Zeeman hamiltonian, adds it to the complete one and finds the energy values and eigenvectors.
     
@@ -1275,7 +1275,8 @@ def JPadaptarray(espac,h1,hx,hy,hz,nx,ny,nz):
         Weight coefficient for the interaction in the y direction.
     nz : float
         Weight coefficient for the interaction in the z direction.
-        
+    hifi : bool
+        Bool to calculate the Jacobian matrix.
     Returns
     -------
 
@@ -1289,7 +1290,7 @@ def JPadaptarray(espac,h1,hx,hy,hz,nx,ny,nz):
     h2=nx*hx+ny*hy+nz*hz
     h3=h1[None,:,:]+h2[None,:,:]*espac[:,None,None]
 
-    Elist,Vlist=containeigh(h3)
+    Elist,Vlist=containeigh(h3,hifi=hifi)
     return Elist,Vlist,h2
     
 # Makes the approximation by the assigment problem solution
@@ -1415,7 +1416,7 @@ def JBoltfactor(Eghz,di,dj,Temp):
     return np.abs(popui-popuj)
 
 @partial(jx.jit,static_argnames=['dim'])
-def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2):
+def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2,hifi=False):
     '''
     Determinates the resonant fields and intensities of the spectrum using the expression for the first order perturbation limit. The intensity is calculated as the product of the transition rate (probability of transition), the Boltzmann factor (Boltzmann distribution) and a frecuency to field conversion factor. 
     
@@ -1530,15 +1531,17 @@ def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2):
     cross=cross.flatten()
     ntrans=jxn.sum(cross).astype(jxn.float64)
     #Scores for transition possibility
-    Ktra=500
-    scores=jxn.where(cross,1.0+fint,-1.0)
-    topones,toponesind=jx.lax.top_k(scores,Ktra)
-    toponesind=jx.lax.stop_gradient(toponesind)
-    ffres=fres[toponesind]
-    ffint=fint[toponesind]
-    maski=topones>0.0
-    ffres=jxn.where(maski,ffres,0.0)
-    ffint=jxn.where(maski,ffint,0.0)
+    Ktra=None if hifi else 500
+    if hifi:
+        ffres,ffint=fres,fint
+    else:
+        topones,toponesind=jx.lax.top_k(scores,Ktra)
+        toponesind=jx.lax.stop_gradient(toponesind)
+        ffres=fres[toponesind]
+        ffint=fint[toponesind]
+        maski=topones>0.0
+        ffres=jxn.where(maski,ffres,0.0)
+        ffint=jxn.where(maski,ffint,0.0)
     return ffres,ffint,ntrans
 
 def Meshtriangle():
@@ -1720,7 +1723,7 @@ def JPowder(Hamer,Expe,Nucl='None',M=70,graph=True):
         plt.show(block=False)
     return Blist,epc
 
-def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None'):
+def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None',hifi=False):
     '''
     Function for the simulation of the EPR spectrum for powder samples using the JAX functions. Instead of making the calculations with fors cycles, uses the vmap function for the calculations, dividing the points of calculations in blocks, that pass using the Oneori (One orientation) and Processvmap functions.
     
@@ -1749,7 +1752,8 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None'):
         Smaller convex poligon tha contains all the points require for the simulation.
     Nucl : str
         Isotope of the sample. Can be the quantum number and the element or only the element ('55Mn' or 'Mn') 
-        
+    hifi : bool
+        Bool value for the calculation of the Jacobian matrix.
     Returns
     -------
     Blist2 : jax.np.array
@@ -1833,8 +1837,8 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None'):
     
     @jx.jit
     def Oneori(nx,ny,nz):
-        Elist,Vlist,h2=JPadaptarray(Blist1,h1,hzex,hzey,hzez,nx,ny,nz)
-        resfield,intensy,ntrans=JNresina(Blist1,Elist,Vlist,dim,Exp.Freq,isx,isy,isz,nx,ny,nz,Exp.Temperature,Ham.Hpp,h2)
+        Elist,Vlist,h2=JPadaptarray(Blist1,h1,hzex,hzey,hzez,nx,ny,nz,hifi)
+        resfield,intensy,ntrans=JNresina(Blist1,Elist,Vlist,dim,Exp.Freq,isx,isy,isz,nx,ny,nz,Exp.Temperature,Ham.Hpp,h2,hifi=hifi)
         return resfield,intensy,ntrans
     voneori=jx.vmap(Oneori,in_axes=(0,0,0))
     csize=50 #Divides the orientations blocks so the RAM doesn't explote
@@ -1892,8 +1896,8 @@ def oneori(nx,ny,nz):
         
     
         '''
-        Elist,Vlist,h2=JPadaptarray(Blist1,h1,hzex,hzey,hzez,nx,ny,nz)
-        resfield,intensy,ntrans=JNresina(Blist1,Elist,Vlist,dim,Exp.Freq,isx,isy,isz,nx,ny,nz,Exp.Temperature,Ham.Hpp,h2)
+        Elist,Vlist,h2=JPadaptarray(Blist1,h1,hzex,hzey,hzez,nx,ny,nz,hifi)
+        resfield,intensy,ntrans=JNresina(Blist1,Elist,Vlist,dim,Exp.Freq,isx,isy,isz,nx,ny,nz,Exp.Temperature,Ham.Hpp,h2,hifi=hifi)
         return resfield,intensy,ntrans   
         
 def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None'):
@@ -2067,7 +2071,7 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None'):
 
     return Blist,epc
 
-def Calresonant(Hamer,Expe,Nucl='None',diagram=False):
+def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
     '''
     Function for the calculation of the EPR cw spectrum of monocristal systems. Uses a formulation similar to the *Eresonant* function, to calculate the resonant fields and intensities, but calculates de absorption curve (first integral) of the spectrum that is numerically  derived, producing the final spectrum.
     
@@ -2083,7 +2087,8 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False):
         Isotope of the sample. Can be the quantum number and the element or only the element ('55Mn' or 'Mn') 
     diagram : Bool
         To pass the Energy data.
-        
+    hifi : Bool
+        Bool to calculate the Jacobian matrix.
     Returns
     -------
     
@@ -2170,7 +2175,7 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False):
     Blist=jxn.linspace(frange0,Expe.Frange[1],Expe.Points)
     def Jdiagop(B):
         h5=h1+B*hze
-        Elist,Vlist=containeigh(h5)
+        Elist,Vlist=containeigh(h5,hifi)
         return Elist,Vlist
     Elist,Vlist=jx.vmap(Jdiagop)(Blist)
     spc=jxn.zeros(Expe.Points)
@@ -2486,7 +2491,7 @@ def Jmstart():
     Ham,Exp,Vary=Mjhval(),JEmco(),JEmva()
     return Ham,Exp,Vary
 
-def JMulpol(maham,Expe,Nucl1='None',Nucl2='None',M=70,graph=True):
+def JMulpol(maham,Expe,Nucl1='None',Nucl2='None',M=70,graph=True,hifi=False):
     '''
     Wrap function for the simulation of the EPR spectrum for powder samples of two systems. If there is an interaction between the systems (electron-eletron or hiperfine), solves the total hamiltonian. Otherwise, sums the contributions to the total spectrum.
     
@@ -2503,7 +2508,8 @@ def JMulpol(maham,Expe,Nucl1='None',Nucl2='None',M=70,graph=True):
         Isotope of the second system. Can be the quantum number and the element or only the element ('55Mn' or 'Mn') 
     graph : Bool
         PLots the spectrum of the multisystem.
-    
+    hifi : Bool
+        Bool value to calculate the Jacobian matrix.
     Returns
     -------
     
@@ -2540,7 +2546,7 @@ def JMulpol(maham,Expe,Nucl1='None',Nucl2='None',M=70,graph=True):
        :alt: Plot of the JMulpol function
        :align: center
     '''
-    Blist,epc=Jcalmulta(maham,Expe,Nucl1,Nucl2,M)
+    Blist,epc=Jcalmulta(maham,Expe,Nucl1,Nucl2,M,hifi)
     if graph:
         plt.figure(figsize=(10,6))
         plt.plot(Blist,epc,color='navy',label='Spectrum')
@@ -2555,7 +2561,7 @@ def JMulpol(maham,Expe,Nucl1='None',Nucl2='None',M=70,graph=True):
     return Blist,epc
     
 
-def Jcalmulta(maham,Expe,Nucl1='None',Nucl2='None',M=70):
+def Jcalmulta(maham,Expe,Nucl1='None',Nucl2='None',M=70,hifi=False):
     '''
     Determinates the spectrum for a two paramagnetic centers system. Follows the same logic from the function Jpowder, but adapted to the two centers system.
     
@@ -2572,7 +2578,8 @@ def Jcalmulta(maham,Expe,Nucl1='None',Nucl2='None',M=70):
         Isotope of the second system. Can be the quantum number and the element or only the element ('55Mn' or 'Mn') 
     graph : Bool
         PLots the spectrum of the multisystem.
-    
+    hifi : Bool
+        Bool value to calculate the Jacobian matrix.
     Returns
     -------
     
@@ -2729,8 +2736,8 @@ def Jcalmulta(maham,Expe,Nucl1='None',Nucl2='None',M=70):
         
         @jx.jit
         def Oneori(nx,ny,nz):
-            Elist,Vlist,h2=JPadaptarray(Blist1,h1,hzex,hzey,hzez,nx,ny,nz)
-            resfield,intensy,ntrans=JNresina(Blist1,Elist,Vlist,dim,Exp1.Freq,stodx,stody,stodz,nx,ny,nz,Exp1.Temperature,Ham1.Hpp,h2)
+            Elist,Vlist,h2=JPadaptarray(Blist1,h1,hzex,hzey,hzez,nx,ny,nz,hifi)
+            resfield,intensy,ntrans=JNresina(Blist1,Elist,Vlist,dim,Exp1.Freq,stodx,stody,stodz,nx,ny,nz,Exp1.Temperature,Ham1.Hpp,h2,hifi=hifi)
             return resfield,intensy,ntrans
         voneori=jx.vmap(Oneori,in_axes=(0,0,0))
         csize=50 #Divides the orientations blocks so the RAM doesn't explote
@@ -2763,7 +2770,7 @@ def Jcalmulta(maham,Expe,Nucl1='None',Nucl2='None',M=70):
         fielde,specs=Blist2,espectotal
     return fielde,specs
 
-def JMusic(maham,Expe,Nucl1='None',Nucl2='None',graph=True):
+def JMusic(maham,Expe,Nucl1='None',Nucl2='None',graph=True,hifi=False):
     '''
     Wrap function for the simulation of the EPR spectrum for monocristal samples of two systems. If there is an interaction between the systems (electron-eletron or hiperfine), solves the total hamiltonian. Otherwise, sums the contributions to the total spectrum.
     
@@ -2780,7 +2787,8 @@ def JMusic(maham,Expe,Nucl1='None',Nucl2='None',graph=True):
         Isotope of the second system. Can be the quantum number and the element or only the element ('55Mn' or 'Mn') 
     graph : Bool
         PLots the spectrum of the multisystem.
-    
+    hifi : Bool
+        Bool value to calculate the Jacobian matrix.
     Returns
     -------
     
@@ -2817,7 +2825,7 @@ def JMusic(maham,Expe,Nucl1='None',Nucl2='None',graph=True):
        :alt: Plot of the Jmusic function
        :align: center
     '''
-    Blist,epc=Jcalmusic(maham,Expe,Nucl1,Nucl2)
+    Blist,epc=Jcalmusic(maham,Expe,Nucl1,Nucl2,hifi=hifi)
     if graph:
         plt.figure(figsize=(10,6))
         plt.plot(Blist,epc,color='navy',label='Spectrum')
@@ -2829,7 +2837,7 @@ def JMusic(maham,Expe,Nucl1='None',Nucl2='None',graph=True):
         plt.show(block=False)
     return Blist,epc
 
-def Jcalmusic(maham,Expe,Nucl1='None',Nucl2='None'):
+def Jcalmusic(maham,Expe,Nucl1='None',Nucl2='None',hifi=False):
     '''
     Determinates the spectrum for a two paramagnetic centers monocristal system. Follows the same logic from the function Jresonant, but adapted to the two centers system.
     
@@ -2847,7 +2855,8 @@ def Jcalmusic(maham,Expe,Nucl1='None',Nucl2='None'):
         Isotope of the second system. Can be the quantum number and the element or only the element ('55Mn' or 'Mn') 
     graph : Bool
         PLots the spectrum of the multisystem.
-    
+    hifi : Bool
+        Bool value to calculate the Jacobian matrix.
     Returns
     -------
     
@@ -2895,8 +2904,8 @@ def Jcalmusic(maham,Expe,Nucl1='None',Nucl2='None'):
     Exp2.Freq,Exp2.Points,Exp2.Temperature,Exp2.Fdirection,Exp2.Mwdirection,Exp2.Frange,Exp2.Sampleframe,Exp2.Molframe,Exp2.gframe,Exp2.Aframe,Exp2.Dframe,Exp2.Qframe=Expe.Freq,Expe.Points,Expe.Temperature,Expe.Fdirection,Expe.Mwdirection,Expe.Frange,Expe.Sampleframe2,Expe.Molframe2,Expe.gframe2,Expe.Aframe2,Expe.Dframe2,Expe.Qframe2
 
     if np.allclose(maham.X1_2,0.0) and np.allclose(maham.A1_2,0.0) and np.allclose(maham.A2_1,0.0):
-        fielde,specs1=Calresonant(Ham1,Exp1,Nucl1)
-        _,specs2=Calresonant(Ham2,Exp2,Nucl2)
+        fielde,specs1=Calresonant(Ham1,Exp1,Nucl1,hifi=hifi)
+        _,specs2=Calresonant(Ham2,Exp2,Nucl2,hifi=hifi)
         specs=specs1+specs2
     else:
         frange0=jxn.where(Exp1.Frange[0]<0.0,1e-4,Exp1.Frange[0])
@@ -3006,7 +3015,7 @@ def Jcalmusic(maham,Expe,Nucl1='None',Nucl2='None'):
         Blist=jxn.linspace(frange0,Exp1.Frange[1],Exp1.Points)
         def Jdiagop(B):
             h5=h1+B*hze
-            Elist,Vlist=containeigh(h5)
+            Elist,Vlist=containeigh(h5,hifi)
             return Elist,Vlist
         Elist,Vlist=jx.vmap(Jdiagop)(Blist)
         spc=jxn.zeros(Exp1.Points)
@@ -3267,13 +3276,13 @@ def Plotbriggs(Blis,expr,espc):
     plt.title('EPR Spectrum')
     plt.show()
 
-def ResidualsJax(pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk):
+def Residualsjax(pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk):
     pravals=unrav(pflat)
     Hat=Ham.replace(g=pravals.get('g',Ham.g),A=pravals.get('A',Ham.A),D=pravals.get('D',Ham.D),Q=pravals.get('Q',Ham.Q),Hpp=pravals.get('Hpp',Ham.Hpp))
     if mode=='p':
-        _,simul=JCalpowder(Hat,Exp,iwas,jwas,kwas,weight,hulk)
+        _,simul=JCalpowder(Hat,Exp,iwas,jwas,kwas,weight,hulk,hifi=True)
     else:
-        _,simul=Calresonant(Hat,Exp,graph=False,table=False)
+        _,simul=Calresonant(Hat,Exp,graph=False,table=False,hifi=True)
     simuln=simul/jxn.maximum(jxn.max(jxn.abs(simul)),1e-8)
     experen=expr/jxn.maximum(jxn.max(jxn.abs(expr)),1e-8)
     return simuln-experen
@@ -3287,12 +3296,12 @@ def BuildresJax(pravals,Ham,Exp,expr,Vary,mode,method,iwas=None,jwas=None,kwas=N
     else:
         Blis,espc=Calresonant(Hat,Exp,graph=False,table=False)
 
-    residuals=ResidualsJax(pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk)
+    residuals=Residualsjax(pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk)
     n,p=len(residuals),len(pflat)
     deno=max(n-p,1)
     chi2=float(jxn.sum(residuals**2))
     redchi2=chi2/deno
-    J=np.asarray(jx.jacfwd(ResidualsJax)(pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk))
+    J=np.asarray(jx.jacfwd(Residualsjax)(pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk))
     variance,perr,identificable=Selectvarian(J,redchi2)
     errdict=unrav(perr) if perr is not None else None
     
@@ -3302,9 +3311,9 @@ def Residualsjax2(pflat,unrav,Ham,Exp,expr,mode):
     pravals=unrav(pflat)
     Hat=Ham.replace(g1=pravals.get('g1',Ham.g1),g2=pravals.get('g2',Ham.g2),A1=pravals.get('A1',Ham.A1),A2=pravals.get('A2',Ham.A2),D1=pravals.get('D1',Ham.D1),D2=pravals.get('D2',Ham.D2),Q1=pravals.get('Q1',Ham.Q1),Q2=pravals.get('Q2',Ham.Q2),Hpp=pravals.get('Hpp',Ham.Hpp))
     if mode=='p':
-        _,simul=JMulpol(Hat,Exp,graph=False)
+        _,simul=JMulpol(Hat,Exp,graph=False,hifi=True)
     elif mode=='c':
-        _,simul=JMusic(Hat,Exp,graph=False)
+        _,simul=JMusic(Hat,Exp,graph=False,hifi=True)
     simuln=simul/jxn.maximum(jxn.max(jxn.abs(simul)),1e-8)
     experen=expr/jxn.maximum(jxn.max(jxn.abs(expr)),1e-8)
     return simuln-experen
@@ -3720,8 +3729,8 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70):
       return fitres.Ham,fitres
           
 
-@partial(jx.custom_jvp,nondiff_argnums=(1,))
-def containeigh(A,eps=1e-8):
+@partial(jx.custom_jvp,nondiff_argnums=(1,2))
+def containeigh(A,epse=50,hifi=False):
     '''
     Wrap function for the eignevalues determination using JAX and making sure the value doesn't go to infinity by the energy degeneration.
     
@@ -3731,8 +3740,10 @@ def containeigh(A,eps=1e-8):
     A : jax.numpy.array
         Total hamiltonian matrix.
     
-    eps : float
-        Perturbation value in case there is energy degeneration. Default is 1e-5.
+    epse : float
+        Perturbation value in case there is energy degeneration. Default is 50.
+    hifi : bool
+        Bool value to calculate the jacobian matrix and with it the variance.
     
     Returns
     -------
@@ -3746,9 +3757,13 @@ def containeigh(A,eps=1e-8):
     return w,v
 
 @containeigh.defjvp
-def containeigh_jvp(eps,primals,tangents):
+def containeigh_jvp(epse,hifi,primals,tangents):
     (A,),(dA,)=primals,tangents
-    w,v=containeigh(A,eps)
+    w,v=containeigh(A,epse,hifi)
+    scale=jxn.linalg.norm(A)
+    #Scale of the perturbation, lower than the hamiltonian 
+    eps1=epse*scale*jxn.finfo(A.dtype).eps
+    eps=eps1*1e-2 if hifi else eps1*1.0
     #Hermitic condition
     dAh=0.5*(dA+jxn.swapaxes(dA,-1,-2).conj())
     vH=jxn.swapaxes(v,-1,-2).conj()
