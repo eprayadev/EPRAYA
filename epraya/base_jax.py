@@ -1413,7 +1413,7 @@ def JBoltfactor(Eghz,di,dj,Temp):
     Z=jxn.sum(boltz)
     popui=boltz[di]/Z
     popuj=boltz[dj]/Z
-    return np.abs(popui-popuj)
+    return jxn.abs(popui-popuj)
 
 @partial(jx.jit,static_argnames=['dim'])
 def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2,hifi=False):
@@ -1523,7 +1523,7 @@ def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2,hifi=Fal
     boltz=boltz/Z
     popui=boltz[:,parr,iidx]
     popuj=boltz[:,parr,jidx]
-    boltzm=np.abs(popui-popuj)
+    boltzm=jxn.abs(popui-popuj)
     eintensy=prob*gema*boltzm
 
     fres=jxn.where(cross,res,0.0).flatten()
@@ -1986,19 +1986,19 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None'):
             pair=tuple(sorted((basis1,basis2)))
             if pair not in targettr:
                 continue
-            diffv=np.abs(Elist[:,j]-Elist[:,i])-Expe.Freq
+            diffv=jxn.abs(Elist[:,j]-Elist[:,i])-Expe.Freq
             signch=np.where(np.diff(np.signbit(diffv)))[0]
             for k in signch:
                 bstart,bend=Blist[k],Blist[k+1]
                 def deltaE(b):
-                    return np.real(np.abs(splines(b)[j]-splines(b)[i]))-Expe.Freq
+                    return np.real(jxn.abs(splines(b)[j]-splines(b)[i]))-Expe.Freq
                 try:
                     res=sci.optimize.root_scalar(deltaE,bracket=[bstart,bend],method='brentq')
                     if res.converged:
                         ms1,ms2=slit[basis1],slit[basis2]
                         mi1,mi2=nlit[basis1],nlit[basis2]
-                        dms=np.abs(ms1-ms2)
-                        dmi=np.abs(mi1-mi2)
+                        dms=jxn.abs(ms1-ms2)
+                        dmi=jxn.abs(mi1-mi2)
                         if np.isclose(dms,1) and np.isclose(dmi,0):
                             ttyp="Allowed"
                         elif np.isclose(dms,2):
@@ -2211,7 +2211,7 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
     boltz=boltz/Z
     popui=boltz[:,iidx]
     popuj=boltz[:,jidx]
-    boltzm=np.abs(popui-popuj)
+    boltzm=jxn.abs(popui-popuj)
     intensy=prob*gema*boltzm
     deltaE=jxn.abs(Elist[:,jidx]-Elist[:,iidx])
     dfe=deltaE-Exp.Freq
@@ -3052,7 +3052,7 @@ def Jcalmusic(maham,Expe,Nucl1='None',Nucl2='None',hifi=False):
         boltz=boltz/Z
         popui=boltz[:,iidx]
         popuj=boltz[:,jidx]
-        boltzm=np.abs(popui-popuj)
+        boltzm=jxn.abs(popui-popuj)
         intensy=prob*gema*boltzm
         deltaE=jxn.abs(Elist[:,jidx]-Elist[:,iidx])
         dfe=deltaE-Exp1.Freq
