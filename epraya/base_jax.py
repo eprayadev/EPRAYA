@@ -1412,7 +1412,7 @@ def JBoltfactor(Eghz,di,dj,Temp):
     Z=jxn.sum(boltz)
     popui=boltz[di]/Z
     popuj=boltz[dj]/Z
-    return (popui-popuj)
+    return np.abs(popui-popuj)
 
 @partial(jx.jit,static_argnames=['dim'])
 def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2):
@@ -1522,7 +1522,7 @@ def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2):
     boltz=boltz/Z
     popui=boltz[:,parr,iidx]
     popuj=boltz[:,parr,jidx]
-    boltzm=popui-popuj
+    boltzm=np.abs(popui-popuj)
     eintensy=prob*gema*boltzm
 
     fres=jxn.where(cross,res,0.0).flatten()
@@ -3043,7 +3043,7 @@ def Jcalmusic(maham,Expe,Nucl1='None',Nucl2='None'):
         boltz=boltz/Z
         popui=boltz[:,iidx]
         popuj=boltz[:,jidx]
-        boltzm=popui-popuj
+        boltzm=np.abs(popui-popuj)
         intensy=prob*gema*boltzm
         deltaE=jxn.abs(Elist[:,jidx]-Elist[:,iidx])
         dfe=deltaE-Exp1.Freq
@@ -3357,8 +3357,10 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70):
         Number of divisions for the Delaunay grid.
     Returns
     -------
-    espc : np.array
-        Best adjusted spectrum.
+    Ham : Class
+        Container for the fitted hamiltonian parameters.
+    fitresult : Class 
+        Container for the results of the Fitting function.
         
     Example
     -------

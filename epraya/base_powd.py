@@ -1259,7 +1259,7 @@ def Mulpol(Hamer,Expe,M=70,graph=True):
             Caltriangle(sketch,Bmin,dB,allres,allint,ntrans,hulk,weight)
 
             #Convolution of the function to create the derivated spectrum
-            maxlenght=np.max(Ham.Mulham[0].Hpp)*10
+            maxlenght=np.max(Ham.Mulham[0].Hpp)*50
             kerpoint=int(maxlenght/dB)*2+1
             kaxis=np.arange(-kerpoint//2+1,kerpoint//2+1)*dB
             kvoigt=Voigtp(kaxis,np.array([1.0]),np.array([0.0]),Ham.Mulham[0].Hpp,Ham.Mulham[0].eta)

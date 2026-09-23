@@ -55,6 +55,40 @@ result={}
 class Fitresult:
     '''
     Container for the results of the Fitting function.
+    
+    Returns
+    -------
+    
+    Ham : object
+        Hamiltonian configured with the fitted parameters
+    spc : np.array
+        Fitted spectrum
+    params : np.array
+        Values of the fitted parameters.
+    method : str
+        Method used in the fit.
+    chi2 : float
+        Chi square of the fit.
+    redchi2 : float
+        Chi square divided by (Number of point - Number of parameters) for the calculation of variance.
+    residuals : np.array
+        Residual array of the fit.
+    denochi : float
+        Denominator of the redchi2.
+    message : str
+        Message of the final state of the fit.
+    variance : np.array
+        Covariance matrix of the fit.
+    paramerrors : np.array
+        Variance array of the fitted parameters.
+    paramerrorsdict : dict
+        Dictionary to relate the variance array with the parameters labels.
+    paramlabels : list
+        Labels of the fitted parameters.
+    success : bool
+        If the process was succesfull in fitting the parameters with the number of iterations.
+    iterations : int
+        Number of iterations for the fit.
     '''
     Ham : object
     spc : np.ndarray
@@ -156,7 +190,8 @@ def Buildres(bestpoint,Ham1,Exp,exper,Vary,functiona,Mr,method,J=None,success=Tr
     deno=max(n-p,1)
     chi2=float(np.sum(residuals**2))
     redchi2=chi2/deno
-    J=Jacobian(resfu,bestpoint,args=(Ham1,Exp,exper,Vary,functiona,Mr))
+    if J is None:
+        J=Jacobian(resfu,bestpoint,args=(Ham1,Exp,exper,Vary,functiona,Mr))
     variance,perr,ident=Selectvarian(J,redchi2)
     return Fitresult(Ham=besHam,spc=spect,params=bestpoint,method=method,chi2=chi2,redchi2=redchi2,residuals=residuals,denochi=deno,variance=variance,paramerrors=perr,paramlabels=labels,success=success,message=message,iterations=iterations)
 
@@ -277,7 +312,6 @@ def Nelder1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p',
         exper=scii.cumulative_trapezoid(exper,fielda,initial=0)
     else:
         raise ValueError(f"Data type {datype} is not supported. Use integral or data instead.")
-    iwas,jwas,kwas,weight,hulk=Delaunay(Exp)
     if Var.g!=0.0:
         pointx.extend(Ham.g)
         stp.extend([(Var.g[1]-Var.g[0])/20,(Var.g[3]-Var.g[2])/20,(Var.g[5]-Var.g[4])/20])
@@ -538,7 +572,6 @@ def Nelder2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p',
         exper=scii.cumulative_trapezoid(exper,fielda,initial=0)
     else:
         raise ValueError(f"Data type {datype} is not supported. Use integral or data instead.")
-    iwas,jwas,kwas,weight,hulk=Delaunay(Exp.Mexp[0])
     numberes=len(Ham.Mulham)
     for lke in range(0,numberes):
         if Var.Mvary[lke].g!=0.0:
@@ -748,8 +781,10 @@ def Nelder(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p',s
     
     Returns
     -------
-    spce : np.array
-        Best adjusted spectrum.
+    Ham : Class
+        Container for the fitted hamiltonian parameters.
+    fitresult : Class 
+        Container for the results of the Fitting function.
     '''
 
     if type(Hamer)==Multham:
@@ -898,7 +933,6 @@ def Genio1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p',see
     else:
         raise ValueError (f'Valid functions are powder (p) or cristal (c).')
     funcname=funtiona.__name__
-    iwas,jwas,kwas,weight,hulk=Delaunay(Exp)
     if datype=='data':
         exper=exper
     elif datype=='integral':
@@ -1122,7 +1156,6 @@ def Genio2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p',see
         exper=scii.cumulative_trapezoid(exper,fielda,initial=0)
     else:
         raise ValueError(f"Data type {datype} is not supported. Use integral or data instead.")
-    iwas,jwas,kwas,weight,hulk=Delaunay(Exp.Mexp[0])
     numberes=len(Ham.Mulham)
     for lke in range(0,numberes):
         if Var.Mvary[lke].g!=0.0:
@@ -1282,8 +1315,10 @@ def Genio(Hamer,Expe,Vara,exper,eps=1e-10,maximal=100,datype='data',mode='p',see
      
     Returns
     -------
-    spce : np.array
-        Best adjusted spectrum.
+    Ham : Class
+        Container for the fitted hamiltonian parameters.
+    fitresult : Class 
+        Container for the results of the Fitting function.
     '''
     if type(Hamer)==Multham:
          if Expe.Mexp[0].Points!=len(exper):
@@ -2026,8 +2061,10 @@ def Metro(Hamer,Exp,Var,exper,maximal=2000,datype='data',mode='p',seed=451,Mr=70
         
     Returns
     -------
-    scpe : np.array
-        Best adjusted spectrum.
+    Ham : Class
+        Container for the fitted hamiltonian parameters.
+    fitresult : Class 
+        Container for the results of the Fitting function.
     '''
     if type(Hamer)==Multham:
          if Exp.Mexp[0].Points!=len(exper):
@@ -2342,8 +2379,10 @@ def LSquare(Ham1,Expe,Vary,exper,maximal=1000,mode='p',Mr=70):
     Returns
     -------
     
-    scpe : np.array
-        Best adjusted spectrum.
+    Ham : Class
+        Container for the fitted hamiltonian parameters.
+    fitresult : Class 
+        Container for the results of the Fitting function.
     '''
     if type(Ham1)==Multham:
          if Expe.Mexp[0].Points!=len(exper):
@@ -2534,34 +2573,54 @@ def Fitting(Hamer,Exper,Vara,datexp):
     display(VBox([centerone,tapts,outside]))
     
     
-def Selectvarian(J,redchi2,tolrel=1e-6,condmax=1e10):
+def Selectvarian(J,redchi2,ztol=None,minw=0.3):
     '''
-    Discart values where the variance cannot be calculated because it derivative is null or is lost in the numerical approximation.
+    Calculates the variance of the fit using the Jacobian matrix of the residuals. IT discart values where the variance cannot be calculated because it derivative is null or is lost in the numerical approximation, keeping the other ones. 
+    
+    The variance calculated in all cases is not conditional, to ensure its validity.
+    
+    Parameters
+    ----------
+    
+    J : np.array
+        Jacobian matrix of residuals.
+    redchi2 : float
+        Chi square for the calculation of the variance.
+    ztol : float
+        Reference value for parameter discart (column of the jacobian) if the variance cannot be calculated.
+    minw : float
+        Reference value for the weight (influence) of one parameter in the calculation of variance. If the weight is higher, the parameter cannot be discarted without affecting the variance validity.
+        
+    Returns
+    -------
+    variance : np.array
+        Matrix of covariance of the fit.
+    perr : np.array
+        Values of the variance of the fitted parameters.
+    identification: np.array
+        Reference of the values that allows the calculation of the variance.
+    
     '''
     p=J.shape[1]
-    perr=np.full(p,np.nan)
-    variance=np.full((p,p),np.nan)
-    colnorms=np.linalg.norm(J,axis=0)
-    refnorm=np.max(colnorms) if np.max(colnorms)>0 else 1.0
-    survive=[i for i in range(p) if colnorms[i]>tolrel*refnorm]
-    while len(survive)>0:
-        Jr=J[:,survive]
-        cond=np.linalg.cond(Jr.T@Jr)
-        if np.isfinite(cond) and cond<=condmax:
-            break
-        _,_,Vt=np.linalg.svd(Jr,full_matrices=False)
-        worst=np.argmax(np.abs(Vt[-1,:]))
-        survive.pop(worst)
-    #When all fails
-    if len(survive)==0:
-        return variance,perr,np.zeros(p,dtype=bool)
-        
-    Jr=J[:,survive]
-    varr=np.linalg.inv(Jr.T@Jr)*redchi2
-    for ar,er in enumerate(survive):
-        perr[er]=np.sqrt(varr[ar,ar])
-        for eb,ib in enumerate(survive):
-            variance[er,ib]=varr[ar,eb]
-    identification=np.zeros(p,dtype=bool)
-    identification[survive]=True
+    
+    U,S,Vt=np.linalg.svd(J,full_matrices=False)
+    Smax=S[0] if len(S)>0 else 0.0
+    if ztol is None:
+        ztol=max(J.shape)*np.finfo(float).eps 
+
+    nulls=S<ztol*Smax if Smax>0 else np.ones_like(S,dtype=bool)
+    #Calculates the inverse of the S matrix
+    invS2=np.zeros_like(S)
+    invS2[~nulls]=1.0/S[~nulls]**2
+
+    variance=(Vt.T*invS2)@Vt*redchi2
+    perr=np.sqrt(np.diag(variance))
+
+    identification=np.ones(p,dtype=bool)
+    if np.any(nulls):
+        wg=np.abs(Vt[nulls,:])                    
+        sick=np.any(wg**2>minw**2,axis=0)
+        identification[sick]=False
+        perr[sick]=np.nan
+
     return variance,perr,identification
