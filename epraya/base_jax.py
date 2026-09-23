@@ -3383,42 +3383,54 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70):
     >>> Vary.D=[200,1000,0.5,1000]
     >>> Vary.Hpp=[0.0, 100.0, 2.0, 100.0]
     >>> de=epr.Briggs(Ham,Exp,Vary,spc,maximal=700,mode='p')    
-    Step   1 | Error: 1.01390e-01 |
+    Step   1 | Error: 8.31270e-02 |
     | gx: 2.1947 | gy: 1.9938 | gz: 1.9938 |
     | D: 504.7 | E: 204.0 |
     | Hppg: 0.0 | Hppl: 30.5 |
-    Step  11 | Error: 5.21379e-02 |
-    | gx: 2.1397 | gy: 1.9335 | gz: 1.9335 |
-    | D: 552.9 | E: 248.4 |
+    Step  11 | Error: 3.10342e-02 |
+    | gx: 2.1398 | gy: 1.9395 | gz: 1.9335 |
+    | D: 550.5 | E: 240.1 |
     | Hppg: 0.0 | Hppl: 35.8 |
-    Step  21 | Error: 3.03045e-02 |
-    | gx: 2.0897 | gy: 1.8884 | gz: 1.8880 |
-    | D: 605.4 | E: 301.9 |
+    Step  21 | Error: 8.40639e-03 |
+    | gx: 2.0893 | gy: 1.8980 | gz: 1.8871 |
+    | D: 589.7 | E: 280.1 |
     | Hppg: 0.0 | Hppl: 41.0 |
-    .
-    .
-    .
-    Step 101 | Error: 8.07586e-03 |
-    | gx: 2.1491 | gy: 1.9043 | gz: 1.8446 |
-    | D: 816.8 | E: 576.9 |
-    | Hppg: 0.0 | Hppl: 59.1 |
-    Step 111 | Error: 7.54648e-03 |
-    | gx: 2.1452 | gy: 1.9161 | gz: 1.8336 |
-    | D: 818.1 | E: 586.4 |
-    | Hppg: 0.0 | Hppl: 60.1 |
-    Step 121 | Error: 6.97381e-03 |
-    | gx: 2.1429 | gy: 1.9301 | gz: 1.8228 |
-    | D: 819.6 | E: 597.9 |
-    | Hppg: 0.0 | Hppl: 60.8 |
-    Step 131 | Error: 6.41336e-03 |
-    | gx: 2.1424 | gy: 1.9453 | gz: 1.8139 |
-    | D: 821.3 | E: 611.3 |
-    | Hppg: 0.0 | Hppl: 61.3 |
-    Process stopped at iteration:140
-    Step 141 | Error: 5.93200e-03 |
-    | gx: 2.1404 | gy: 1.9589 | gz: 1.8065 |
-    | D: 822.2 | E: 628.8 |
-    | Hppg: 0.0 | Hppl: 61.6 |
+    Step  31 | Error: 4.93202e-03 |
+    | gx: 2.0695 | gy: 1.8849 | gz: 1.8696 |
+    | D: 629.3 | E: 319.8 |
+    | Hppg: 0.0 | Hppl: 45.3 |
+    Step  41 | Error: 3.02956e-03 |
+    | gx: 2.0745 | gy: 1.8955 | gz: 1.8743 |
+    | D: 665.0 | E: 339.4 |
+    | Hppg: 0.0 | Hppl: 47.9 |
+    Step  51 | Error: 2.32793e-03 |
+    | gx: 2.0834 | gy: 1.9114 | gz: 1.8861 |
+    | D: 684.6 | E: 347.6 |
+    | Hppg: 0.0 | Hppl: 49.0 |
+    Step  61 | Error: 2.24381e-03 |
+    | gx: 2.0767 | gy: 1.9193 | gz: 1.8918 |
+    | D: 686.8 | E: 348.8 |
+    | Hppg: 0.0 | Hppl: 49.1 |
+    Step  71 | Error: 1.99499e-03 |
+    | gx: 2.0626 | gy: 1.9208 | gz: 1.8925 |
+    | D: 682.1 | E: 347.8 |
+    | Hppg: 0.0 | Hppl: 48.8 |
+    Step  81 | Error: 2.28818e-03 |
+    | gx: 2.0433 | gy: 1.9176 | gz: 1.8939 |
+    | D: 692.1 | E: 342.7 |
+    | Hppg: 0.0 | Hppl: 48.5 |
+    Step  91 | Error: 1.99445e-03 |
+    | gx: 2.0455 | gy: 1.9236 | gz: 1.9031 |
+    | D: 704.7 | E: 336.8 |
+    | Hppg: 0.0 | Hppl: 48.2 |
+    Process ended at step 101, with error: 1.93857e-03 |
+    | gx: 2.0523 | gy: 1.9298 | gz: 1.9095 |
+    | D: 709.5 | E: 333.3 |
+    | Hppg: 0.0 | Hppl: 48.2 |
+
+    chi2 = 7.97762e+00 | chi2 residual = 1.95147e-03
+    Parameters error (1 sigma): D: 17.32 | E: 14.82 | Hppg: Undeterminated | Hppl: 0.4423 | gx: 0.002274 | gy: 0.01138 | gz: 0.01202
+
        
     .. image:: /_static/briggs.png
        :alt: Plot of the briggs function
