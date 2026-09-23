@@ -611,6 +611,7 @@ def Spectre(Hamer,Expe,phi=0,orient='Z'):
     formatter=EngFormatter(sep='') 
     axs[0].yaxis.set_major_formatter(formatter)
     axs[0].set_ylabel('Counts [U. A.]',fontsize=14)
+    axs[0].axes.get_xaxis().set_visible(False)
     axs[0].set_xlim(Exp.Frange[0], Exp.Frange[1])
     axs[0].grid()
     #Rotations
@@ -668,6 +669,7 @@ def Spectre(Hamer,Expe,phi=0,orient='Z'):
     axs[1].set_ylabel(r'Angle $\theta$ ($^{\circ}$)',fontsize=14)
     axs[1].set_ylim(0,180)
     axs[1].set_yticks(np.arange(0,181,30))
+    axs[1].axes.get_xaxis().set_visible(False)
     axs[1].grid(True)
     slit,nlit,llit,transitions=Msmi(Ham.I,Ham.S,Ham.L)
     targettr=set()
