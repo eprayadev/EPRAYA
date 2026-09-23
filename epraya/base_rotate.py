@@ -599,7 +599,7 @@ def Spectre(Hamer,Expe,phi=0,orient='Z'):
     Bmin=Exp.Frange[0]
     dB=(Exp.Frange[1]-Exp.Frange[0])/(Exp.Points)
     Caltriangle(sketch,Bmin,dB,allres,allint,ntrans,hulk,weight)
-    fig,axs=plt.subplots(3,figsize=(12,13))
+    fig,axs=plt.subplots(3,1,figsize=(12,13),sharex=True)
     #Convolution of the function to create the derivated spectrum
     maxlenght=np.max(Ham.Hpp)*10
     kerpoint=int(maxlenght/dB)*2+1
@@ -611,7 +611,7 @@ def Spectre(Hamer,Expe,phi=0,orient='Z'):
     formatter=EngFormatter(sep='') 
     axs[0].yaxis.set_major_formatter(formatter)
     axs[0].set_ylabel('Counts [U. A.]',fontsize=14)
-    axs[0].axes.get_xaxis().set_visible(False)
+    axs[0].tick_params(axis='x',labelbottom=False)
     axs[0].set_xlim(Exp.Frange[0], Exp.Frange[1])
     axs[0].grid()
     #Rotations
@@ -669,7 +669,7 @@ def Spectre(Hamer,Expe,phi=0,orient='Z'):
     axs[1].set_ylabel(r'Angle $\theta$ ($^{\circ}$)',fontsize=14)
     axs[1].set_ylim(0,180)
     axs[1].set_yticks(np.arange(0,181,30))
-    axs[1].axes.get_xaxis().set_visible(False)
+    axs[1].tick_params(axis='x',labelbottom=False)
     axs[1].grid(True)
     slit,nlit,llit,transitions=Msmi(Ham.I,Ham.S,Ham.L)
     targettr=set()
@@ -737,5 +737,6 @@ def Spectre(Hamer,Expe,phi=0,orient='Z'):
             axs[2].vlines(x=fv,ymin=eni,ymax=enj,color='green',linewidth=2.5,zorder=15)
         else:
             axs[2].vlines(fv,ymin=eni,ymax=enj,color='grey')
+    fig.subplots_adjust(hspace=0.05)
     plt.show()
     return espac1,espectotal
