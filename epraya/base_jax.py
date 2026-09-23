@@ -3709,7 +3709,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70):
           
 
 @partial(jx.custom_jvp,nondiff_argnums=(1,))
-def containeigh(A,eps=1e-5):
+def containeigh(A,eps=1e-8):
     '''
     Wrap function for the eignevalues determination using JAX and making sure the value doesn't go to infinity by the energy degeneration.
     
