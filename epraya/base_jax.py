@@ -3776,6 +3776,8 @@ def containeigh_jvp(epse,hifi,primals,tangents):
     dV=v@(F*M)
     return (w,v),(dw,dV)
     
+def containeigh(A,epse=50,hifi=False):
+    return _containeigh_core(A,epse,hifi)    
     
 def Jformaterrors(ed):
     if ed is None:
