@@ -398,6 +398,8 @@ def Eresonant(Hamer,Exp,graph=True,table=True):  #Function for finding the reson
     isz=np.kron(np.eye(int(2*Ham.L+1)),isz)
     isz=np.asarray(isz,dtype=np.complex128)
     E=Exp.Freq
+    if Exp.Frange[0]==0:
+        Exp.Frange[0]=1e-8
     espac1=np.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
     beta=(scic.physical_constants["Bohr magneton"][0]/scic.physical_constants["Planck constant"][0])/1e12
     betan=(scic.physical_constants["nuclear magneton"][0]/scic.physical_constants["Planck constant"][0])/1e12
