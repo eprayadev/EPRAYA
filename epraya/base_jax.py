@@ -3350,6 +3350,111 @@ def BuildresJax2(pravals,Ham,Exp,expr,Vary,mode,method,success=True,message='',i
     return Fitresult(Ham=Hat,spc=espc,params=np.asarray(pflat),method=method,chi2=chi2,redchi2=redchi2,residuals=np.asarray(residuals),denochi=deno,variance=variance,paramerrors=perr,paramerrorsdict=errdict,success=success,message=message,iterations=iterations),Blis
 
 def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70):
+    '''
+    Fitting function for the experimental data using the ADAM Algorithm. Uses the *Optax* (part of the Deepmind proyect) ADAM algorithm implementation with a learning rate of 0.1. The parameters are changed and evaluated using a normalized sigmoid function in the range from the *Vary* container. 
+    
+    It's recommended to use the function in VS code, Jupyter or Colab, because the process can be stop at any moment using the stop process button of the notebook.
+    
+    Parameters
+    ----------
+    Hamer: Class
+        Container for the hamiltonian parameters.
+    Exp : Class
+        Container for the experimental conditions.
+    Vary : Class
+        Container for the range and parameters to vary.
+    
+    exper : np.array
+        Experimental spectrum data to fit.
+    maximal : int
+        Max. number of iterations to evalue the function.
+    eps : float
+        Tolerance value for the error. Default is 1e-11
+    mode : str
+        Defines the sample type, 'p' for powder and 'c' for monocristal.
+    M : int
+        Number of divisions for the Delaunay grid.
+    Returns
+    -------
+    Ham : Class
+        Container for the fitted hamiltonian parameters.
+    fitresult : Class 
+        Container for the results of the Fitting function.
+        
+    Example
+    -------
+    >>> import matplotlib.pyplot as plt
+    >>> import epraya as epr
+    >>> import numpy as np
+    >>> #epr.Sload('ZCr5600-300K.dat',4096,[2,3])
+    >>> B,spc=epr.Seek()
+    >>> Ham,Exp,Vary=epr.Jstart()
+    >>> Ham.S=3/2
+    >>> Ham.I=0
+    >>> Ham.Hpp=[0, 30.0]
+    >>> Exp.Freq=9.43
+    >>> Exp.Points=len(B)
+    >>> Exp.Frange=[B[0],B[-1]]
+    >>> Exp.Temperature = 300
+    >>> Ham.g=np.array([2.2,2,2])
+    >>> Ham.D=np.array([500,200])  
+    >>> Vary.g=[1.5,2.5,1.5,2.5,1.5,2.5]
+    >>> Vary.D=[200,1000,0.5,1000]
+    >>> Vary.Hpp=[0.0, 100.0, 2.0, 100.0]
+    >>> de=epr.Briggs(Ham,Exp,Vary,spc,maximal=700,mode='p')    
+    Step   1 | Error: 8.31270e-02 |
+    | gx: 2.1947 | gy: 1.9938 | gz: 1.9938 |
+    | D: 504.7 | E: 204.0 |
+    | Hppg: 0.0 | Hppl: 30.5 |
+    Step  11 | Error: 3.10342e-02 |
+    | gx: 2.1398 | gy: 1.9395 | gz: 1.9335 |
+    | D: 550.5 | E: 240.1 |
+    | Hppg: 0.0 | Hppl: 35.8 |
+    Step  21 | Error: 8.40639e-03 |
+    | gx: 2.0893 | gy: 1.8980 | gz: 1.8871 |
+    | D: 589.7 | E: 280.1 |
+    | Hppg: 0.0 | Hppl: 41.0 |
+    Step  31 | Error: 4.93202e-03 |
+    | gx: 2.0695 | gy: 1.8849 | gz: 1.8696 |
+    | D: 629.3 | E: 319.8 |
+    | Hppg: 0.0 | Hppl: 45.3 |
+    Step  41 | Error: 3.02956e-03 |
+    | gx: 2.0745 | gy: 1.8955 | gz: 1.8743 |
+    | D: 665.0 | E: 339.4 |
+    | Hppg: 0.0 | Hppl: 47.9 |
+    Step  51 | Error: 2.32793e-03 |
+    | gx: 2.0834 | gy: 1.9114 | gz: 1.8861 |
+    | D: 684.6 | E: 347.6 |
+    | Hppg: 0.0 | Hppl: 49.0 |
+    Step  61 | Error: 2.24381e-03 |
+    | gx: 2.0767 | gy: 1.9193 | gz: 1.8918 |
+    | D: 686.8 | E: 348.8 |
+    | Hppg: 0.0 | Hppl: 49.1 |
+    Step  71 | Error: 1.99499e-03 |
+    | gx: 2.0626 | gy: 1.9208 | gz: 1.8925 |
+    | D: 682.1 | E: 347.8 |
+    | Hppg: 0.0 | Hppl: 48.8 |
+    Step  81 | Error: 2.28818e-03 |
+    | gx: 2.0433 | gy: 1.9176 | gz: 1.8939 |
+    | D: 692.1 | E: 342.7 |
+    | Hppg: 0.0 | Hppl: 48.5 |
+    Step  91 | Error: 1.99445e-03 |
+    | gx: 2.0455 | gy: 1.9236 | gz: 1.9031 |
+    | D: 704.7 | E: 336.8 |
+    | Hppg: 0.0 | Hppl: 48.2 |
+    Process ended at step 101, with error: 1.93857e-03 |
+    | gx: 2.0523 | gy: 1.9298 | gz: 1.9095 |
+    | D: 709.5 | E: 333.3 |
+    | Hppg: 0.0 | Hppl: 48.2 |
+
+    chi2 = 7.97762e+00 | chi2 residual = 1.95147e-03
+    Parameters error (1 sigma): D: 17.32 | E: 14.82 | Hppg: Undeterminated | Hppl: 0.4423 | gx: 0.002274 | gy: 0.01138 | gz: 0.01202
+
+       
+    .. image:: /_static/briggs.png
+       :alt: Plot of the briggs function
+       :align: center
+    '''
     global result
     result.clear()
     if isinstance(Hamer,JHval):
@@ -3636,6 +3741,28 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70):
 
 @partial(jx.custom_jvp,nondiff_argnums=(1,2))
 def containeigh(A,hifi=False,epse=50):
+    '''
+    Wrap function for the eignevalues determination using JAX and making sure the value doesn't go to infinity by the energy degeneration.
+    
+    Parameters
+    ----------
+    
+    A : jax.numpy.array
+        Total hamiltonian matrix.
+    
+    epse : float
+        Perturbation value in case there is energy degeneration. Default is 50.
+    hifi : bool
+        Bool value to calculate the jacobian matrix and with it the variance.
+    
+    Returns
+    -------
+    
+    w : jax.numpy.array
+        Energy values of the hamiltonian.
+    v : jax.numpy.array
+        Eigenvectors of the hamiltonian.
+    '''
     w,v=jxn.linalg.eigh(A)
     return w,v
 
