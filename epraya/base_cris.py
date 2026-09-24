@@ -139,7 +139,7 @@ def ERetrack(field,energy,einvector,tol1=0.05):
                 #Select the columns that corresponds to V{i+1} using the J-V method
                 _,col1=sci.optimize.linear_sum_assignment(-np.abs(MM)**2)
                 M=MM[:, col1]
-                U,_,Vh=np.linalg.svd(M[:,best])
+                U,_,Vh=np.linalg.svd(M)
                 #Changes the vectors with the  aplication of the Procrustes analysis or Kabsch algorithm,
                 #to find the best configuation to match the vectors traced before.
                 actvecs[:,a:b]=Q@(U@Vh)
