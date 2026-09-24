@@ -89,6 +89,7 @@ def ERetrack(field,energy,einvector):
     It considers the values at high field and goes backwards. Following the method develop by Stoll et al, it applies the Kabsch algorithm
     to eliminate the phase between the eigenvectors of i and i+1 and use it as input to construct the solap matrix O=<\phi(i)|\phi(i+1)>. With this matrix
     the J-V method is applied to solve the assignation problem and relate the energy to the eigenvectors, to avoid missing the Kramers degeneration.
+    
     Parameters
     ----------
    
@@ -100,7 +101,13 @@ def ERetrack(field,energy,einvector):
        
     einvector : np.array
         Array of the eigenvectors of the hamiltonian.
-        
+
+    nrefer : int
+        Number of points for the interpolation.
+
+    order : int
+        Order of the interpolation.
+       
     Returns
     -------
    
@@ -115,11 +122,19 @@ def ERetrack(field,energy,einvector):
     nf=len(field)
     dim=Vector.shape[1]
     for i in range(nf-2,-1,-1):
-        onesvecs=Vector[i+1]
         actvecs=Vector[i]
         actvals=Enegria[i]
+        #Interpolates the data to see if the change in value is an anticrossing or a bad classification
+        if i<nf-2:
+            oncevecs=2.0*Vector[i+1]-Vector[i+2]
+            #Normalize the vectors
+            norma=np.linalg.norm(oncevecs,axis=0,keepdims=True)
+            norma[norma==0]=1.0
+            oncevecs=oncevecs/norma
+        else:
+            oncevecs=Vector[i+1]
         #Calculates the overlap matrix of the vectors like O=<\phi(B)|\phi(B+\deltaB)>
-        Ov=actvecs.conj().T @onesvecs
+        Ov=actvecs.conj().T@oncevecs
         #Singular values descomposition of the overlap matrix.
         U,S,V=np.linalg.svd(Ov)
         R=U@V
@@ -128,11 +143,12 @@ def ERetrack(field,energy,einvector):
         #of the bases to eliminate the phase.
         rotvecs=actvecs@R
         #Use of the J-V method to assignate the vectors to a energy 
-        cost=1.0-np.abs((rotvecs.conj().T@onesvecs))
+        cost=1.0-np.abs((rotvecs.conj().T@oncevecs))
         rows,cols=sci.optimize.linear_sum_assignment(cost)
         Vector[i]=rotvecs[:,cols]
         Enegria[i]=actvals[cols]
     return Enegria,Vector
+    
 # Makes the approximation by the assigment problem solution
 def EHungorder(onevals,onevecs,actvals,actvecs):
     '''
