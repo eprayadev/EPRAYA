@@ -160,7 +160,7 @@ def ERetrack(field,energy,einvector,tol1=0.05):
         actvecs=actvecs*(phase/mag)[None,:]
         Vector[i]=actvecs
         Enegria[i]=actvals
-     return Enegria,Vector
+    return Enegria,Vector
 
     
 # Makes the approximation by the assigment problem solution
