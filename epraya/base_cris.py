@@ -416,7 +416,7 @@ def Eresonant(Hamer,Exp,graph=True,table=True):  #Function for finding the reson
     if np.any(Ham.Q):
         h1=h1+Qii(ix,iy,iz,Ham.Q,dim)
     h1=np.asarray(h1,dtype=complex)
-    Blist=np.linspace(Exp.Frange[0],Exp.Frange[1],100)
+    Blist=np.linspace(Exp.Frange[0],Exp.Frange[1],500)
     Elist,Vlist=EAdaptarray(Blist,h1,hze)
     Elist,Vlist=ERetrack(Blist,Elist,Vlist)
     #Find allowed transitions
@@ -829,6 +829,8 @@ def Cristalfm(Hamer,Exp):  #Function for finding the resonant fields and energie
     isz=np.kron(np.eye(int(2*Ham.L+1)),isz)
     isz=np.asarray(isz,dtype=np.complex128)
     E=Exp.Freq
+    if Exp.Frange[0]==0:
+        Exp.Frange[0]=1e-8
     espac1=np.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
     beta=(scic.physical_constants["Bohr magneton"][0]/scic.physical_constants["Planck constant"][0])/1e12
     betan=(scic.physical_constants["nuclear magneton"][0]/scic.physical_constants["Planck constant"][0])/1e12
@@ -845,7 +847,7 @@ def Cristalfm(Hamer,Exp):  #Function for finding the resonant fields and energie
     if np.any(Ham.Q):
         h1=h1+Qii(ix,iy,iz,Ham.Q,dim)
     h1=np.asarray(h1,dtype=complex)
-    Blist=np.linspace(Exp.Frange[0],Exp.Frange[1],100)
+    Blist=np.linspace(Exp.Frange[0],Exp.Frange[1],500)
     Elist,Vlist=EAdaptarray(Blist,h1,hze)
     Elist,Vlist=ERetrack(Blist,Elist,Vlist)
     #Find allowed transitions
@@ -1164,6 +1166,8 @@ def Music(Hamer,Exper,graph=True,table=True):
                     targettr.update(tuple(sorted(p)) for p in transitions[key])
 
             espectotal=np.zeros(Exp.Mexp[0].Points)
+            if Exp.Mexp[0].Frange[0]==0:
+                Exp.Mexp[0].Frange[0]=1e-8    
             Blist=np.linspace(Exp.Mexp[0].Frange[0],Exp.Mexp[0].Frange[1],500)
             Elist,Vlist=EAdaptarray(Blist,h1,hze)
             Elist,Vlist=ERetrack(Blist,Elist,Vlist)
