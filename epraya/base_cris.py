@@ -79,28 +79,121 @@ def EAdaptarray(espac,h1,iser):
         Elist[B]=vals
         Vlist[B]=vecs
     return Elist,Vlist
+
+def Proyectorpolate(alfields,alrevecs,refield,order=1):
+    '''
+    Calculates the expected projector of an specific field value, using an interpolation of the know projectors of the eigenvectors.
+
+    Parameters
+    ----------
+   
+    alfields : np.array
+        Known field values related to the eigenvectors.
+    alrevecs : np.array
+        Known eigenvectors of n field values.
+    refield : float
+        Field value where the projector is going to be interpolated.
+    order : int
+        Order of the interpolation.
+
+    Returns
+    -------
+
+    proyector : np.array
+        Interpolated projector.
+   
+    '''
+    #Instead of using the vectors abs, uses the projector \rho to calculate the change in the values
+    dim=alrevecs.shape[1]
+    order=min(order,len(afields)-1)
+    #All field values in one
+    alles=refield**np.arange(order,-1,-1)
+    proyector=np.zeros((dim,dim,dim),dtype=np.complex128)
+    for k in range(dim):
+        alrepro=np.array([np.outer(alrevecs[t,:,k],alrevecs[t,:,k].conj()) for t in range(n)])
+        #Change of dimension of the projector to use broadcasting
+        proje=alrepro.reshape(n,dim*dim)
+        #Makes a linear interpolation to approximate a function for the projector as function of the field
+        cr=np.polyfit(alfields,proje.real,order)
+        ci=np.polyfit(alfields,proje.imag,order)
+        #Unites the real and imaginary interpolations to calculate the estimated projector
+        proje=(cr.T@alles)+1j*(ci.T@alles)
+        proyector[k]=proje.reshape(dim,dim)
+    return proyector
+
+def EHungorders(proyector,expevals,actvals,actvecs):
+    '''
+    Solves the assigment problem with the J-V method implemented in scipy to relate the energy values to the eigenvectors, with the projectors traces as reference. This one is use to make sure the
+    energy values don't "jump", damaging the classification.
+   
+    Parameters
+    ----------
+   
+    proyector : np.array
+       Interpolated projector of the eigenvector.
+    onevecs : np.array
+        Array of the expected values of the proyector.
+
+    actvals : np.array
+        Array of the point (i) energy values of the hamiltonian.
+    actvecs : np.array
+
+        Array of the point (i) eigenvectors of the hamiltonian.
+       
+    Returns
+    -------
+    actvals[novo] : np.array
+        Sorted energy value of the hamiltonian.
+    actvecs[:,novo] : np.array
+        Sorted eigenvectors of the hamiltonian.
+       
+    '''
+    dim=actvecs.shape[0]
+    actpro=np.array([np.outer(actvecs[:,j],actvecs[:,j].conj()) for j in range(dim)])
+    #Evalues the trace of the two projectors to creates the supermatrix
+    supermatrix=np.array([[np.real(np.trace(proyector[k]@actpro[j])) for j in range(dim)] for k in range(dim)])
+    cost=1-supermatrix
+    Edif=np.abs(expevals[:,None]-actvals[None,:])
+    maxE=np.max(Edif)
+    if maxE>0:
+        coste=Edif/maxE
+    else:
+        coste=0
+    cost=cost+0.1*coste
+    rowidx,colidx=sci.optimize.linear_sum_assignment(cost)
+    novo=colidx[np.argsort(rowidx)]
+    return actvals[novo],actvecs[:,novo]
+    
 # Takes into account the possibility of crossing in the energies, then makes an approximation with
 # the eigenvectors change, that will be "close" from each other, if the field difference is low
-def ERetrack(field,energy,einvector):
+def ERetrack(field,energy,einvector,nrefer=3,order=2):
     '''
 
     Organize the eigenvectors and energies to relate them with the quantum numbers of the system, taking as references the values at high field.
-    
+    For the possibility of anticrossings and for good measure, uses the projector of the eigenvector to estimate the change in energy. This
+    countermeasure is necessary to ensure that with zero-field splitting the two spin values (-s,+s) start in the same point.
+   
     Parameters
     ----------
-    
+   
     field : np.array
         Array with the values of the magnetic field.
-        
+       
     energy : np.array
         Array of the energy values of the hamiltonian.
-        
+       
     einvector : np.array
         Array of the eigenvectors of the hamiltonian.
-    
+
+    nrefer : int
+        Number of points for the interpolation.
+
+    order : int
+        Order of the interpolation.
+       
     Returns
     -------
-    
+   
     Enegria : np.array
         Array of the sorted energy values of the hamiltonian.
     Vector : np.array
@@ -109,13 +202,23 @@ def ERetrack(field,energy,einvector):
     '''
     Enegria=np.array(energy,copy=True)
     Vector=np.array(einvector,copy=True)
-    for i in range(len(field)-2,-1,-1):
-        oncevals,oncevecs=Enegria[i+1],Vector[i+1]
+    nf=len(field)
+    for i in range(nf-2,-1,-1):
+        navail=min(nrefer,nf-1-i)
+        idxs=list(range(i+1,i+1+navail))
+        alfields=field[idxs]
+        alrevecs=Vector[idxs]
+        alrevals=Enegria[idxs]
         actvals,actvecs=Enegria[i],Vector[i]
-        novovals,novovecs=EHungorder(oncevals,oncevecs,actvals,actvecs)
+        if navail>=2:
+            order1=min(order,navail-1)
+            proyector=Proyectorpolate(alfields,alrevecs,field[i],order=order1)
+            expevals=np.array([np.polyval(np.polyfit(alfields,alrevals[:,k],order1),field[i]) for k in range(alrevals.shape[1])])
+            novovals,novovecs=EHungorders(proyector,expevals,actvals,actvecs)
+        else:
+            novovals,novovecs=EHungorder(alrevals[-1],alrevecs[-1],actvals,actvecs)
         Enegria[i],Vector[i]=novovals,novovecs
     return Enegria,Vector
-
 # Makes the approximation by the assigment problem solution
 def EHungorder(onevals,onevecs,actvals,actvecs):
     '''
