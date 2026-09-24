@@ -40,9 +40,9 @@ from joblib import Parallel, delayed
 from threadpoolctl import threadpool_limits
 import re
 from itertools import product as iterproduct
-from base_powd import *
-from base_ham import *
-from base_fit import Fitresult,result,Selectvarian
+from .base_powd import *
+from .base_ham import *
+from .base_fit import Fitresult,result,Selectvarian
 import matplotlib.cm as cm
 
 jx.config.update("jax_enable_x64", True)
@@ -1531,7 +1531,7 @@ def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2,hifi=Fal
     cross=cross.flatten()
     ntrans=jxn.sum(cross).astype(jxn.float64)
     #Scores for transition possibility
-    Ktra=1000 if hifi else 500
+    Ktra=1500 if hifi else 500
     scores=jxn.where(cross,1.0+fint,-1.0)
     topones,toponesind=jx.lax.top_k(scores,Ktra)
     toponesind=jx.lax.stop_gradient(toponesind)
@@ -2774,8 +2774,7 @@ def JMusic(maham,Expe,Nucl1='None',Nucl2='None',graph=True,hifi=False):
     
     Parameters
     ----------
-
-     maham : Class
+    maham : Class
         Container for the hamiltonian parameters of the two systems.
     Expe : Class
         Container for the experimental conditions.
