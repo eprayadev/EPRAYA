@@ -82,7 +82,7 @@ def EAdaptarray(espac,h1,iser):
     
 # Takes into account the possibility of crossing in the energies, then makes an approximation with
 # the eigenvectors change, that will be "close" from each other, if the field difference is low
-def ERetrack(field,energy,einvector,tol1=0.05):
+def ERetrack(field,energy,einvector,tol1=1e-5):
     '''
 
     Organize the eigenvectors and energies to relate them with the quantum numbers of the system, taking as references the values at high field.
@@ -105,7 +105,7 @@ def ERetrack(field,energy,einvector,tol1=0.05):
         Array of the eigenvectors of the hamiltonian.
         
     tol1 : float
-        Relative tolerance to consider two energies degenerate. Default is 0.05 GHz
+        Relative tolerance to consider two energies degenerate. Default is 1e-5 GHz
        
     Returns
     -------
@@ -125,11 +125,10 @@ def ERetrack(field,energy,einvector,tol1=0.05):
         actvals=Enegria[i].copy()
         #Kabsch algorithm restricted to the degenerate subspaces (eigh returns sorted energies)
         #Calculates the degeneration limit for the classification
-        tol=tol1*max(1.0,np.max(np.abs(actvals)))
         a=0
         while a<dim:
             b=a+1 
-            while b<dim and np.abs(actvals[b]-actvals[a])<tol:
+            while b<dim and np.abs(actvals[b]-actvals[a])<tol1:
                 b+=1
             if b-a>1:
                 #Selects the vectors
@@ -144,6 +143,15 @@ def ERetrack(field,energy,einvector,tol1=0.05):
                 #to find the best configuation to match the vectors traced before.
                 actvecs[:,a:b]=Q@(U@Vh)
             a=b
+        #Interpolates the data to see if the change in value is an anticrossing or a bad classification
+        if i<nf-2:
+            oncevecs=2.0*Vector[i+1]-Vector[i+2]
+            #Normalize the vectors
+            norma=np.linalg.norm(oncevecs,axis=0,keepdims=True)
+            norma[norma==0]=1.0
+            oncevecs=oncevecs/norma
+        else:
+            oncevecs=Vector[i+1]
         #Calculates the Overlap matrix O=|<\phi(B)|\phi(B+\deltaB)>|^2
         Ov=np.abs(actvecs.conj().T@oncevecs)**2
         #Use of the J-V method to assignate the vectors to a energy
