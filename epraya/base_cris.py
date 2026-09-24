@@ -105,7 +105,8 @@ def Proyectorpolate(alfields,alrevecs,refield,order=1):
     '''
     #Instead of using the vectors abs, uses the projector \rho to calculate the change in the values
     dim=alrevecs.shape[1]
-    order=min(order,len(afields)-1)
+    n=len(alfields)    
+    order=min(order,n-1)
     #All field values in one
     alles=refield**np.arange(order,-1,-1)
     proyector=np.zeros((dim,dim,dim),dtype=np.complex128)
