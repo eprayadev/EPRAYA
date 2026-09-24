@@ -82,7 +82,7 @@ def EAdaptarray(espac,h1,iser):
     
 # Takes into account the possibility of crossing in the energies, then makes an approximation with
 # the eigenvectors change, that will be "close" from each other, if the field difference is low
-def ERetrack(field,energy,einvector,tol1=1e-8):
+def ERetrack(field,energy,einvector,tol1=0.05):
     '''
 
     Organize the eigenvectors and energies to relate them with the quantum numbers of the system, taking as references the values at high field.
@@ -105,7 +105,7 @@ def ERetrack(field,energy,einvector,tol1=1e-8):
         Array of the eigenvectors of the hamiltonian.
         
     tol1 : float
-        Relative tolerance to consider two energies degenerate. Default is 1e-8.
+        Relative tolerance to consider two energies degenerate. Default is 0.05 GHz
        
     Returns
     -------
@@ -135,8 +135,10 @@ def ERetrack(field,energy,einvector,tol1=1e-8):
                 #Selects the vectors
                 Q=actvecs[:,a:b]
                 #Calculates the inner product of the remaining vectors with the ones from the base matrix in high field. 
-                M=Q.conj().T@oncevecs            
-                best=np.argsort(-np.linalg.norm(M,axis=0))[:b-a]
+                MM=Q.conj().T@oncevecs      
+                #Select the columns that corresponds to V{i+1} using the J-V method
+                _,col1=sci.optimize.linear_sum_assignment(-np.abs(MM)**2)
+                M=MM[:, col1]
                 U,_,Vh=np.linalg.svd(M[:,best])
                 #Changes the vectors with the  aplication of the Procrustes analysis or Kabsch algorithm,
                 #to find the best configuation to match the vectors traced before.
@@ -158,7 +160,7 @@ def ERetrack(field,energy,einvector,tol1=1e-8):
         actvecs=actvecs*(phase/mag)[None,:]
         Vector[i]=actvecs
         Enegria[i]=actvals
-    return Enegria,Vector
+     return Enegria,Vector
 
     
 # Makes the approximation by the assigment problem solution
