@@ -82,14 +82,16 @@ def EAdaptarray(espac,h1,iser):
     
 # Takes into account the possibility of crossing in the energies, then makes an approximation with
 # the eigenvectors change, that will be "close" from each other, if the field difference is low
-def ERetrack(field,energy,einvector):
+def ERetrack(field,energy,einvector,tol1=1e-8):
     '''
 
     Organize the eigenvectors and energies to relate them with the quantum numbers of the system, taking as references the values at high field.
-    It considers the values at high field and goes backwards. Following the method develop by Stoll et al, it applies the Kabsch algorithm
-    to eliminate the phase between the eigenvectors of i and i+1 and use it as input to construct the solap matrix O=<\phi(i)|\phi(i+1)>. With this matrix
-    the J-V method is applied to solve the assignation problem and relate the energy to the eigenvectors, to avoid missing the Kramers degeneration.
-    
+    It considers the values at high field and goes backwards. In every value, in the degenerate subspace, the basis is rotated using 
+    the Kabsch algorithm to match the vectors tracked in the last iteration.
+
+    In the next stephe overlap matrix O=|<\phi_a(i)|\phi_b(i+1)>|^2 is calculated and useas reference to solve the assigment problem
+    using the J-V method, reorganizing the energies and eigenvectorss. Finally the phase ofthe eigenvectors is changed so <\phi_k(i)|\phi_k(i+1)> is real and positive.
+
     Parameters
     ----------
    
@@ -101,12 +103,9 @@ def ERetrack(field,energy,einvector):
        
     einvector : np.array
         Array of the eigenvectors of the hamiltonian.
-
-    nrefer : int
-        Number of points for the interpolation.
-
-    order : int
-        Order of the interpolation.
+        
+    tol1 : float
+        Relative tolerance to consider two energies degenerate. Default is 1e-8.
        
     Returns
     -------
@@ -119,35 +118,48 @@ def ERetrack(field,energy,einvector):
     '''
     Enegria=np.array(energy,copy=True)
     Vector=np.array(einvector,copy=True)
-    nf=len(field)
-    dim=Vector.shape[1]
+    nf,dim=Enegria.shape
     for i in range(nf-2,-1,-1):
-        actvecs=Vector[i]
-        actvals=Enegria[i]
-        #Interpolates the data to see if the change in value is an anticrossing or a bad classification
-        if i<nf-2:
-            oncevecs=2.0*Vector[i+1]-Vector[i+2]
-            #Normalize the vectors
-            norma=np.linalg.norm(oncevecs,axis=0,keepdims=True)
-            norma[norma==0]=1.0
-            oncevecs=oncevecs/norma
-        else:
-            oncevecs=Vector[i+1]
-        #Calculates the overlap matrix of the vectors like O=<\phi(B)|\phi(B+\deltaB)>
-        Ov=actvecs.conj().T@oncevecs
-        #Singular values descomposition of the overlap matrix.
-        U,S,V=np.linalg.svd(Ov)
-        R=U@V
-        #Rotate the vectors to eliminate the phase.
-        #Is a aplication of the Procrustes analysis or Kabsch algorithm, to find the best rotation that maximaze the coincidence
-        #of the bases to eliminate the phase.
-        rotvecs=actvecs@R
-        #Use of the J-V method to assignate the vectors to a energy 
-        cost=1.0-np.abs((rotvecs.conj().T@oncevecs))
-        rows,cols=sci.optimize.linear_sum_assignment(cost)
-        Vector[i]=rotvecs[:,cols]
-        Enegria[i]=actvals[cols]
-    return Enegria,Vector
+        oncevecs=Vector[i+1]
+        actvecs=Vector[i].copy()
+        actvals=Enegria[i].copy()
+        #Kabsch algorithm restricted to the degenerate subspaces (eigh returns sorted energies)
+        #Calculates the degeneration limit for the classification
+        tol=tol1*max(1.0,np.max(np.abs(actvals)))
+        a=0
+        while a<dim:
+            b=a+1 
+            while b<dim and np.abs(actvals[b]-actvals[a])<tol:
+                b+=1
+            if b-a>1:
+                #Selects the vectors
+                Q=actvecs[:,a:b]
+                #Calculates the inner product of the remaining vectors with the ones from the base matrix in high field. 
+                M=Q.conj().T@oncevecs            
+                best=np.argsort(-np.linalg.norm(M,axis=0))[:b-a]
+                U,_,Vh=np.linalg.svd(M[:,best])
+                #Changes the vectors with the  aplication of the Procrustes analysis or Kabsch algorithm,
+                #to find the best configuation to match the vectors traced before.
+                actvecs[:,a:b]=Q@(U@Vh)
+            a=b
+        #Calculates the Overlap matrix O=|<\phi(B)|\phi(B+\deltaB)>|^2
+        Ov=np.abs(actvecs.conj().T@oncevecs)**2
+        #Use of the J-V method to assignate the vectors to a energy
+        rows,cols=sci.optimize.linear_sum_assignment(-Ov)
+        perm=np.empty(dim,dtype=int)
+        perm[cols]=rows
+        #Values assignation
+        actvecs=actvecs[:,perm]
+        actvals=actvals[perm]
+        #Phase fixing: <\phi_k(i)|\phi_k(i+1)> real and positive
+        phase=np.einsum('ij,ij->j',actvecs.conj(),oncevecs)
+        mag=np.abs(phase)
+        mag[mag==0]=1.0
+        actvecs=actvecs*(phase/mag)[None,:]
+        Vector[i]=actvecs
+        Enegria[i]=actvals
+     return Enegria,Vector
+
     
 # Makes the approximation by the assigment problem solution
 def EHungorder(onevals,onevecs,actvals,actvecs):
@@ -232,7 +244,7 @@ def EBoltfactor(Eghz,di,dj,Temp):
     popuj=boltz[dj]/Z
     return np.abs(popui-popuj)
 
-def Eresonant(Hamer,Exp,graph=True,table=True):  #Function for finding the resonant fields and energies
+def Eresonant(Hamer,Expe,graph=True,table=True):  #Function for finding the resonant fields and energies
     '''
     Function for the simulation of the EPR spectrum for monocrystal samples, creating the energy diagrams and a table of the resonant fields.
     
@@ -291,6 +303,7 @@ def Eresonant(Hamer,Exp,graph=True,table=True):  #Function for finding the reson
 
     '''
     Ham=deepcopy(Hamer)
+    Exp=deepcopy(Expe)
     if Exp.Freq<=0:
         raise ValueError("Frequency can't be a negative or zero value")
     Ham.D,Ham.A=np.asarray(Ham.D),np.asarray(Ham.A)
@@ -415,7 +428,10 @@ def Eresonant(Hamer,Exp,graph=True,table=True):  #Function for finding the reson
                         intensy.append(prob*boltzman*gema)
                 except ValueError:
                     pass
-    inten1=Voigtp(espac1,intensy,resfield,Ham.Hpp,Ham.eta)
+    if len(resfield)>0:
+        inten1=Voigtp(espac1,np.asarray(intensy,dtype=float),np.asarray(resfield,dtype=float),Ham.Hpp,Ham.eta)
+    else:
+        inten1=np.zeros_like(espac1)
     if len(resfield)>0:
         if table:
             df=DataFrame(data=resonants)
