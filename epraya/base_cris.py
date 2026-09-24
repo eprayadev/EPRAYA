@@ -572,7 +572,7 @@ def Plotsim(espac1,inten1,resfield,espac2,enegria,curvebasis,splines,resonants,H
         fig1,ax1=plt.subplots(figsize=(10,6))
         ax1.plot(espac1,inten1,color='navy',label="Spectrum",linewidth=1.5)
         if len(resfield)>1:
-            col_es=cm.viridis(np.linspace(0,1,len(resfield)))
+            colres=cm.viridis(np.linspace(0,1,len(resfield)))
         else:
             colres=['red']
         meanint=np.mean(inten1)
