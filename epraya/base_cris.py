@@ -89,8 +89,8 @@ def ERetrack(field,energy,einvector,tol1=1e-6):
     It considers the values at high field and goes backwards. In every value, in the degenerate subspace, the basis is rotated using 
     the Kabsch algorithm to match the vectors tracked in the last iteration.
 
-    In the next stephe overlap matrix O=|<\phi_a(i)|\phi_b(i+1)>|^2 is calculated and useas reference to solve the assigment problem
-    using the J-V method, reorganizing the energies and eigenvectorss. Finally the phase ofthe eigenvectors is changed so <\phi_k(i)|\phi_k(i+1)> is real and positive.
+    In the next stephe overlap matrix O=|<phi_a(i)|phi_b(i+1)>|^2 is calculated and useas reference to solve the assigment problem
+    using the J-V method, reorganizing the energies and eigenvectorss. Finally the phase ofthe eigenvectors is changed so <phi_k(i)|phi_k(i+1)> is real and positive.
 
     Parameters
     ----------
@@ -152,7 +152,7 @@ def ERetrack(field,energy,einvector,tol1=1e-6):
             oncevecs=oncevecs/norma
         else:
             oncevecs=Vector[i+1]
-        #Calculates the Overlap matrix O=|<\phi(B)|\phi(B+\deltaB)>|^2
+        #Calculates the Overlap matrix O=|<phi(B)|phi(B+\deltaB)>|^2
         Ov=np.abs(actvecs.conj().T@oncevecs)**2
         #Use of the J-V method to assignate the vectors to a energy
         rows,cols=sci.optimize.linear_sum_assignment(-Ov)
@@ -161,7 +161,7 @@ def ERetrack(field,energy,einvector,tol1=1e-6):
         #Values assignation
         actvecs=actvecs[:,perm]
         actvals=actvals[perm]
-        #Phase fixing: <\phi_k(i)|\phi_k(i+1)> real and positive
+        #Phase fixing: <phi_k(i)|phi_k(i+1)> real and positive
         phase=np.einsum('ij,ij->j',actvecs.conj(),oncevecs)
         mag=np.abs(phase)
         mag[mag==0]=1.0

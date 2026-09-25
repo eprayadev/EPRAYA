@@ -615,7 +615,7 @@ def JQii(iix,iiy,iiz,q,dim):
     [-4.75-0.49999997j  0.  +0.j         -4.75+0.49999997j]
     [ 0.  +0.j         -4.75-0.49999997j  0.  +0.j        ]]
     '''
-    hql=(q[0,0]*(iix@iix))+(q[1,1])*(iiy@iiy))+(q[2,2]*(iiz@iiz))+(q[0,1]*((iix@iiy)+(iiy@iix)))+(q[1,2]*((iiy@iiz)+(iiz@iiy)))
+    hql=(q[0,0]*(iix@iix))+(q[1,1]*(iiy@iiy))+(q[2,2]*(iiz@iiz))+(q[0,1]*((iix@iiy)+(iiy@iix)))+(q[1,2]*((iiy@iiz)+(iiz@iiy)))
     +(q[2,0]*((iiz@iix)+(iix@iiz)))
     tql=jxn.kron(jxn.eye(int(dim/(hql).shape[1])),hql)
     return tql
