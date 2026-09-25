@@ -1235,9 +1235,9 @@ def Music(Hamer,Exper,graph=True,table=True,relevance=1e-4):
                 smax=max(relev)
                 keep=[]
                 if smax>0:
-                for k in range(len(relev)):
-                    if relev[k]>=relevance*smax:
-                        keep.append(k)
+                    for k in range(len(relev)):
+                        if relev[k]>=relevance*smax:
+                            keep.append(k)
                 resonants=[resonants[k] for k in keep]
                 resfield=[resfield[k] for k in keep]
                 intensy=[intensy[k] for k in keep]
