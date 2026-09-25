@@ -749,9 +749,12 @@ def Caltriangle(sketch,Bmin,dB,allres,allint,transi,hulk,weight):
                         w3=k/(numd-1)
                         Bin=w1*B1+w2*B2+w3*B3
                         Iint=w1*I1+w2*I2+w3*I3
-                        igdam=int((Bin-Bmin)/dB)
-                        if 0<=igdam<len(sketch):
-                            sketch[igdam]+=Iint*pointweg
+                        xdam=(Bin-Bmin)/dB
+                        igdam=int(np.floor(xdam))
+                        frac=xdam-igdam
+                        sketch[igdam]+=Iint*pointweg*(1.0-frac)
+                        if 0<=igdam+1<len(sketch):
+                            sketch[igdam+1]+=Iint*pointweg*frac
 
 
 def Powder(Hamer,Expe,M=70,graph=True):  #Method ASG
@@ -945,6 +948,10 @@ def Calpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk):
     isz=np.kron(sz,np.eye(int(2*Ham.I+1)))
     isz=np.kron(np.eye(int(2*Ham.L+1)),isz)
     isz=np.asarray(isz,dtype=np.complex128)
+    #Transition rate value
+    isx=Ham.g[0,0]*isx+Ham.g[0,1]*isy+Ham.g[0,2]*isz
+    isy=Ham.g[1,0]*isx+Ham.g[1,1]*isy+Ham.g[1,2]*isz
+    isz=Ham.g[2,0]*isx+Ham.g[2,1]*isy+Ham.g[2,2]*isz
     E=Exp.Freq
     espac1=np.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
     beta=(scic.physical_constants["Bohr magneton"][0]/scic.physical_constants["Planck constant"][0])/1e12
@@ -997,7 +1004,7 @@ def Calpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk):
             allint[ide,:na]=Iv
     sketch=np.zeros(Exp.Points)
     Bmin=Exp.Frange[0]
-    dB=(Exp.Frange[1]-Exp.Frange[0])/(Exp.Points)
+    dB=(Exp.Frange[1]-Exp.Frange[0])/(Exp.Points-1)
     Caltriangle(sketch,Bmin,dB,allres,allint,ntrans,hulk,weight)
 
     #Convolution of the function to create the derivated spectrum
@@ -1160,29 +1167,34 @@ def Mulpol(Hamer,Expe,M=70,graph=True):
                 Ham.Mulham[orka].Bk6=Ham.Mulham[orka].Bk6/1000
                 Ham.Mulham[orka]=chaframe(Ham.Mulham[orka],Exp.Mexp[orka])
                 Pmatrixs[orka]=Pauli(Ham.Mulham[orka].S)
-                Pmatrixi[orka]=Pauli(Ham.Mulham[orka].I)
-                hzexx=np.asarray(beta*Hze(Pmatrixs[orka][0],Pmatrixs[orka][1],Pmatrixs[orka][2],Ham.Mulham[orka].g,[1,0,0],dimerq[orka]),dtype=complex)
-                hzex+=Kroexpand(hzexx,orka,dimerq)
-                hzeyy=np.asarray(beta*Hze(Pmatrixs[orka][0],Pmatrixs[orka][1],Pmatrixs[orka][2],Ham.Mulham[orka].g,[0,1,0],dimerq[orka]),dtype=complex)
-                hzey+=Kroexpand(hzeyy,orka,dimerq)
-                hzezz=np.asarray(beta*Hze(Pmatrixs[orka][0],Pmatrixs[orka][1],Pmatrixs[orka][2],Ham.Mulham[orka].g,[0,0,1],dimerq[orka]),dtype=complex)
-                hzez+=Kroexpand(hzezz,orka,dimerq)
+                Pmatrixi[orka]=Pauli(Ham.Mulham[orka].I)                
+                hzexx=np.asarray(beta*Hze(Pmatrixs[orka][0],Pmatrixs[orka][1],Pmatrixs[orka][2],Ham.Mulham[orka].g,[1,0,0],dimerq[elka.index(orka)]),dtype=complex)
+                hzex+=Kroexpand(hzexx,elka.index(orka),dimerq)
+                hzeyy=np.asarray(beta*Hze(Pmatrixs[orka][0],Pmatrixs[orka][1],Pmatrixs[orka][2],Ham.Mulham[orka].g,[0,1,0],dimerq[elka.index(orka)]),dtype=complex)
+                hzey+=Kroexpand(hzeyy,elka.index(orka),dimerq)
+                hzezz=np.asarray(beta*Hze(Pmatrixs[orka][0],Pmatrixs[orka][1],Pmatrixs[orka][2],Ham.Mulham[orka].g,[0,0,1],dimerq[elka.index(orka)]),dtype=complex)
+                hzez+=Kroexpand(hzezz,elka.index(orka),dimerq)
                 if Ham.Mulham[orka].S>=1:
-                    h1=h1+StevensO(Pmatrixs[orka][0],Pmatrixs[orka][1],Pmatrixs[orka][2],Ham.Mulham[orka].S,Ham.Mulham[orka],dim)
+                    h1=h1+Kroexpand(StevensO(Pmatrixs[orka][0],Pmatrixs[orka][1],Pmatrixs[orka][2],Ham.Mulham[orka].S,Ham.Mulham[orka],dimerq[elka.index(orka)]),elka.index(orka),dimerq)
                 if Ham.Mulham[orka].I!=0:
-                    h1=h1+Hfi(Pmatrixs[orka][0],Pmatrixs[orka][1],Pmatrixs[orka][2],Pmatrixi[orka][0],Pmatrixi[orka][1],Pmatrixi[orka][2],Ham.Mulham[orka].A,dim)
-                    nhzexx=np.asarray(betan*Nhze(Ham.Mulham[orka].I,Pmatrixi[orka][0],Pmatrixi[orka][1],Pmatrixi[orka][2],dimerq[orka],Ham.Mulham[orka].Nucl,[1,0,0]),dtype=complex)
-                    nhzex=Kroexpand(nhzexx,orka,dimerq)
-                    nhzeyy=np.asarray(betan*Nhze(Ham.Mulham[orka].I,Pmatrixi[orka][0],Pmatrixi[orka][1],Pmatrixi[orka][2],dimerq[orka],Ham.Mulham[orka].Nucl,[0,1,0]),dtype=complex)
-                    nhzey=Kroexpand(nhzeyy,orka,dimerq)
-                    nhzezz=np.asarray(betan*Nhze(Ham.Mulham[orka].I,Pmatrixi[orka][0],Pmatrixi[orka][1],Pmatrixi[orka][2],dimerq[orka],Ham.Mulham[orka].Nucl,[0,0,1]),dtype=complex)
-                    nhzez=Kroexpand(nhzezz,orka,dimerq)
+                    h1=h1+Kroexpand(Hfi(Pmatrixs[orka][0],Pmatrixs[orka][1],Pmatrixs[orka][2],Pmatrixi[orka][0],Pmatrixi[orka][1],Pmatrixi[orka][2],Ham.Mulham[orka].A,dimerq[elka.index(orka)]),elka.index(orka),dimerq)
+                    nhzexx=np.asarray(betan*Nhze(Ham.Mulham[orka].I,Pmatrixi[orka][0],Pmatrixi[orka][1],Pmatrixi[orka][2],dimerq[elka.index(orka)],Ham.Mulham[orka].Nucl,[1,0,0]),dtype=complex)
+                    nhzex=Kroexpand(nhzexx,elka.index(orka),dimerq)
+                    nhzeyy=np.asarray(betan*Nhze(Ham.Mulham[orka].I,Pmatrixi[orka][0],Pmatrixi[orka][1],Pmatrixi[orka][2],dimerq[elka.index(orka)],Ham.Mulham[orka].Nucl,[0,1,0]),dtype=complex)
+                    nhzey=Kroexpand(nhzeyy,elka.index(orka),dimerq)
+                    nhzezz=np.asarray(betan*Nhze(Ham.Mulham[orka].I,Pmatrixi[orka][0],Pmatrixi[orka][1],Pmatrixi[orka][2],dimerq[elka.index(orka)],Ham.Mulham[orka].Nucl,[0,0,1]),dtype=complex)
+                    nhzez=Kroexpand(nhzezz,elka.index(orka),dimerq)
                     hzex-=nhzex
                     hzey-=nhzey
                     hzez-=nhzez
                 if np.any(Ham.Mulham[orka].Q):
-                    h1=h1+Qii(Pmatrixi[orka][0],Pmatrixi[orka][1],Pmatrixi[orka][2],Ham.Mulham[orka].Q,dim)
+                    h1=h1+Kroexpand(Qii(Pmatrixi[orka][0],Pmatrixi[orka][1],Pmatrixi[orka][2],Ham.Mulham[orka].Q,dimerq[elka.index(orka)]),elka.index(orka),dimerq)
             if isinstance(Ham,Multham):
+               #Spin operators of system k embedded in the product space of the interacting systems
+                def Sintothis(k,a):
+                    return Kroexpand(np.kron(Pmatrixs[k][a],np.eye(int(2*Ham.Mulham[k].I+1))),elka.index(k),dimerq)
+                def Iintothis(k,a):
+                    return Kroexpand(np.kron(np.eye(int(2*Ham.Mulham[k].S+1)),Pmatrixi[k][a]),elka.index(k),dimerq)
                 for ilar in elka:
                     for jlar in elka:
                         if ilar==jlar:
@@ -1191,12 +1203,12 @@ def Mulpol(Hamer,Expe,M=70,graph=True):
                         if Aref is not None and np.any(Aref):
                             Aref=np.asarray(Aref)/1000.0
                             Aref=Aref*np.eye(3)
-                            h1+=Hfi(Pmatrixs[ilar][0],Pmatrixs[ilar][1],Pmatrixs[ilar][2],Pmatrixi[jlar][0],Pmatrixi[jlar][1],Pmatrixi[jlar][2],Aref,dim)
+                            h1+=sum(Aref[a,b]*(Sintothis(ilar,a)@Iintothis(jlar,b)) for a in range(3) for b in range(3))
                         Xref=Ham.Xmix.get((ilar,jlar))
                         if Xref is not None and np.any(Xref):
                             Xref=np.asarray(Xref)/1000.0
                             Xref=Xref*np.eye(3)
-                            h1+=Iee(Pmatrixs[ilar][0],Pmatrixs[ilar][1],Pmatrixs[ilar][2],Pmatrixs[jlar][0],Pmatrixs[jlar][1],Pmatrixs[jlar][2],Xref,dim)
+                            h1+=sum(Xref[a,b]*(Sintothis(ilar,a)@Sintothis(jlar,b)) for a in range(3) for b in range(3))
             h1=np.asarray(h1,dtype=complex)
             #For the total magnetic moment of the system
             stodx=np.zeros((dim,dim),dtype='complex')
@@ -1205,7 +1217,9 @@ def Mulpol(Hamer,Expe,M=70,graph=True):
             pla=0
             for pla in elka:
                 if Ham.Mulham[pla].S>0:
-                    sxe1,sye1,sze1=Pmatrixs[pla]
+                    #Transition rate with the zeeman interaction
+                    gp,sp=Ham.Mulham[pla].g,Pmatrixs[pla]
+                    sxe1,sye1,sze1=[gp[a,0]*sp[0]+gp[a,1]*sp[1]+gp[a,2]*sp[2] for a in range(3)]
                     sxe2=np.array([[1.0]])
                     sye2=np.array([[1.0]])
                     sze2=np.array([[1.0]])
@@ -1255,7 +1269,7 @@ def Mulpol(Hamer,Expe,M=70,graph=True):
                     allint[ide,:na]=Iv
             sketch=np.zeros(Exp.Mexp[0].Points)
             Bmin=Exp.Mexp[0].Frange[0]
-            dB=(Exp.Mexp[0].Frange[1]-Exp.Mexp[0].Frange[0])/(Exp.Mexp[0].Points)
+            dB=(Exp.Mexp[0].Frange[1]-Exp.Mexp[0].Frange[0])/(Exp.Mexp[0].Points-1)
             Caltriangle(sketch,Bmin,dB,allres,allint,ntrans,hulk,weight)
 
             #Convolution of the function to create the derivated spectrum
