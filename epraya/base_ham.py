@@ -523,9 +523,12 @@ class Mulexco:
 
     Mexp: List[Eco]=dcfield(default_factory=list)
     def _parse_attr(self,name):
-        match=re.match(r"^(Freq|Points|Temperature|Fdirection|Frange|Sampleframe|Molframe|gframe|Aframe|Dframe|)(\d+)$",name)
+        match=re.match(r"^(Freq|Points|Temperature|Fdirection|Frange|Sampleframe|Molframe|gframe|Aframe|Dframe|)(\d*)$",name)
         if match:
-            return "single",match.group(1),int(match.group(2))-1
+            attr=match.group(1)
+            numstr=match.group(2)
+            idx=(int(num_str)-1) if numstr else 0
+            return "single",attr,idx
         return None,None,None
 
     def __getattr__(self,name):
@@ -835,6 +838,8 @@ def Hze(ssx,ssy,ssz,g,biel,dim):
     [[ 1.0015+0.j  0.    +0.j]
     [ 0.    +0.j -1.0015+0.j]]
     '''
+    if np.linalg.norm(biel)>0:
+        biel=biel/np.linalg.norm(biel)
     hze=biel[0]*(g[0,0]*ssx+g[0,1]*ssy+g[0,2]*ssz)+biel[1]*(g[1,0]*ssx+g[1,1]*ssy+g[1,2]*ssz)+biel[2]*(g[2,0]*ssx+g[2,1]*ssy+g[2,2]*ssz)
     thz=np.kron(hze,np.eye(int(dim/(hze).shape[1])))
     return thz
@@ -876,9 +881,9 @@ def Qii(iix,iiy,iiz,q,dim):
     [-4.75-0.5j  0.  +0.j  -4.75+0.5j]
     [ 0.  +0.j  -4.75-0.5j  0.  +0.j ]]
     '''
-    hql=(q[0,0]*iix*iix)+(q[1,1]*iiy*iiy)+(q[2,2]*iiz*iiz)+(q[0,1]*(iix*iiy)-(iiy*iix))+(q[1,2]*(iiy*iiz)-(iiz*iiy))
-    +(q[2,0]*(iiz*iix)-(iix*iiz))
-    tql=np.kron(hql,np.eye(int(dim/(hql).shape[1])))
+    hql=(q[0,0]*(iix@iix))+(q[1,1])*(iiy@iiy))+(q[2,2]*(iiz@iiz))+(q[0,1]*((iix@iiy)+(iiy@iix)))+(q[1,2]*((iiy@iiz)+(iiz@iiy)))
+    +(q[2,0]*((iiz@iix)+(iix@iiz)))
+    tql=np.kron(np.eye(int(dim/(hql).shape[1])),hql)
     return tql
 
 def Nhze(I,iix,iiy,iiz,dim,Nucl='None',direction=[0,0,1]):
@@ -928,16 +933,13 @@ def Nhze(I,iix,iiy,iiz,dim,Nucl='None',direction=[0,0,1]):
         gn=deq['gN_factor'].values[0]
     else:
         gn=0
-    if direction==[0,0,1]:
-        direct=iiz
-    if direction==[0,1,0]:
-        direct=iiy
-    if direction==[1,0,0]:
-        direct=iix
-    else:
-        direct=iiz
+    nd=np.asarray(direction,dtype=float)
+    nor=np.linalg.norm(nd)
+    if nor>0:
+        nd=nd/nor
+    direct=nd[0]*iix+nd[1]*iiy+nd[2]*iiz
     nhz=gn*direct
-    nhz=np.kron(nhz,np.eye(int(dim/(nhz).shape[1])))
+    nhz=np.kron(np.eye(int(dim/(nhz).shape[1])),nhz)
     return nhz
 
 def chaframe(Ham,Exp):
@@ -1053,7 +1055,7 @@ def Rotmatrix(alfa,beta,gamma):
     >>> import epraya as epr
     >>> alfa,beta,gamma=20,30,40
     >>> print(epr.Rotmatrix(alfa,beta,gamma))
-    [[ 0.40355888  0.96394593 -0.38302222]
+    [[ 0.40355888  0.83092371 -0.38302222]
     [-0.7851017   0.52945382  0.3213938 ]
     [ 0.46984631  0.17101007  0.8660254 ]]
     '''
@@ -1069,7 +1071,7 @@ def Rotmatrix(alfa,beta,gamma):
     sina=np.where(np.abs(sina)<eps,0.0,sina)
     cosb=np.where(np.abs(cosb)<eps,0.0,cosb)
     sinb=np.where(np.abs(sinb)<eps,0.0,sinb)
-    Reuler=np.array([[(cosg*cosa*cosb)-(sing*sina),(cosg*cosa*sinb)+(sing*cosa),-cosg*sinb],
+    Reuler=np.array([[(cosg*cosa*cosb)-(sing*sina),(cosg*cosb*sina)+(sing*cosa),-cosg*sinb],
     [-(sing*cosb*cosa)-(cosg*sina),-(sing*cosb*sina)+(cosg*cosa),sing*sinb],
     [sinb*cosa,sina*sinb,cosb]])
     return Reuler
@@ -1566,3 +1568,55 @@ def MMsmi(Sval,Ival):
         transitions[key]=np.array(transitions[key])
     return slit,nlit,transitions
 
+def Fieldframe(vectors,direction,S,I):
+    '''
+    Pass the eigenvectos to the basis quantized along the static field direction. Pass from the molecular frame to the field frame to define the 
+    high field labels (|ms,mi>), assuming the basis refer to the z axis of the molecular frame. To make the rotation uses the Euler-Rodrigues formula
+    with exp(-theta u·(S+I))
+
+
+    Parameters
+    ----------
+    vectors : np.array
+        Eigenvectors (columns) in the basis quantized along z.
+
+    direction : array
+        Direction of the static magnetic field.
+
+    S : float
+        Electron spin value.
+
+    I : float
+        Nuclear spin value
+
+    Returns
+    -------
+    Rt : np.array
+        Eigenvectors in the basis quantized along the field direction.
+    '''
+    from scipy.linalg import expm
+    #Normalize
+    n=np.asarray(direction,dtype=float)
+    n=n/np.linalg.norm(n)
+    #Finds the perpendicular vector of the direction and the z basis
+    u=np.cross(np.array([0.0,0.0,1.0]),n)
+    s=np.linalg.norm(u)
+    #Defines the angle theta for the rotation
+    if s<1e-12:
+        if n[2]>0:
+            #If the basis is the same
+            return vectors
+        #Along the -z direction
+        u,theta=np.array([1.0,0.0,0.0]),np.pi
+    else:
+        u,theta=u/s,np.arctan2(s,n[2])
+    sx,sy,sz=Pauli(S)
+    ix,iy,iz=Pauli(I)
+    ds,di=sx.shape[0],ix.shape[0]
+    J1=np.kron(sx,np.eye(di))+np.kron(np.eye(ds),ix)
+    J2=np.kron(sy,np.eye(di))+np.kron(np.eye(ds),iy)
+    J3=np.kron(sz,np.eye(di))+np.kron(np.eye(ds),iz)
+    J=[J1,J2,J3]
+    R=expm(-1j*theta*(u[0]*J[0]+u[1]*J[1]+u[2]*J[2]))
+    Rt=R.conj().T@vectors
+    return Rt
