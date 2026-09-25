@@ -506,6 +506,8 @@ def JHze(ssx,ssy,ssz,g,biel,dim):
     [ 0.    +0.j -1.0015+0.j]]
 
     '''
+    biel=jxn.asarray(biel,dtype=float)
+    biel=biel/jxn.where(jxn.linalg.norm(biel)>0,jxn.linalg.norm(biel),1.0)
     hze=biel[0]*(g[0,0]*ssx+g[0,1]*ssy+g[0,2]*ssz)+biel[1]*(g[1,0]*ssx+g[1,1]*ssy+g[1,2]*ssz)+biel[2]*(g[2,0]*ssx+g[2,1]*ssy+g[2,2]*ssz)
     thz=jxn.kron(hze,jxn.eye(int(dim/(hze).shape[1])))
     return thz
@@ -613,9 +615,9 @@ def JQii(iix,iiy,iiz,q,dim):
     [-4.75-0.49999997j  0.  +0.j         -4.75+0.49999997j]
     [ 0.  +0.j         -4.75-0.49999997j  0.  +0.j        ]]
     '''
-    hql=(q[0,0]*iix*iix)+(q[1,1]*iiy*iiy)+(q[2,2]*iiz*iiz)+(q[0,1]*(iix*iiy)-(iiy*iix))+(q[1,2]*(iiy*iiz)-(iiz*iiy))
-    +(q[2,0]*(iiz*iix)-(iix*iiz))
-    tql=jxn.kron(hql,jxn.eye(int(dim/(hql).shape[1])))
+    hql=(q[0,0]*(iix@iix))+(q[1,1])*(iiy@iiy))+(q[2,2]*(iiz@iiz))+(q[0,1]*((iix@iiy)+(iiy@iix)))+(q[1,2]*((iiy@iiz)+(iiz@iiy)))
+    +(q[2,0]*((iiz@iix)+(iix@iiz)))
+    tql=jxn.kron(jxn.eye(int(dim/(hql).shape[1])),hql)
     return tql
 
 
@@ -661,9 +663,11 @@ def JNhze(I,iix,iiy,iiz,dim,gn,direction=[0,0,1]):
     [ 0.    +0.j  0.    +0.j  0.    +0.j]
     [ 0.    +0.j  0.    +0.j -1.3813+0.j]]
     '''
-    direct=direction[0]*iix+direction[1]*iiy+direction[2]*iiz
+    nd=jxn.asarray(direction,dtype=float)
+    nd=nd/jxn.where(jxn.linalg.norm(nd)>0,jxn.linalg.norm(nd),1.0)
+    direct=nd[0]*iix+nd[1]*iiy+nd[2]*iiz
     nhz=gn*direct
-    nhz=jxn.kron(nhz,jxn.eye(int(dim/(nhz).shape[1])))
+    nhz=jxn.kron(jxn.eye(int(dim/(nhz).shape[1])),nhz)
     return nhz
 
 def gnfactor(Nucl='None'):
@@ -772,9 +776,9 @@ def JRotationmat(Exp):
     >>> Exp.Sampleframe=[30,20,0]
     >>> Exp.Molframe=[60,0,0]
     >>> print(epr.JRotationmat(Exp))
-    [[ 0.49999997 -0.86602545  0.        ]
-    [ 0.          0.49999997  0.        ]
-    [ 0.          0.          1.        ]]
+    [[ 0.40355888  0.83092371 -0.38302222]
+    [-0.7851017   0.52945382  0.3213938 ]
+    [ 0.46984631  0.17101007  0.8660254 ]]
     '''
     RRmatrix=JRotmatrix(Exp.Sampleframe[0],Exp.Sampleframe[1],Exp.Sampleframe[2])@JRotmatrix(Exp.Molframe[0],Exp.Molframe[1],Exp.Molframe[2])
     return RRmatrix.T
@@ -823,7 +827,7 @@ def JRotmatrix(alfa,beta,gamma):
     sina=jxn.where(jxn.abs(sina)<eps,0.0,sina)
     cosb=jxn.where(jxn.abs(cosb)<eps,0.0,cosb)
     sinb=jxn.where(jxn.abs(sinb)<eps,0.0,sinb)
-    Reuler=jxn.array([[(cosg*cosa*cosb)-(sing*sina),(cosg*cosa*sinb)+(sing*cosa),-cosg*sinb],
+    Reuler=jxn.array([[(cosg*cosa*cosb)-(sing*sina),(cosg*cosb*sina)+(sing*cosa),-cosg*sinb],
     [-(sing*cosb*cosa)-(cosg*sina),-(sing*cosb*sina)+(cosg*cosa),sing*sinb],
     [sinb*cosa,sina*sinb,cosb]])
     return Reuler
@@ -1413,7 +1417,7 @@ def JBoltfactor(Eghz,di,dj,Temp):
     Z=jxn.sum(boltz)
     popui=boltz[di]/Z
     popuj=boltz[dj]/Z
-    return jxn.abs(popui-popuj)
+    return jxn.where(Temp<=0.0,1.0,jxn.abs(popui-popuj))
 
 @partial(jx.jit,static_argnames=['dim','hifi'])
 def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2,hifi=False):
@@ -1524,6 +1528,7 @@ def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2,hifi=Fal
     popui=boltz[:,parr,iidx]
     popuj=boltz[:,parr,jidx]
     boltzm=jxn.abs(popui-popuj)
+    boltzm=jxn.where(Tem<=0.0,1.0,boltzm)
     eintensy=prob*gema*boltzm
 
     fres=jxn.where(cross,res,0.0).flatten()
@@ -1531,7 +1536,7 @@ def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2,hifi=Fal
     cross=cross.flatten()
     ntrans=jxn.sum(cross).astype(jxn.float64)
     #Scores for transition possibility
-    Ktra=1500 if hifi else 500
+    Ktra=min(Ktra,scores.shape[0])
     scores=jxn.where(cross,1.0+fint,-1.0)
     topones,toponesind=jx.lax.top_k(scores,Ktra)
     toponesind=jx.lax.stop_gradient(toponesind)
@@ -1807,6 +1812,10 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None',hifi=False):
     isz=jxn.kron(sz,jxn.eye(int(2*Ham.I+1)))
     isz=jxn.kron(jxn.eye(int(2*Ham.L+1)),isz)
     isz=jxn.asarray(isz,dtype=jxn.complex64)
+    #Transition rate with the Zeeman part
+    isx=Ham.g[0,0]*isx+Ham.g[0,1]*isy+Ham.g[0,2]*isz
+    isy=Ham.g[1,0]*isx+Ham.g[1,1]*isy+Ham.g[1,2]*isz
+    isz=Ham.g[2,0]*isx+Ham.g[2,1]*isy+Ham.g[2,2]*isz
     E=Exp.Freq
     beta=(scic.physical_constants["Bohr magneton"][0]/scic.physical_constants["Planck constant"][0])/1e12
     betan=(scic.physical_constants["nuclear magneton"][0]/scic.physical_constants["Planck constant"][0])/1e12
@@ -2128,10 +2137,10 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
     slit,nlit,llit=JMsmi(Ham.I,Ham.S,Ham.L)
     dim=int(2*Ham.S+1)*int(2*Ham.I+1)*int(2*Ham.L+1)
     Exp=Expe
-    ndir=jxn.array(Expe.Fdirection,dtype=jxn.float32)
+    ndir=jxn.array(Expe.Fdirection,dtype=jxn.float64)
     ndir=ndir/jxn.linalg.norm(ndir)
     nx,ny,nz=ndir[0],ndir[1],ndir[2]
-    mdir=jxn.array(Expe.Mwdirection,dtype=jxn.float32)
+    mdir=jxn.array(Expe.Mwdirection,dtype=jxn.float64)
     mdir=mdir/jxn.linalg.norm(mdir)
     mx,my,mz=mdir[0],mdir[1],mdir[2]
     Ham=Jchaframe(Ham,Exp)
@@ -2146,6 +2155,10 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
     isz=jxn.kron(sz,jxn.eye(int(2*Ham.I+1)))
     isz=jxn.kron(jxn.eye(int(2*Ham.L+1)),isz)
     isz=jxn.asarray(isz,dtype=jxn.complex64)
+    #Transition rate with the Zeeman part
+    isx=Ham.g[0,0]*isx+Ham.g[0,1]*isy+Ham.g[0,2]*isz
+    isy=Ham.g[1,0]*isx+Ham.g[1,1]*isy+Ham.g[1,2]*isz
+    isz=Ham.g[2,0]*isx+Ham.g[2,1]*isy+Ham.g[2,2]*isz
     E=Exp.Freq
     beta=(scic.physical_constants["Bohr magneton"][0]/scic.physical_constants["Planck constant"][0])/1e12
     betan=(scic.physical_constants["nuclear magneton"][0]/scic.physical_constants["Planck constant"][0])/1e12
@@ -2210,6 +2223,7 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
     popui=boltz[:,iidx]
     popuj=boltz[:,jidx]
     boltzm=jxn.abs(popui-popuj)
+    boltzm=jxn.where(Exp.Temperature<=0.0,1.0,boltzm)
     intensy=prob*gema*boltzm
     deltaE=jxn.abs(Elist[:,jidx]-Elist[:,iidx])
     dfe=deltaE-Exp.Freq
@@ -3050,6 +3064,7 @@ def Jcalmusic(maham,Expe,Nucl1='None',Nucl2='None',hifi=False):
         popui=boltz[:,iidx]
         popuj=boltz[:,jidx]
         boltzm=jxn.abs(popui-popuj)
+        boltzm=jxn.where(Exp1.Temperature<=0.0,1.0,boltzm)
         intensy=prob*gema*boltzm
         deltaE=jxn.abs(Elist[:,jidx]-Elist[:,iidx])
         dfe=deltaE-Exp1.Freq
