@@ -82,7 +82,7 @@ def EAdaptarray(espac,h1,iser):
     
 # Takes into account the possibility of crossing in the energies, then makes an approximation with
 # the eigenvectors change, that will be "close" from each other, if the field difference is low
-def ERetrack(field,energy,einvector,tol1=1e-5):
+def ERetrack(field,energy,einvector,tol1=1e-6):
     '''
 
     Organize the eigenvectors and energies to relate them with the quantum numbers of the system, taking as references the values at high field.
@@ -254,7 +254,7 @@ def EBoltfactor(Eghz,di,dj,Temp):
     popuj=boltz[dj]/Z
     return np.abs(popui-popuj)
 
-def Eresonant(Hamer,Expe,graph=True,table=True):  #Function for finding the resonant fields and energies
+def Eresonant(Hamer,Expe,graph=True,table=True,relevance=1e-4):  #Function for finding the resonant fields and energies
     '''
     Function for the simulation of the EPR spectrum for monocrystal samples, creating the energy diagrams and a table of the resonant fields.
     
@@ -274,7 +274,10 @@ def Eresonant(Hamer,Expe,graph=True,table=True):  #Function for finding the reso
         
     table : Bool
         Generates the resonant fields and transitions table.
-    
+        
+    relevance : float
+        Relative threshold for the transition strength (Intensity/Boltzmann factor), if lower it is discarded. Default is 1e-4.
+        
     Returns
     -------
     
@@ -314,6 +317,10 @@ def Eresonant(Hamer,Expe,graph=True,table=True):  #Function for finding the reso
     '''
     Ham=deepcopy(Hamer)
     Exp=deepcopy(Expe)
+    ndir=np.asarray(Exp.Fdirection,dtype=float)
+    mdir=np.asarray(Exp.Mwdirection,dtype=float)
+    if np.linalg.norm(ndir)>0 and np.linalg.norm(mdir)>0 and abs(ndir@mdir)/(np.linalg.norm(ndir)*np.linalg.norm(mdir))>0.99:
+        print("WARNING: Mwdirection is (almost) parallel to Fdirection. Use a Mwdirection perpendicular to Fdirection for a standard cavity.")
     if Exp.Freq<=0:
         raise ValueError("Frequency can't be a negative or zero value")
     Ham.D,Ham.A=np.asarray(Ham.D),np.asarray(Ham.A)
@@ -371,11 +378,9 @@ def Eresonant(Hamer,Expe,graph=True,table=True):  #Function for finding the reso
     Blist=np.linspace(Exp.Frange[0],Exp.Frange[1],500)
     Elist,Vlist=EAdaptarray(Blist,h1,hze)
     Elist,Vlist=ERetrack(Blist,Elist,Vlist)
-    #Find allowed transitions
-    targettr=set()
-    targettr.update(tuple(sorted(p)) for p in transitions["allowed"])
-    targettr.update(tuple(sorted(p)) for p in transitions["for Dms2"])
+
     maxvector=Vlist[-1]
+    maxvector=Fieldframe(maxvector,Exp.Fdirection,Ham.S,Ham.I)
     curvebasis=Assingstatestobasis(maxvector)
     #Cubic splines algorithm for the values
     splines=cubichers(Blist,Elist,axis=0)
@@ -383,13 +388,11 @@ def Eresonant(Hamer,Expe,graph=True,table=True):  #Function for finding the reso
     resonants=[]
     resfield=[]
     intensy=[]
+    relev=[]
     for i in range(dim):
         for j in range(i+1,dim):
             basis1=curvebasis[i]
             basis2=curvebasis[j]
-            pair=tuple(sorted((basis1,basis2)))
-            if pair not in targettr:
-                continue
             def deltaE(b):
                 return np.real(np.abs(splines(b)[j]-splines(b)[i]))-Exp.Freq
             diffv=np.abs(Elist[:,j]-Elist[:,i])-Exp.Freq
@@ -427,17 +430,33 @@ def Eresonant(Hamer,Expe,graph=True,table=True):  #Function for finding the reso
                             ttyp="Allowed"
                         elif np.isclose(dms,2):
                             ttyp="Forbidden (2)"
+                        elif np.isclose(dms,3):
+                            ttyp="Forbidden (3)"
                         elif not np.isclose(dmi,0):
                             ttyp="Forbidden (N)"
                         else:
                             ttyp="Forbidden"
                         state1=Getlabel(basis1,slit,nlit,llit,Ham.L,Ham.I)
                         state2=Getlabel(basis2,slit,nlit,llit,Ham.L,Ham.I)
-                        resonants.append({'field': res.root,'inx': (i, j),'bainx': (basis1,basis2),'type': ttyp,'transition': f"{state1} <-> {state2}"})
+                        resonants.append({'field': res.root,'inx': (i, j),'bainx': (basis1,basis2),'type': ttyp,'transition': f"{state1} <-> {state2}",'relevance': prob*gema})
                         resfield.append(res.root)
                         intensy.append(prob*boltzman*gema)
+                        relev.append(prob*gema)
                 except ValueError:
                     pass
+    #Discard the lower relevance resonances
+    if len(relev)>0:
+        smax=max(relev)
+        keep=[]
+        if smax>0:
+            for k in range(len(relev)):
+                if relev[k]>=relevance*smax:
+                    keep.append(k)
+        resonants=[resonants[k] for k in keep]
+        resfield=[resfield[k] for k in keep]
+        intensy=[intensy[k] for k in keep]
+        for r in resonants:
+            r['relevance']=r['relevance']/smax
     if len(resfield)>0:
         inten1=Voigtp(espac1,np.asarray(intensy,dtype=float),np.asarray(resfield,dtype=float),Ham.Hpp,Ham.eta)
     else:
@@ -690,7 +709,7 @@ def Mulgetlabel(basisidx,slit,nlit):
     else:
         return f"|Ms:{msf}⟩"
 
-def Cristalfm(Hamer,Exp):  #Function for finding the resonant fields and energies
+def Cristalfm(Hamer,Exp,relevance=1e-4):  #Function for finding the resonant fields and energies
     '''
     Function for the calculation of the spectrum of monocristals without producing the graphs.
     
@@ -702,6 +721,9 @@ def Cristalfm(Hamer,Exp):  #Function for finding the resonant fields and energie
     
     Exp : Class
         Container for the experimental conditions.
+        
+    relevance : float
+        Relative threshold for the transition strength (Intensity/Boltzmann factor), if lower it is discarded. Default is 1e-4.
         
     Returns
     -------
@@ -805,11 +827,8 @@ def Cristalfm(Hamer,Exp):  #Function for finding the resonant fields and energie
     Blist=np.linspace(Exp.Frange[0],Exp.Frange[1],500)
     Elist,Vlist=EAdaptarray(Blist,h1,hze)
     Elist,Vlist=ERetrack(Blist,Elist,Vlist)
-    #Find allowed transitions
-    targettr=set()
-    targettr.update(tuple(sorted(p)) for p in transitions["allowed"])
-    targettr.update(tuple(sorted(p)) for p in transitions["for Dms2"])
     maxvector=Vlist[-1]
+    maxvector=Fieldframe(maxvector,Exp.Fdirection,Ham.S,Ham.I)
     curvebasis=Assingstatestobasis(maxvector)
     #Cubic splines algorithm for the values
     splines=cubichers(Blist,Elist,axis=0)
@@ -817,13 +836,11 @@ def Cristalfm(Hamer,Exp):  #Function for finding the resonant fields and energie
     resonants=[]
     resfield=[]
     intensy=[]
+    relev=[]
     for i in range(dim):
         for j in range(i+1,dim):
             basis1=curvebasis[i]
             basis2=curvebasis[j]
-            pair=tuple(sorted((basis1,basis2)))
-            if pair not in targettr:
-                continue
             def deltaE(b):
                 return np.real(np.abs(splines(b)[j]-splines(b)[i]))-Exp.Freq
             diffv=np.abs(Elist[:, j]-Elist[:, i])-Exp.Freq
@@ -861,18 +878,37 @@ def Cristalfm(Hamer,Exp):  #Function for finding the resonant fields and energie
                             ttyp="Allowed"
                         elif np.isclose(dms,2):
                             ttyp="Forbidden (2)"
+                        elif np.isclose(dms,3):
+                            ttyp="Forbidden (3)"
                         elif not np.isclose(dmi,0):
                             ttyp="Forbidden (N)"
                         else:
                             ttyp="Forbidden"
                         state1=Getlabel(basis1,slit,nlit,llit,0,Ham.I)
                         state2=Getlabel(basis2,slit,nlit,llit,0,Ham.I)
-                        resonants.append({'field':res.root,'inx':(i, j),'bainx': (basis1,basis2),'type':ttyp,'transition':f"{state1}<-> {state2}"})
+                        esonants.append({'field': res.root,'inx': (i, j),'bainx': (basis1,basis2),'type': ttyp,'transition': f"{state1} <-> {state2}",'relevance': prob*gema})
                         resfield.append(res.root)
                         intensy.append(prob*boltzman*gema)
+                        relev.append(prob*gema)
                 except ValueError:
                     pass
-    inten1=Voigtp(espac1,intensy,resfield,Ham.Hpp,Ham.eta)
+    #Discard the lower relevance resonances
+    if len(relev)>0:
+        smax=max(relev)
+        keep=[]
+        if smax>0:
+            for k in range(len(relev)):
+                if relev[k]>=relevance*smax:
+                    keep.append(k)
+        resonants=[resonants[k] for k in keep]
+        resfield=[resfield[k] for k in keep]
+        intensy=[intensy[k] for k in keep]
+        for r in resonants:
+            r['relevance']=r['relevance']/smax
+    if len(resfield)>0:
+        inten1=Voigtp(espac1,np.asarray(intensy,dtype=float),np.asarray(resfield,dtype=float),Ham.Hpp,Ham.eta)
+    else:
+        inten1=np.zeros_like(espac1)
     if len(resfield)>0:
         df=DataFrame(data=resonants)
         dfdis=df[['field', 'transition', 'type']].copy()
@@ -886,7 +922,7 @@ def Cristalfm(Hamer,Exp):  #Function for finding the resonant fields and energie
 
     return espac1,inten1,Elist,dfdis
 
-def Music(Hamer,Exper,graph=True,table=True):
+def Music(Hamer,Exper,graph=True,table=True,relevance=1e-4):
     '''
     Wrap function that calculates the spectrum and table of transitions of multisystems. If there is an interaction between the systems (electron-eletron or hiperfine), solves the total hamiltonian. Otherwise, use the function Cristalfm and sums the contributions to the total spectrum.
     
@@ -904,7 +940,10 @@ def Music(Hamer,Exper,graph=True,table=True):
         
     table : Bool
         Generates the resonant fields and transitions table.
-    
+        
+    relevance : float
+        Relative threshold for the transition strength (Intensity/Boltzmann factor), if lower it is discarded. Default is 1e-4.
+        
     Returns
     -------
     
@@ -952,6 +991,10 @@ def Music(Hamer,Exper,graph=True,table=True):
         Exper.Mexp[inka].Frange=Exper.Mexp[0].Frange
         Exper.Mexp[inka].Mwdirection=Exper.Mexp[0].Mwdirection
     Exp=deepcopy(Exper)
+    ndir=np.asarray(Exp.Mexp[0].Fdirection,dtype=float)
+    mdir=np.asarray(Exp.Mexp[0].Mwdirection,dtype=float)
+    if np.linalg.norm(ndir)>0 and np.linalg.norm(mdir)>0 and abs(ndir@mdir)/(np.linalg.norm(ndir)*np.linalg.norm(mdir))>0.99:
+        print("WARNING: Mwdirection is (almost) parallel to Fdirection. Use a Mwdirection perpendicular to Fdirection for a standard cavity.")
     submixes=set()
     if hasattr(Ham,'Amix') and Ham.Amix:
         submixes.update(Ham.Amix.keys())
@@ -981,7 +1024,7 @@ def Music(Hamer,Exper,graph=True,table=True):
         if len(elka)==1:
             Ham.Mulham[elka[0]].Hpp=Ham.Mulham[0].Hpp
             Ham.Mulham[elka[0]].eta=Ham.Mulham[0].eta
-            fild1,fild2,enegrias,datafr=Cristalfm(Ham.Mulham[elka[0]],Exp.Mexp[0])
+            fild1,fild2,enegrias,datafr=Cristalfm(Ham.Mulham[elka[0]],Exp.Mexp[elka[0]],relevance)
             sumespct+=fild2
             energya.append(enegrias)
             padata.append(datafr)
@@ -1043,28 +1086,35 @@ def Music(Hamer,Exper,graph=True,table=True):
                 Pmatrixs[orka]=Pauli(Ham.Mulham[orka].S)
                 Pmatrixi[orka]=Pauli(Ham.Mulham[orka].I)
                 hzexx=np.asarray(beta*Hze(Pmatrixs[orka][0],Pmatrixs[orka][1],Pmatrixs[orka][2],Ham.Mulham[orka].g,[1,0,0],dimerq[orka]),dtype=complex)
-                hzex+=Kroexpand(hzexx,orka,dimerq)
-                hzeyy=np.asarray(beta*Hze(Pmatrixs[orka][0],Pmatrixs[orka][1],Pmatrixs[orka][2],Ham.Mulham[orka].g,[0,1,0],dimerq[orka]),dtype=complex)
-                hzey+=Kroexpand(hzeyy,orka,dimerq)
-                hzezz=np.asarray(beta*Hze(Pmatrixs[orka][0],Pmatrixs[orka][1],Pmatrixs[orka][2],Ham.Mulham[orka].g,[0,0,1],dimerq[orka]),dtype=complex)
-                hzez+=Kroexpand(hzezz,orka,dimerq)
+                hzexx=np.asarray(beta*Hze(Pmatrixs[orka][0],Pmatrixs[orka][1],Pmatrixs[orka][2],Ham.Mulham[orka].g,[1,0,0],dimerq[elka.index(orka)]),dtype=complex)
+                hzex+=Kroexpand(hzexx,elka.index(orka),dimerq)
+                hzeyy=np.asarray(beta*Hze(Pmatrixs[orka][0],Pmatrixs[orka][1],Pmatrixs[orka][2],Ham.Mulham[orka].g,[0,1,0],dimerq[elka.index(orka)]),dtype=complex)
+                hzey+=Kroexpand(hzeyy,elka.index(orka),dimerq)
+                hzezz=np.asarray(beta*Hze(Pmatrixs[orka][0],Pmatrixs[orka][1],Pmatrixs[orka][2],Ham.Mulham[orka].g,[0,0,1],dimerq[elka.index(orka)]),dtype=complex)
+                hzez+=Kroexpand(hzezz,elka.index(orka),dimerq)
+                hmw+=Kroexpand(np.asarray(beta*Hze(Pmatrixs[orka][0],Pmatrixs[orka][1],Pmatrixs[orka][2],Ham.Mulham[orka].g,Exp.Mexp[0].Mwdirection,dimerq[elka.index(orka)]),dtype=complex),elka.index(orka),dimerq)
                 hmw+=Kroexpand(np.asarray(beta*Hze(Pmatrixs[orka][0],Pmatrixs[orka][1],Pmatrixs[orka][2],Ham.Mulham[orka].g,Exp.Mexp[0].Mwdirection,dimerq[orka]),dtype=complex),orka,dimerq)
                 if Ham.Mulham[orka].S>=1:
-                    h1=h1+StevensO(Pmatrixs[orka][0],Pmatrixs[orka][1],Pmatrixs[orka][2],Ham.Mulham[orka].S,Ham.Mulham[orka],dim)
+                    h1=h1+Kroexpand(StevensO(Pmatrixs[orka][0],Pmatrixs[orka][1],Pmatrixs[orka][2],Ham.Mulham[orka].S,Ham.Mulham[orka],dimerq[elka.index(orka)]),elka.index(orka),dimerq)
                 if Ham.Mulham[orka].I!=0:
-                    h1=h1+Hfi(Pmatrixs[orka][0],Pmatrixs[orka][1],Pmatrixs[orka][2],Pmatrixi[orka][0],Pmatrixi[orka][1],Pmatrixi[orka][2],Ham.Mulham[orka].A,dim)
-                    nhzexx=np.asarray(betan*Nhze(Ham.Mulham[orka].I,Pmatrixi[orka][0],Pmatrixi[orka][1],Pmatrixi[orka][2],dimerq[orka],Ham.Mulham[orka].Nucl,[1,0,0]),dtype=complex)
-                    nhzex=Kroexpand(nhzexx,orka,dimerq)
-                    nhzeyy=np.asarray(betan*Nhze(Ham.Mulham[orka].I,Pmatrixi[orka][0],Pmatrixi[orka][1],Pmatrixi[orka][2],dimerq[orka],Ham.Mulham[orka].Nucl,[0,1,0]),dtype=complex)
-                    nhzey=Kroexpand(nhzeyy,orka,dimerq)
-                    nhzezz=np.asarray(betan*Nhze(Ham.Mulham[orka].I,Pmatrixi[orka][0],Pmatrixi[orka][1],Pmatrixi[orka][2],dimerq[orka],Ham.Mulham[orka].Nucl,[0,0,1]),dtype=complex)
-                    nhzez=Kroexpand(nhzezz,orka,dimerq)
+                    h1=h1+Kroexpand(Hfi(Pmatrixs[orka][0],Pmatrixs[orka][1],Pmatrixs[orka][2],Pmatrixi[orka][0],Pmatrixi[orka][1],Pmatrixi[orka][2],Ham.Mulham[orka].A,dimerq[elka.index(orka)]),elka.index(orka),dimerq)
+                    nhzexx=np.asarray(betan*Nhze(Ham.Mulham[orka].I,Pmatrixi[orka][0],Pmatrixi[orka][1],Pmatrixi[orka][2],dimerq[elka.index(orka)],Ham.Mulham[orka].Nucl,[1,0,0]),dtype=complex)
+                    nhzex=Kroexpand(nhzexx,elka.index(orka),dimerq)
+                    nhzeyy=np.asarray(betan*Nhze(Ham.Mulham[orka].I,Pmatrixi[orka][0],Pmatrixi[orka][1],Pmatrixi[orka][2],dimerq[elka.index(orka)],Ham.Mulham[orka].Nucl,[0,1,0]),dtype=complex)
+                    nhzey=Kroexpand(nhzeyy,elka.index(orka),dimerq)
+                    nhzezz=np.asarray(betan*Nhze(Ham.Mulham[orka].I,Pmatrixi[orka][0],Pmatrixi[orka][1],Pmatrixi[orka][2],dimerq[elka.index(orka)],Ham.Mulham[orka].Nucl,[0,0,1]),dtype=complex)
+                    nhzez=Kroexpand(nhzezz,elka.index(orka),dimerq)
                     hzex-=nhzex
                     hzey-=nhzey
                     hzez-=nhzez
                 if np.any(Ham.Mulham[orka].Q):
-                    h1=h1+Qii(Pmatrixi[orka][0],Pmatrixi[orka][1],Pmatrixi[orka][2],Ham.Mulham[orka].Q,dim)
+                    h1=h1+Kroexpand(Qii(Pmatrixi[orka][0],Pmatrixi[orka][1],Pmatrixi[orka][2],Ham.Mulham[orka].Q,dimerq[elka.index(orka)]),elka.index(orka),dimerq)
             if isinstance(Ham,Multham):
+               #Spin operators of system k embedded in the product space of the interacting systems
+                def Sintothis(k,a):
+                    return Kroexpand(np.kron(Pmatrixs[k][a],np.eye(int(2*Ham.Mulham[k].I+1))),elka.index(k),dimerq)
+                def Iintothis(k,a):
+                    return Kroexpand(np.kron(np.eye(int(2*Ham.Mulham[k].S+1)),Pmatrixi[k][a]),elka.index(k),dimerq)
                 for ilar in elka:
                     for jlar in elka:
                         if ilar==jlar:
@@ -1073,12 +1123,12 @@ def Music(Hamer,Exper,graph=True,table=True):
                         if Aref is not None and np.any(Aref):
                             Aref=np.asarray(Aref)/1000.0
                             Aref=Aref*np.eye(3)
-                            h1+=Hfi(Pmatrixs[ilar][0],Pmatrixs[ilar][1],Pmatrixs[ilar][2],Pmatrixi[jlar][0],Pmatrixi[jlar][1],Pmatrixi[jlar][2],Aref,dim)
+                            h1+=sum(Aref[a,b]*(Sintothis(ilar,a)@Iintothis(jlar,b)) for a in range(3) for b in range(3))
                         Xref=Ham.Xmix.get((ilar,jlar))
                         if Xref is not None and np.any(Xref):
                             Xref=np.asarray(Xref)/1000.0
                             Xref=Xref*np.eye(3)
-                            h1+=Iee(Pmatrixs[ilar][0],Pmatrixs[ilar][1],Pmatrixs[ilar][2],Pmatrixs[jlar][0],Pmatrixs[jlar][1],Pmatrixs[jlar][2],Xref,dim)
+                            h1+=sum(Xref[a,b]*(Sintothis(ilar,a)@Sintothis(jlar,b)) for a in range(3) for b in range(3))
             h1=np.asarray(h1,dtype=complex)
             #For the total magnetic moment of the system
             stodx=np.zeros((dim,dim),dtype='complex')
@@ -1087,6 +1137,9 @@ def Music(Hamer,Exper,graph=True,table=True):
             pla=0
             for pla in elka:
                 if Ham.Mulham[pla].S>0:
+                    #Transition rate with the zeeman interaction
+                    gp,sp=Ham.Mulham[pla].g,Pmatrixs[pla]
+                    sxe1,sye1,sze1=[gp[a,0]*sp[0]+gp[a,1]*sp[1]+gp[a,2]*sp[2] for a in range(3)]
                     sxe1,sye1,sze1=Pmatrixs[pla]
                     sxe2=np.array([[1.0]])
                     sye2=np.array([[1.0]])
@@ -1115,11 +1168,6 @@ def Music(Hamer,Exper,graph=True,table=True):
             Sval=[Ham.Mulham[se].S for se in elka]
             Ival=[Ham.Mulham[ie].I for ie in elka]
             slit,nlit,transitions=MMsmi(Sval,Ival)
-            targettr=set()
-            for key in ["allowed","for Dms2","for nuclear","cross spin"]:
-                if key in transitions:
-                    targettr.update(tuple(sorted(p)) for p in transitions[key])
-
             espectotal=np.zeros(Exp.Mexp[0].Points)
             if Exp.Mexp[0].Frange[0]==0:
                 Exp.Mexp[0].Frange[0]=1e-8    
@@ -1134,13 +1182,11 @@ def Music(Hamer,Exper,graph=True,table=True):
             resonants=[]
             resfield=[]
             intensy=[]
+            relev=[]
             for i in range(dim):
                 for j in range(i+1,dim):
                     basis1=curvebasis[i]
                     basis2=curvebasis[j]
-                    pair=tuple(sorted((basis1,basis2)))
-                    if pair not in targettr:
-                        continue
                     def deltaE(b):
                         return np.real(np.abs(splines(b)[j]-splines(b)[i]))-Exp.Mexp[0].Freq
                     diffv=np.abs(Elist[:,j]-Elist[:,i])-Exp.Mexp[0].Freq
@@ -1181,9 +1227,24 @@ def Music(Hamer,Exper,graph=True,table=True):
                                 resonants.append({'field':res.root,'inx':(i,j),'bainx':(basis1,basis2),'type': ttyp,'transition':f"{state1}<->{state2}"})
                                 resfield.append(res.root)
                                 intensy.append(prob*boltzman*gema)
+                                relev.append(prob*gema)
                         except ValueError:
                             pass
-            inten1=Voigtp(espac1,intensy,resfield,Ham.Mulham[0].Hpp,Ham.Mulham[0].eta)
+
+            if len(relev)>0:
+                smax=max(relev)
+                keep=[]
+                if smax>0:
+                for k in range(len(relev)):
+                    if relev[k]>=relevance*smax:
+                        keep.append(k)
+                resonants=[resonants[k] for k in keep]
+                resfield=[resfield[k] for k in keep]
+                intensy=[intensy[k] for k in keep]
+            if len(resfield)>0:
+                inten1=Voigtp(espac1,np.asarray(intensy,dtype=float),np.asarray(resfield,dtype=float),Ham.Mulham[0].Hpp,Ham.Mulham[0].eta)
+            else:
+                inten1=np.zeros_like(espac1)
             sumespct+=inten1
             fild1=espac1
             if len(resfield)>0:
