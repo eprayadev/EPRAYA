@@ -123,6 +123,10 @@ def Nrotate(Hamer,Expe,phi=0):
     isz=np.kron(sz,np.eye(int(2*Ham.I+1)))
     isz=np.kron(np.eye(int(2*Ham.L+1)),isz)
     isz=np.asarray(isz,dtype=np.complex128)
+    #Transition rate for the intensity
+    isx=Ham.g[0,0]*isx+Ham.g[0,1]*isy+Ham.g[0,2]*isz
+    isy=Ham.g[1,0]*isx+Ham.g[1,1]*isy+Ham.g[1,2]*isz
+    isz=Ham.g[2,0]*isx+Ham.g[2,1]*isy+Ham.g[2,2]*isz
     E=Exp.Freq
     espac1=np.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
     beta=(scic.physical_constants["Bohr magneton"][0]/scic.physical_constants["Planck constant"][0])/1e12
@@ -307,7 +311,7 @@ def Pot(espac2,enegria,curvebasis,resonants,lab,espac1,Ham,):
                 line,=ax.plot([fv,fv],[eni,enj],color=coljet[idi],marker='o',markersize=4,linestyle='-',label=f"Field: {fv:.2f} mT")
             else:
                 line,=ax.plot([fv,fv],[eni,enj],color='gray',marker='o',markersize=4,linestyle='-',label=f"Field: {fv:.2f} mT")
-            fieldr.append(line)
+            fielde.append(line)
 
         ax.set_title(f'Energy VS Field: {lab} Orientation', fontsize=18)
         ax.set_xlabel('Field [mT]')
@@ -390,6 +394,10 @@ def Ori(Hamer,Expe):
     isz=np.kron(sz,np.eye(int(2*Ham.I+1)))
     isz=np.kron(np.eye(int(2*Ham.L+1)),isz)
     isz=np.asarray(isz,dtype=np.complex128)
+    #Transition rate for the intensity
+    isx=Ham.g[0,0]*isx+Ham.g[0,1]*isy+Ham.g[0,2]*isz
+    isy=Ham.g[1,0]*isx+Ham.g[1,1]*isy+Ham.g[1,2]*isz
+    isz=Ham.g[2,0]*isx+Ham.g[2,1]*isy+Ham.g[2,2]*isz
     E=Exp.Freq
     espac1=np.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
     beta=(scic.physical_constants["Bohr magneton"][0]/scic.physical_constants["Planck constant"][0])/1e12
@@ -413,9 +421,6 @@ def Ori(Hamer,Expe):
     if np.any(Ham.Q):
         h1=h1+Qii(ix,iy,iz,Ham.Q,dim)
     h1=np.asarray(h1,dtype=np.complex128)
-    targettr=set()
-    targettr.update(tuple(sorted(p)) for p in transitions["allowed"])
-    targettr.update(tuple(sorted(p)) for p in transitions["for Dms2"])
     fpoints=500
     Blist=np.linspace(Exp.Frange[0],Exp.Frange[1],fpoints)
     rfield=[]
@@ -424,6 +429,7 @@ def Ori(Hamer,Expe):
         Elist,Vlist,h2=Padaptarray(Blist,h1,hzex,hzey,hzez,nx,ny,nz)
         Elist,Vlist=Pretrack(Elist,Vlist)
         maxvec=Vlist[-1]
+        maxvec=Fieldframe(maxvec,[nx,ny,nz],Ham.S,Ham.I)
         curvebasis=Assingstatestobasis(maxvec)
         resonants=[]
         for i in range(dim):
@@ -446,15 +452,24 @@ def Ori(Hamer,Expe):
                             ttyp="Allowed"
                         elif np.isclose(dms,2):
                             ttyp="Forbidden (2)"
+                        elif np.isclose(dms,3):
+                            ttyp="Forbidden (3)"
                         elif not np.isclose(dmi,0):
                             ttyp="Forbidden (N)"
                         else:
                             ttyp="Forbidden"
                         if res>Blist[0]+2:
+                            #Transition probability with B1 perpendicular to B for the relevance of the resonant field
+                            vi,vj=Vlist[k,:,i],Vlist[k,:,j]
+                            T=np.array([vj.conj()@op@vi for op in (isx,isy,isz)])
+                            prob=float(np.real(np.sum(np.abs(T)**2)-np.abs(nx*T[0]+ny*T[1]+nz*T[2])**2))
                             state1=Getlabel(basis1,slit,nlit,llit,Ham.L,Ham.I)
                             state2=Getlabel(basis2,slit,nlit,llit,Ham.L,Ham.I)
-                            resonants.append({'field': res,'inx': (i, j),'bainx': (basis1,basis2),'type': ttyp,'transition': f"{state1} <-> {state2}"})
-
+                            resonants.append({'field': res,'inx': (i, j),'bainx': (basis1,basis2),'type': ttyp,'transition': f"{state1} <-> {state2}", 'relevance': prob})
+        #The resonant fields with prob over 1e-4*max are consider relevant
+        if resonants:
+            smax=max(r['relevance'] for r in resonants)
+            resonants=[r for r in resonants if smax>0 and r['relevance']>=1e-4*smax]
         Pot(Blist,Elist,curvebasis,resonants,lab,espac1,Ham)
         
 def Spectre(Hamer,Expe,phi=0,orient='Z'):
@@ -543,6 +558,10 @@ def Spectre(Hamer,Expe,phi=0,orient='Z'):
     isz=np.kron(sz,np.eye(int(2*Ham.I+1)))
     isz=np.kron(np.eye(int(2*Ham.L+1)),isz)
     isz=np.asarray(isz,dtype=np.complex128)
+    #Transition rate for the intensity
+    isx=Ham.g[0,0]*isx+Ham.g[0,1]*isy+Ham.g[0,2]*isz
+    isy=Ham.g[1,0]*isx+Ham.g[1,1]*isy+Ham.g[1,2]*isz
+    isz=Ham.g[2,0]*isx+Ham.g[2,1]*isy+Ham.g[2,2]*isz
     E=Exp.Freq
     espac1=np.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
     beta=(scic.physical_constants["Bohr magneton"][0]/scic.physical_constants["Planck constant"][0])/1e12
@@ -597,11 +616,11 @@ def Spectre(Hamer,Expe,phi=0,orient='Z'):
             allint[ide,:na]=Iv
     sketch=np.zeros(Exp.Points)
     Bmin=Exp.Frange[0]
-    dB=(Exp.Frange[1]-Exp.Frange[0])/(Exp.Points)
+    dB=(Exp.Frange[1]-Exp.Frange[0])/(Exp.Points-1)
     Caltriangle(sketch,Bmin,dB,allres,allint,ntrans,hulk,weight)
     fig,axs=plt.subplots(3,1,figsize=(12,13),sharex=True)
     #Convolution of the function to create the derivated spectrum
-    maxlenght=np.max(Ham.Hpp)*10
+    maxlenght=np.max(Ham.Hpp)*50
     kerpoint=int(maxlenght/dB)*2+1
     kaxis=np.arange(-kerpoint//2+1,kerpoint//2+1)*dB
     #Int=1, no resonant field
@@ -672,9 +691,6 @@ def Spectre(Hamer,Expe,phi=0,orient='Z'):
     axs[1].tick_params(axis='x',labelbottom=False)
     axs[1].grid(True)
     slit,nlit,llit,transitions=Msmi(Ham.I,Ham.S,Ham.L)
-    targettr=set()
-    targettr.update(tuple(sorted(p)) for p in transitions["allowed"])
-    targettr.update(tuple(sorted(p)) for p in transitions["for Dms2"])
     fpoints=500
     rfield=[]
     if orient=='X':
@@ -708,6 +724,8 @@ def Spectre(Hamer,Expe,phi=0,orient='Z'):
                             ttyp="Allowed"
                         elif np.isclose(dms,2):
                             ttyp="Forbidden (2)"
+                        elif np.isclose(dms,3):
+                            ttyp="Forbidden (3)"
                         elif not np.isclose(dmi,0):
                             ttyp="Forbidden (N)"
                         else:
