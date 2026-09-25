@@ -59,6 +59,7 @@ Auxiliary functions
    Rotmatrix
    Convtarray
    Msmi
+   Fieldframe
    Assingstatestobasis
    PMsmi
    MMsmi
@@ -83,6 +84,8 @@ Auxiliary functions
      - Makes sure hamiltonian parameters have the right dimensions.      
    * - :doc:`epraya.Msmi <Msmi>`
      - Finds the quantum numbers of the operators and the possibles energy levels transitions.
+   * - :doc:`epraya.Msmi <Fieldframe>`
+     - Pass the eigenvectos to the basis quantized along the static field direction.
    * - :doc:`epraya.Assingstatestobasis <Assingstatestobasis>`
      - Relates the eigenvectors of the hamiltonian in the basis of s and i with it's quantum numbers.   
    * - :doc:`epraya.PMsmi <PMsmi>`
