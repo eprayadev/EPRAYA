@@ -79,50 +79,10 @@ def EAdaptarray(espac,h1,iser):
         Elist[B]=vals
         Vlist[B]=vecs
     return Elist,Vlist
-    
-def thetarotation(S,I):
-    '''
-    Theta=exp(-i*pi*Jy)*K rotation over S⊗I for the kramer classification.
-    '''
-    from scipy.linalg import expm
-    sy=Pauli(S)[1]
-    if I>0:
-        iy=Pauli(I)[1]
-    else:
-        iy=np.zeros((1,1))
-    ds,di=sy.shape[0],iy.shape[0]
-    Jy=np.kron(sy,np.eye(di))+np.kron(np.eye(ds),iy)
-    return expm(-1j*np.pi*Jy)
 
-def Searchkramer(h1,S,I,tol=1e-8):
-    fener,fvec=np.linalg.eigh(h1)
-    #Verifies that the kramers pariring is necessary (not integer)
-    #Theta^2=(-1)^(2S+2I)
-    if (round(2*S)+round(2*I))%2==1:
-        U=thetarotation(S,I)
-        dim1=h1.shape[0]
-        order,used=[],np.zeros(dim1,dtype=bool)
-        for ke in range(dim1):
-            if used[ke]:
-                continue
-            tv=U@fvec[:,ke].conj()
-            #Establish minimun energy for the degeneration comparison 
-            pasr=[]
-            for eir in np.where(np.abs(fener-fener[ke])<tol)[0]:
-                if not used[eir] and eir!=ke:
-                    pasr.append(eir)
-            if len(pasr)==0:
-                raise ValueError(f"Didn't find Kramer's pair.")
-            value=pasr[np.argmax([np.abs(np.vdot(fvec[:,ec],tv)) for ec in pasr])]
-            order+=[ke,value]
-            used[ke]=used[value]=True
-        return fener[order],fvec[:,order]
-    else:
-        return fener,fvec
-        
 # Takes into account the possibility of crossing in the energies, then makes an approximation with
 # the eigenvectors change, that will be "close" from each other, if the field difference is low
-def ERetrack(field,energy,einvector,h1,Ham,tol1=1e-8):
+def ERetrack(field,energy,einvector,tol1=1e-5):
     '''
 
     Organize the eigenvectors and energies to relate them with the quantum numbers of the system, taking as references the values at high field.
@@ -144,12 +104,6 @@ def ERetrack(field,energy,einvector,h1,Ham,tol1=1e-8):
     einvector : np.array
         Array of the eigenvectors of the hamiltonian.
         
-    h1 : np.array
-        All non Zeeman interaction matrix.
-        
-    Ham : Object
-        Container of the hamiltonian parameters
-        
     tol1 : float
         Relative tolerance to consider two energies degenerate. Default is 1e-5 GHz
        
@@ -164,17 +118,12 @@ def ERetrack(field,energy,einvector,h1,Ham,tol1=1e-8):
     '''
     Enegria=np.array(energy,copy=True)
     Vector=np.array(einvector,copy=True)
-    nozen,nozvec=Searchkramer(h1,Ham.S,Ham.I,tol=1e-8)
     nf,dim=Enegria.shape
     for i in range(nf-2,-1,-1):
         oncevecs=Vector[i+1]
         actvecs=Vector[i].copy()
         actvals=Enegria[i].copy()
         #For the krammers calculation
-        if i==0:
-            lvec=nozvec
-        else:
-            lvec=Vector[i+1]
         #Kabsch algorithm restricted to the degenerate subspaces (eigh returns sorted energies)
         #Calculates the degeneration limit for the classification
         a=0
@@ -186,7 +135,7 @@ def ERetrack(field,energy,einvector,h1,Ham,tol1=1e-8):
                 #Selects the vectors
                 Q=actvecs[:,a:b]
                 #Calculates the inner product of the remaining vectors with the ones from the base matrix in high field. 
-                MM=Q.conj().T@lvec    
+                MM=Q.conj().T@oncevecs  
                 #Select the columns that corresponds to V{i+1} using the J-V method
                 _,col1=sci.optimize.linear_sum_assignment(-np.abs(MM)**2)
                 M=MM[:, col1]
@@ -195,10 +144,8 @@ def ERetrack(field,energy,einvector,h1,Ham,tol1=1e-8):
                 #to find the best configuation to match the vectors traced before.
                 actvecs[:,a:b]=Q@(U@Vh)
             a=b
-        #Interpolates the data to see if the change in value is an anticrossing or a bad classification
-        if i==0:
-            oncevecs=nozvec                      
-        elif i<nf-2:
+        #Interpolates the data to see if the change in value is an anticrossing or a bad classification                   
+        if i<nf-2:
             oncevecs=2.0*Vector[i+1]-Vector[i+2]
             norma=np.linalg.norm(oncevecs,axis=0,keepdims=True)
             norma[norma==0]=1.0
@@ -223,7 +170,7 @@ def ERetrack(field,energy,einvector,h1,Ham,tol1=1e-8):
         Enegria[i]=actvals
     return Enegria,Vector 
 
-    
+
 # Makes the approximation by the assigment problem solution
 def EHungorder(onevals,onevecs,actvals,actvecs):
     '''
@@ -430,7 +377,7 @@ def Eresonant(Hamer,Expe,graph=True,table=True,relevance=1e-4):  #Function for f
     h1=np.asarray(h1,dtype=complex)
     Blist=np.linspace(Exp.Frange[0],Exp.Frange[1],500)
     Elist,Vlist=EAdaptarray(Blist,h1,hze)
-    Elist,Vlist=ERetrack(Blist,Elist,Vlist,h1,Ham,tol1=1e-8)
+    Elist,Vlist=ERetrack(Blist,Elist,Vlist)
 
     maxvector=Vlist[-1]
     maxvector=Fieldframe(maxvector,Exp.Fdirection,Ham.S,Ham.I)
@@ -879,7 +826,7 @@ def Cristalfm(Hamer,Exp,relevance=1e-4):  #Function for finding the resonant fie
     h1=np.asarray(h1,dtype=complex)
     Blist=np.linspace(Exp.Frange[0],Exp.Frange[1],500)
     Elist,Vlist=EAdaptarray(Blist,h1,hze)
-    Elist,Vlist=ERetrack(Blist,Elist,Vlist,h1,Ham,tol1=1e-8)
+    Elist,Vlist=ERetrack(Blist,Elist,Vlist)
     maxvector=Vlist[-1]
     maxvector=Fieldframe(maxvector,Exp.Fdirection,Ham.S,Ham.I)
     curvebasis=Assingstatestobasis(maxvector)
