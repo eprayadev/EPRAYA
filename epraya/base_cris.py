@@ -1093,7 +1093,6 @@ def Music(Hamer,Exper,graph=True,table=True,relevance=1e-4):
                 hzezz=np.asarray(beta*Hze(Pmatrixs[orka][0],Pmatrixs[orka][1],Pmatrixs[orka][2],Ham.Mulham[orka].g,[0,0,1],dimerq[elka.index(orka)]),dtype=complex)
                 hzez+=Kroexpand(hzezz,elka.index(orka),dimerq)
                 hmw+=Kroexpand(np.asarray(beta*Hze(Pmatrixs[orka][0],Pmatrixs[orka][1],Pmatrixs[orka][2],Ham.Mulham[orka].g,Exp.Mexp[0].Mwdirection,dimerq[elka.index(orka)]),dtype=complex),elka.index(orka),dimerq)
-                hmw+=Kroexpand(np.asarray(beta*Hze(Pmatrixs[orka][0],Pmatrixs[orka][1],Pmatrixs[orka][2],Ham.Mulham[orka].g,Exp.Mexp[0].Mwdirection,dimerq[orka]),dtype=complex),orka,dimerq)
                 if Ham.Mulham[orka].S>=1:
                     h1=h1+Kroexpand(StevensO(Pmatrixs[orka][0],Pmatrixs[orka][1],Pmatrixs[orka][2],Ham.Mulham[orka].S,Ham.Mulham[orka],dimerq[elka.index(orka)]),elka.index(orka),dimerq)
                 if Ham.Mulham[orka].I!=0:
