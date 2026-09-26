@@ -173,7 +173,7 @@ def ERetrack(field,energy,einvector,h1,Ham,tol1=1e-8):
         #For the krammers calculation
         if i==0:
             lvec=nozvec
-        else 
+        else:
             lvec=Vector[i+1]
         #Kabsch algorithm restricted to the degenerate subspaces (eigh returns sorted energies)
         #Calculates the degeneration limit for the classification
