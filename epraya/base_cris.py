@@ -430,7 +430,7 @@ def Eresonant(Hamer,Expe,graph=True,table=True,relevance=1e-4):  #Function for f
     h1=np.asarray(h1,dtype=complex)
     Blist=np.linspace(Exp.Frange[0],Exp.Frange[1],500)
     Elist,Vlist=EAdaptarray(Blist,h1,hze)
-    Elist,Vlist=ERetrack(Blist,Elist,Vlist)
+    Elist,Vlist=ERetrack(Blist,Elist,Vlist,h1,Ham,tol1=1e-8)
 
     maxvector=Vlist[-1]
     maxvector=Fieldframe(maxvector,Exp.Fdirection,Ham.S,Ham.I)
@@ -879,7 +879,7 @@ def Cristalfm(Hamer,Exp,relevance=1e-4):  #Function for finding the resonant fie
     h1=np.asarray(h1,dtype=complex)
     Blist=np.linspace(Exp.Frange[0],Exp.Frange[1],500)
     Elist,Vlist=EAdaptarray(Blist,h1,hze)
-    Elist,Vlist=ERetrack(Blist,Elist,Vlist)
+    Elist,Vlist=ERetrack(Blist,Elist,Vlist,h1,Ham,tol1=1e-8)
     maxvector=Vlist[-1]
     maxvector=Fieldframe(maxvector,Exp.Fdirection,Ham.S,Ham.I)
     curvebasis=Assingstatestobasis(maxvector)
