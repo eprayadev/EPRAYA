@@ -2219,7 +2219,7 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
     dert=h2diag[:,iidx]
     izrt=h2diag[:,jidx]
     gma=jxn.abs(izrt-dert)
-    gma=jxn.where(gma<1e-4,1e-4,gma)
+    gma=jxn.where(gma<1e-4,1e-2,gma)
     gema=1.0/gma
     #Boltzmann distribution
     conver=1e9*scc.h
