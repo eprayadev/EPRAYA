@@ -2221,6 +2221,7 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
     gma=jxn.abs(izrt-dert)
     gma=jxn.where(gma<1e-4,1e-4,gma)
     gema=1.0/gma
+    gmas=jxn.minimum(gema,100.0)
     #Boltzmann distribution
     conver=1e9*scc.h
     Ej=Elist*conver
@@ -2235,24 +2236,22 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
     boltzm=jxn.abs(popui-popuj)
     boltzm=jxn.where(Exp.Temperature<=0.0,1.0,boltzm)
     #Relevance of the transition
-    relev=prob*gema
+    relev=prob*gmas
     smax=jxn.max(relev)
     mask=jxn.where(smax>0,relev>=(1e-4*smax),1.0)
-    intensy=prob*gema*boltzm*mask
     deltaE=jxn.abs(Elist[:,jidx]-Elist[:,iidx])
     dfe=deltaE-Exp.Freq
+    
+    intensy=prob*gmas*boltzm*mask
     hppg=jxn.maximum(Ham.Hpp[0]*gma,0.1)
     hppl=jxn.maximum(Ham.Hpp[1]*gma,0.1)
-    hppg=jxn.where(hppg==0.0,1e-10,hppg)
-    hpp=jxn.where(hppl==0.0,1e-10,hppl)
     gammag=hppg*jxn.sqrt(jxn.log(2.0)/2.0)
     gbs=jxn.exp(-jxn.log(2.0)*(dfe/gammag)**2)
     gammal=hppl*jxn.sqrt(3.0)
     gamma2l=gammal/2.0
     lbs=(gamma2l**2)/(dfe**2+gamma2l**2)
-    #Reduce window noise
-    window=jxn.exp(-(dfe/0.3)**2) 
-    voigt=(lbs*etas)+(gbs*(1.0-etas))*window
+    window=jxn.exp(-(dfe/0.3)**2)
+    voigt=((lbs*etas)+(gbs*(1.0-etas)))*window
     spcint=jxn.sum(intensy*voigt,axis=1)
     dB=Blist[1]-Blist[0]
     spc=jxn.gradient(spcint,dB)
