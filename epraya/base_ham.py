@@ -1619,3 +1619,49 @@ def Fieldframe(vectors,direction,S,I):
     R=expm(-1j*theta*(u[0]*J[0]+u[1]*J[1]+u[2]*J[2]))
     Rt=R.conj().T@vectors
     return Rt
+
+def Mfieldframe(vectors,direction,Sval,Ival,dimerq,Kroexpand):
+    '''
+    Pass the eigenvectos to the basis quantized along the static field direction for multi systems. Pass from the molecular frame to the field frame to define the 
+    high field labels (|ms_N,mi_N>), assuming the basis refer to the z axis of the molecular frame. To make the rotation uses the Euler-Rodrigues formula
+    with exp(-theta u·(S+I))
+    '''
+    from scipy.linalg import expm
+    #Normalize
+    n=np.asarray(direction,dtype=float)
+    n=n/np.linalg.norm(n)
+    #Finds the perpendicular vector of the direction and the z basis
+    u=np.cross(np.array([0.0,0.0,1.0]),n)
+    s=np.linalg.norm(u)
+    #Defines the angle theta for the rotation
+    if s<1e-12:
+        if n[2]>0:
+            #If the basis is the same
+            return vectors
+        #Along the -z direction
+        u,theta=np.array([1.0,0.0,0.0]),np.pi
+    else:
+        u, theta = u/s, np.arctan2(s, n[2])
+    dim=int(np.prod(dimerq))
+    J1=np.zeros((dim,dim),dtype=complex)
+    J2=np.zeros((dim,dim),dtype=complex)
+    J3=np.zeros((dim,dim),dtype=complex)
+    for kar in range(len(dimerq)):
+        S,I=Sval[kar],Ival[kar]
+        sx,sy,sz=Pauli(S)
+        ds=sx.shape[0]
+        if I>0:
+            ix,iy,iz=Pauli(I)
+            di=ix.shape[0]
+        else:
+            ix,iy,iz=(np.zeros((1,1)),)*3
+            di=1
+        j1l=np.kron(sx,np.eye(di))+np.kron(np.eye(ds),ix)
+        j2l=np.kron(sy,np.eye(di))+np.kron(np.eye(ds),iy)
+        j3l=np.kron(sz,np.eye(di))+np.kron(np.eye(ds),iz)
+        J1+=Kroexpand(j1l,kar,dimerq)
+        J2+=Kroexpand(j2l,kar,dimerq)
+        J3+=Kroexpand(j3l,kar,dimerq)
+
+    R=expm(-1j*theta*(u[0]*J1+u[1]*J2+u[2]*J3))
+    return R.conj().T@vectors
