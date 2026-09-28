@@ -2243,8 +2243,8 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
     dfe=deltaE-Exp.Freq
     
     intensy=prob*gmas*boltzm*mask
-    hppg=jxn.maximum(Ham.Hpp[0]*gma,0.1)
-    hppl=jxn.maximum(Ham.Hpp[1]*gma,0.1)
+    hppg=jxn.maximum(Ham.Hpp[0],0.01)
+    hppl=jxn.maximum(Ham.Hpp[1],0.01)
     gammag=hppg*jxn.sqrt(jxn.log(2.0)/2.0)
     gbs=jxn.exp(-jxn.log(2.0)*(dfe/gammag)**2)
     gammal=hppl*jxn.sqrt(3.0)
@@ -3065,13 +3065,13 @@ def Jcalmusic(maham,Expe,Nucl1='None',Nucl2='None',hifi=False):
         h2diag=jxn.diagonal(h22,axis1=1,axis2=2)
         dert=h2diag[:,iidx]
         izrt=h2diag[:,jidx]
-        gma=jxn.abs(izrt-dert)
-        gma=jxn.where(gma<1e-6,1e-6,gma)
+        gma=jxn.where(gma<1e-4,1e-4,gma)
         gema=1.0/gma
+        gmas=jxn.minimum(gema,100.0)
         #Boltzmann distribution
         conver=1e9*scc.h
         Ej=Elist*conver
-        Temp=jxn.where(Exp1.Temperature<=0.0,1.0,Exp1.Temperature)
+        Temp=jxn.where(Exp.Temperature<=0.0,1.0,Exp.Temperature)
         beta=1.0/(scc.k*Temp)
         Emin=jxn.min(Ej,axis=-1,keepdims=True)
         boltz=jxn.exp(-beta*(Ej-Emin))
@@ -3080,21 +3080,23 @@ def Jcalmusic(maham,Expe,Nucl1='None',Nucl2='None',hifi=False):
         popui=boltz[:,iidx]
         popuj=boltz[:,jidx]
         boltzm=jxn.abs(popui-popuj)
-        boltzm=jxn.where(Exp1.Temperature<=0.0,1.0,boltzm)
-        intensy=prob*gema*boltzm
+        boltzm=jxn.where(Exp.Temperature<=0.0,1.0,boltzm)
+        #Relevance of the transition
+        relev=prob*gmas
+        smax=jxn.max(relev)
+        mask=jxn.where(smax>0,relev>=(1e-4*smax),1.0)
         deltaE=jxn.abs(Elist[:,jidx]-Elist[:,iidx])
-        dfe=deltaE-Exp1.Freq
-        hppg=Ham1.Hpp[0]*gma
-        hppl=Ham1.Hpp[1]*gma
-        hppg=jxn.where(hppg==0.0,1e-10,hppg)
-        hpp=jxn.where(hppl==0.0,1e-10,hppl)
+        dfe=deltaE-Exp.Freq
+        intensy=prob*gmas*boltzm*mask
+        hppg=jxn.maximum(Ham1.Hpp[0],0.01)
+        hppl=jxn.maximum(Ham1.Hpp[1],0.01)
         gammag=hppg*jxn.sqrt(jxn.log(2.0)/2.0)
         gbs=jxn.exp(-jxn.log(2.0)*(dfe/gammag)**2)
         gammal=hppl*jxn.sqrt(3.0)
         gamma2l=gammal/2.0
         lbs=(gamma2l**2)/(dfe**2+gamma2l**2)
-        window=jxn.exp(-(dfe/0.3)**2) 
-        voigt=(lbs*etas)+(gbs*(1.0-etas))*window
+        window=jxn.exp(-(dfe/0.3)**2)
+        voigt=((lbs*etas)+(gbs*(1.0-etas)))*window
         spcint=jxn.sum(intensy*voigt,axis=1)
         dB=Blist[1]-Blist[0]
         spc=jxn.gradient(spcint,dB)
