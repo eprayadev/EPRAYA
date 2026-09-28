@@ -1998,7 +1998,7 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None'):
                         res=sci.optimize.root_scalar(deltaE,bracket=[bstart,bend],method='brentq')
                         if res.converged:
                             Hres=h1+hze*res.root
-                            Eres,Vres=jnx.linalg.eigh(Hres)
+                            Eres,Vres=jxn.linalg.eigh(Hres)
                             Vres=Fieldframe(Vres,Exp.Fdirection,Hamer.S,Hamer.I)
                             localbasis=Assingstatestobasis(Vres)
                             basis1=localbasis[i]
