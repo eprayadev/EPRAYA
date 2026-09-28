@@ -1813,9 +1813,10 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None',hifi=False):
     isz=jxn.kron(jxn.eye(int(2*Ham.L+1)),isz)
     isz=jxn.asarray(isz,dtype=jxn.complex64)
     #Transition rate with the Zeeman part
-    isx=Ham.g[0,0]*isx+Ham.g[0,1]*isy+Ham.g[0,2]*isz
-    isy=Ham.g[1,0]*isx+Ham.g[1,1]*isy+Ham.g[1,2]*isz
-    isz=Ham.g[2,0]*isx+Ham.g[2,1]*isy+Ham.g[2,2]*isz
+    issx=Ham.g[0,0]*isx+Ham.g[0,1]*isy+Ham.g[0,2]*isz
+    issy=Ham.g[1,0]*isx+Ham.g[1,1]*isy+Ham.g[1,2]*isz
+    issz=Ham.g[2,0]*isx+Ham.g[2,1]*isy+Ham.g[2,2]*isz
+    isx,isy,isz=issx,issy,issz
     E=Exp.Freq
     beta=(scic.physical_constants["Bohr magneton"][0]/scic.physical_constants["Planck constant"][0])/1e12
     betan=(scic.physical_constants["nuclear magneton"][0]/scic.physical_constants["Planck constant"][0])/1e12
@@ -2156,9 +2157,10 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
     isz=jxn.kron(jxn.eye(int(2*Ham.L+1)),isz)
     isz=jxn.asarray(isz,dtype=jxn.complex64)
     #Transition rate with the Zeeman part
-    isx=Ham.g[0,0]*isx+Ham.g[0,1]*isy+Ham.g[0,2]*isz
-    isy=Ham.g[1,0]*isx+Ham.g[1,1]*isy+Ham.g[1,2]*isz
-    isz=Ham.g[2,0]*isx+Ham.g[2,1]*isy+Ham.g[2,2]*isz
+    issx=Ham.g[0,0]*isx+Ham.g[0,1]*isy+Ham.g[0,2]*isz
+    issy=Ham.g[1,0]*isx+Ham.g[1,1]*isy+Ham.g[1,2]*isz
+    issz=Ham.g[2,0]*isx+Ham.g[2,1]*isy+Ham.g[2,2]*isz
+    isx,isy,isz=issx,issy,issz
     E=Exp.Freq
     beta=(scic.physical_constants["Bohr magneton"][0]/scic.physical_constants["Planck constant"][0])/1e12
     betan=(scic.physical_constants["nuclear magneton"][0]/scic.physical_constants["Planck constant"][0])/1e12
