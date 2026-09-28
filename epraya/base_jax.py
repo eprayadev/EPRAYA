@@ -2241,19 +2241,22 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
     mask=jxn.where(smax>0,relev>=(1e-4*smax),1.0)
     deltaE=jxn.abs(Elist[:,jidx]-Elist[:,iidx])
     dfe=deltaE-Exp.Freq
-    
     intensy=prob*gmas*boltzm*mask
-    hppg=jxn.maximum(Ham.Hpp[0],0.01)
-    hppl=jxn.maximum(Ham.Hpp[1],0.01)
-    gammag=hppg*jxn.sqrt(jxn.log(2.0)/2.0)
+    
+    dB=Blist[1]-Blist[0]
+    hppg=jxn.maximum(Ham.Hpp[0],0.001)
+    hppl=jxn.maximum(Ham.Hpp[1],0.001)
+    hppg=jxn.maximum(hppg,3.0*dB)
+    hppl=jxn.maximum(hppl,3.0*dB)
+    gammag=hppg*gma*jxn.sqrt(jxn.log(2.0)/2.0)
     gbs=jxn.exp(-jxn.log(2.0)*(dfe/gammag)**2)
-    gammal=hppl*jxn.sqrt(3.0)
+    gammal=hppl*gma*jxn.sqrt(3.0)
     gamma2l=gammal/2.0
     lbs=(gamma2l**2)/(dfe**2+gamma2l**2)
-    window=jxn.exp(-(dfe/0.3)**2)
+    windowwidth=jxn.maximum(hppg,hppl)*gma
+    window=jxn.exp(-(dfe/windowwidth)**2)
     voigt=((lbs*etas)+(gbs*(1.0-etas)))*window
     spcint=jxn.sum(intensy*voigt,axis=1)
-    dB=Blist[1]-Blist[0]
     spc=jxn.gradient(spcint,dB)
     if diagram:
         return Blist,spc,Elist,Vlist,h1,hze
@@ -3065,6 +3068,7 @@ def Jcalmusic(maham,Expe,Nucl1='None',Nucl2='None',hifi=False):
         h2diag=jxn.diagonal(h22,axis1=1,axis2=2)
         dert=h2diag[:,iidx]
         izrt=h2diag[:,jidx]
+        gma=jxn.abs(izrt-dert)  
         gma=jxn.where(gma<1e-4,1e-4,gma)
         gema=1.0/gma
         gmas=jxn.minimum(gema,100.0)
@@ -3088,17 +3092,20 @@ def Jcalmusic(maham,Expe,Nucl1='None',Nucl2='None',hifi=False):
         deltaE=jxn.abs(Elist[:,jidx]-Elist[:,iidx])
         dfe=deltaE-Exp.Freq
         intensy=prob*gmas*boltzm*mask
-        hppg=jxn.maximum(Ham1.Hpp[0],0.01)
-        hppl=jxn.maximum(Ham1.Hpp[1],0.01)
-        gammag=hppg*jxn.sqrt(jxn.log(2.0)/2.0)
+        dB=Blist[1]-Blist[0]
+        hppg=jxn.maximum(Ham1.Hpp[0],0.001)
+        hppl=jxn.maximum(Ham1.Hpp[1],0.001)
+        hppg=jxn.maximum(hppg,3.0*dB)
+        hppl=jxn.maximum(hppl,3.0*dB)
+        gammag=hppg*gma*jxn.sqrt(jxn.log(2.0)/2.0)
         gbs=jxn.exp(-jxn.log(2.0)*(dfe/gammag)**2)
-        gammal=hppl*jxn.sqrt(3.0)
+        gammal=hppl*gma*jxn.sqrt(3.0)
         gamma2l=gammal/2.0
         lbs=(gamma2l**2)/(dfe**2+gamma2l**2)
-        window=jxn.exp(-(dfe/0.3)**2)
+        windowwidth=jxn.maximum(hppg,hppl)*gma
+        window=jxn.exp(-(dfe/windowwidth)**2)
         voigt=((lbs*etas)+(gbs*(1.0-etas)))*window
         spcint=jxn.sum(intensy*voigt,axis=1)
-        dB=Blist[1]-Blist[0]
         spc=jxn.gradient(spcint,dB)
         fielde=Blist
         specs=spc
