@@ -433,7 +433,6 @@ def Ori(Hamer,Expe):
         maxvec=Vlist[-1]
         maxvec=Fieldframe(Vlist[-1],[nx,ny,nz],Ham.S,Ham.I)
         curvebasis=Assingstatestobasis(maxvec)
-        curvebasis=Assingstatestobasis(maxvec)
         resonants=[]
         for i in range(dim):
             for j in range(i+1,dim):
@@ -445,7 +444,7 @@ def Ori(Hamer,Expe):
                             En=np.linalg.eigvalsh(h1+h2*b)
                             return En[j]-En[i]-Exp.Freq
                         try:
-                            res=sci.optimize.brentq(gap,Blist[k],Blist[k+1],xtol=1e-9)
+                            res=sci.optimize.brentq(deltaE,Blist[k],Blist[k+1],xtol=1e-9)
                         except ValueError:
                             t=-diffv[k]/(diffv[k+1]-diffv[k])
                             res=Blist[k]+(t*(Blist[k+1]-Blist[k]))
@@ -712,7 +711,7 @@ def Spectre(Hamer,Expe,phi=0,orient='Z'):
     for lab,(nx,ny,nz,hop) in alabel.items():
         Elist5,Vlist5=ZElist,ZVlist
         maxvec=Vlist5[-1]
-        maxvector=Fieldframe(maxvector,Exp.Fdirection,Ham.S,Ham.I)
+        maxvec=Fieldframe(maxvec,Exp.Fdirection,Ham.S,Ham.I)
         curvebasis=Assingstatestobasis(maxvec)
         resonants=[]
         for i in range(dim):
@@ -724,7 +723,7 @@ def Spectre(Hamer,Expe,phi=0,orient='Z'):
                             En=np.linalg.eigvalsh(h1+h2*b)
                             return En[j]-En[i]-Exp.Freq
                         try:
-                            res=sci.optimize.brentq(gap,Blist3[k],Blist3[k+1],xtol=1e-9)
+                            res=sci.optimize.brentq(deltaE,Blist3[k],Blist3[k+1],xtol=1e-9)
                         except ValueError:
                             t=-diffv[k]/(diffv[k+1]-diffv[k])
                             res=Blist3[k]+(t*(Blist3[k+1]-Blist3[k]))
