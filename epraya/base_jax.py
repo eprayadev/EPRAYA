@@ -1536,8 +1536,9 @@ def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2,hifi=Fal
     cross=cross.flatten()
     ntrans=jxn.sum(cross).astype(jxn.float64)
     #Scores for transition possibility
-    Ktra=min(Ktra,scores.shape[0])
+    Ktra=1500 if hifi else 500
     scores=jxn.where(cross,1.0+fint,-1.0)
+    Ktra=min(Ktra,scores.shape[0])
     topones,toponesind=jx.lax.top_k(scores,Ktra)
     toponesind=jx.lax.stop_gradient(toponesind)
     ffres=fres[toponesind]
