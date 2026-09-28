@@ -2193,7 +2193,7 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
         hzez-=nhzez
     h1=jxn.asarray(h1,dtype=complex)
     hze=nx*hzex+ny*hzey+nz*hzez
-    Blist=jxn.linspace(frange0,Expe.Frange[1],Expe.Points)
+    Blist=jxn.linspace(frange0,Exp.Frange[1],Exp.Points)
     def Jdiagop(B):
         h5=h1+B*hze
         Elist,Vlist=containeigh(h5,hifi)
@@ -2219,7 +2219,7 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
     dert=h2diag[:,iidx]
     izrt=h2diag[:,jidx]
     gma=jxn.abs(izrt-dert)
-    gma=jxn.where(gma<1e-4,1e-2,gma)
+    gma=jxn.where(gma<1e-4,1e-4,gma)
     gema=1.0/gma
     #Boltzmann distribution
     conver=1e9*scc.h
@@ -2241,8 +2241,8 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
     intensy=prob*gema*boltzm*mask
     deltaE=jxn.abs(Elist[:,jidx]-Elist[:,iidx])
     dfe=deltaE-Exp.Freq
-    hppg=Ham.Hpp[0]*gma
-    hppl=Ham.Hpp[1]*gma
+    hppg=jxn.maximum(Ham.Hpp[0]*gma,0.1)
+    hppl=jxn.maximum(Ham.Hpp[1]*gma,0.1)
     hppg=jxn.where(hppg==0.0,1e-10,hppg)
     hpp=jxn.where(hppl==0.0,1e-10,hppl)
     gammag=hppg*jxn.sqrt(jxn.log(2.0)/2.0)
