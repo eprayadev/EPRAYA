@@ -2000,7 +2000,7 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None'):
                         if res.converged:
                             Hres=h1+hze*res.root
                             Eres,Vres=jxn.linalg.eigh(Hres)
-                            Vres=Fieldframe(Vres,Exp.Fdirection,Hamer.S,Hamer.I)
+                            Vres=Fieldframe(Vres,Expe.Fdirection,Hamer.S,Hamer.I)
                             localbasis=Assingstatestobasis(Vres)
                             basis1=localbasis[i]
                             basis2=localbasis[j]
@@ -2130,6 +2130,13 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
     -8.85167972e-08, -8.84171157e-08, -8.83673152e-08], dtype=float64))
     '''
     frange0=jxn.where(Expe.Frange[0]<0.0,1e-4,Expe.Frange[0])
+    ndi1=np.asarray(Expe.Fdirection,dtype=float)
+    mdir1=np.asarray(Expe.Mwdirection,dtype=float)
+    norm2=np.linalg.norm(ndir1)
+    norm3=np.linalg.norm(mdir1)
+    if norm2>0 and norm3>0 and abs(ndir1@mdir1)/(norm2*norm3)>0.99:
+        print("WARNING: Mwdirection is (almost) parallel to Fdirection. Use a Mwdirection perpendicular to Fdirection for a standard cavity.")
+        
     Ham=Hamer.replace(A=jxn.asarray(Hamer.A)/1000.0,D=jxn.asarray(Hamer.D)/1000.0,Hpp=jxn.asarray(Hamer.Hpp)/1.0,Q=jxn.asarray(Hamer.Q)/1000.0,
                      Bk2=jxn.asarray(Hamer.Bk2)/1000.0,Bk4=jxn.asarray(Hamer.Bk4)/1000.0,Bk6=jxn.asarray(Hamer.Bk6)/1000.0)
     etas=Ham.eta
@@ -2227,7 +2234,11 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
     popuj=boltz[:,jidx]
     boltzm=jxn.abs(popui-popuj)
     boltzm=jxn.where(Exp.Temperature<=0.0,1.0,boltzm)
-    intensy=prob*gema*boltzm
+    #Relevance of the transition
+    relev=prob*gema
+    smax=jxn.max(relev)
+    mask=jxn.where(smax>0,relev>=(1e-4*smax),1.0)
+    intensy=prob*gema*boltzm*mask
     deltaE=jxn.abs(Elist[:,jidx]-Elist[:,iidx])
     dfe=deltaE-Exp.Freq
     hppg=Ham.Hpp[0]*gma
