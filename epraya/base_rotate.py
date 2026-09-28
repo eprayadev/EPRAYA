@@ -437,7 +437,7 @@ def Ori(Hamer,Expe):
         resonants=[]
         for i in range(dim):
             for j in range(i+1,dim):
-                pair=tuple(sorted((basis1,basis2)))
+                
                 diffv=np.abs(Elist[:,j]-Elist[:,i])-Exp.Freq
                 for k in range(len(diffv)-1):
                     if (diffv[k]*diffv[k+1]<=0.0) and (diffv[k]!=diffv[k+1]):
@@ -453,6 +453,7 @@ def Ori(Hamer,Expe):
                             Eres,Vres=np.linalg.eigh(h1+h2*res)
                             localbasis=Assingstatestobasis(Fieldframe(Vres,[nx,ny,nz],Ham.S,Ham.I))
                             basis1,basis2=localbasis[i],localbasis[j]
+                            pair=tuple(sorted((basis1,basis2)))
                             ms1,ms2=slit[basis1],slit[basis2]
                             mi1,mi2=nlit[basis1],nlit[basis2]
                             dms=np.abs(ms1-ms2)
@@ -709,29 +710,29 @@ def Spectre(Hamer,Expe,phi=0,orient='Z'):
     if orient=='Z':
         alabel={'Z':(0,0,1,hzez)}
     for lab,(nx,ny,nz,hop) in alabel.items():
-        #Elist5,Vlist5=Pretrack(ZElist,ZVlist)
-        maxvec=ZVlist[-1]
-        maxvector=epr.Fieldframe(maxvector,Exp.Fdirection,Ham.S,Ham.I)
+        Elist5,Vlist5=ZElist,ZVlist
+        maxvec=Vlist5[-1]
+        maxvector=Fieldframe(maxvector,Exp.Fdirection,Ham.S,Ham.I)
         curvebasis=Assingstatestobasis(maxvec)
         resonants=[]
         for i in range(dim):
-            for j in range(i+1,dim):
-                pair=tuple(sorted((basis1,basis2)))
-                diffv=np.abs(Elist[:,j]-Elist[:,i])-Exp.Freq
+            for j in range(i+1,dim):                
+                diffv=np.abs(Elist5[:,j]-Elist5[:,i])-Exp.Freq
                 for k in range(len(diffv)-1):
                     if (diffv[k]*diffv[k+1]<=0.0) and (diffv[k]!=diffv[k+1]):
                         def deltaE(b,i=i,j=j):
                             En=np.linalg.eigvalsh(h1+h2*b)
                             return En[j]-En[i]-Exp.Freq
                         try:
-                            res=sci.optimize.brentq(gap,Blist[k],Blist[k+1],xtol=1e-9)
+                            res=sci.optimize.brentq(gap,Blist3[k],Blist3[k+1],xtol=1e-9)
                         except ValueError:
                             t=-diffv[k]/(diffv[k+1]-diffv[k])
-                            res=Blist[k]+(t*(Blist[k+1]-Blist[k]))
-                        if res>Blist[0]+2:
+                            res=Blist3[k]+(t*(Blist3[k+1]-Blist3[k]))
+                        if res>Blist3[0]+2:
                             Eres,Vres=np.linalg.eigh(h1+h2*res)
                             localbasis=Assingstatestobasis(Fieldframe(Vres,[nx,ny,nz],Ham.S,Ham.I))
                             basis1,basis2=localbasis[i],localbasis[j]
+                            pair=tuple(sorted((basis1,basis2)))
                             ms1,ms2=slit[basis1],slit[basis2]
                             mi1,mi2=nlit[basis1],nlit[basis2]
                             dms=np.abs(ms1-ms2)
@@ -747,7 +748,7 @@ def Spectre(Hamer,Expe,phi=0,orient='Z'):
                             else:
                                 ttyp="Forbidden"
                             #Transition probability with B1 perpendicular to B for the relevance of the resonant field
-                            vi,vj=Vlist[k,:,i],Vlist[k,:,j]
+                            vi,vj=Vlist5[k,:,i],Vlist5[k,:,j]
                             T=np.array([vj.conj()@op@vi for op in (isx,isy,isz)])
                             prob=float(np.real(np.sum(np.abs(T)**2)-np.abs(nx*T[0]+ny*T[1]+nz*T[2])**2))
                             state1=Getlabel(basis1,slit,nlit,llit,Ham.L,Ham.I)
