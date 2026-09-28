@@ -426,8 +426,8 @@ def Eresonant(Hamer,Expe,graph=True,table=True,relevance=1e-4):  #Function for f
     h1=np.asarray(h1,dtype=complex)
     Blist=np.linspace(Exp.Frange[0],Exp.Frange[1],500)
     Elist,Vlist=EAdaptarray(Blist,h1,hze)
-    Elist,Vlist=ERetrack(Blist,Elist,Vlist,h1,Ham)
-
+    #Now the values are calculated in the resonant fields.
+    #Elist,Vlist=ERetrack(Blist,Elist,Vlist,h1,Ham)
     maxvector=Vlist[-1]
     maxvector=Fieldframe(maxvector,Exp.Fdirection,Ham.S,Ham.I)
     curvebasis=Assingstatestobasis(maxvector)
@@ -440,8 +440,6 @@ def Eresonant(Hamer,Expe,graph=True,table=True,relevance=1e-4):  #Function for f
     relev=[]
     for i in range(dim):
         for j in range(i+1,dim):
-            basis1=curvebasis[i]
-            basis2=curvebasis[j]
             def deltaE(b):
                 return np.real(np.abs(splines(b)[j]-splines(b)[i]))-Exp.Freq
             diffv=np.abs(Elist[:,j]-Elist[:,i])-Exp.Freq
@@ -451,12 +449,15 @@ def Eresonant(Hamer,Expe,graph=True,table=True,relevance=1e-4):  #Function for f
                 try:
                     res=sci.optimize.root_scalar(deltaE,bracket=[bstart,bend],method='brentq')
                     if res.converged:
-                        #Interpolate for intensities
-                        t=(res.root-bstart)/(bend-bstart)
-                        vik,vik1=Vlist[k,:,i],Vlist[k+1,:,i]
-                        vjk,vjk1=Vlist[k,:,j],Vlist[k+1,:,j]
-                        vecci=(1-t)*vik+t*vik1
-                        veccj=(1-t)*vjk+t*vjk1
+                        Hres=h1+hze*res.root
+                        Eres,Vres=np.linalg.eigh(Hres)
+                        Vres=Fieldframe(Vres,Exp.Fdirection,Ham.S,Ham.I)
+                        localbasis=Assingstatestobasis(Vres)
+                        basis1=localbasis[i]
+                        basis2=localbasis[j]
+                        vecci=Vres[:,i]
+                        veccj=Vres[:,j]
+                        #Calculation for intensities
                         vecci/=np.linalg.norm(vecci)
                         veccj/=np.linalg.norm(veccj)
                         trament=veccj.conj().T@hmw@vecci
@@ -875,9 +876,10 @@ def Cristalfm(Hamer,Exp,relevance=1e-4):  #Function for finding the resonant fie
     h1=np.asarray(h1,dtype=complex)
     Blist=np.linspace(Exp.Frange[0],Exp.Frange[1],500)
     Elist,Vlist=EAdaptarray(Blist,h1,hze)
-    Elist,Vlist=ERetrack(Blist,Elist,Vlist)
+    #Elist,Vlist=ERetrack(Blist,Elist,Vlist)
     maxvector=Vlist[-1]
     maxvector=Fieldframe(maxvector,Exp.Fdirection,Ham.S,Ham.I)
+    maxvector=epr.Fieldframe(maxvector,Exp.Fdirection,Ham.S,Ham.I)
     curvebasis=Assingstatestobasis(maxvector)
     #Cubic splines algorithm for the values
     splines=cubichers(Blist,Elist,axis=0)
@@ -899,14 +901,17 @@ def Cristalfm(Hamer,Exp,relevance=1e-4):  #Function for finding the resonant fie
                 try:
                     res=sci.optimize.root_scalar(deltaE,bracket=[bstart,bend],method='brentq')
                     if res.converged:
-                        #Interpolate for intensities
-                        t=(res.root-bstart)/(bend-bstart)
-                        vik,vik1=Vlist[k,:,i],Vlist[k+1,:,i]
-                        vjk,vjk1=Vlist[k,:,j],Vlist[k+1,:,j]
-                        vecci=(1-t)*vik+t*vik1
-                        veccj=(1-t)*vjk+t*vjk1
+                        Hres=h1+hze*res.root
+                        Eres,Vres=np.linalg.eigh(Hres)
+                        Vres=Fieldframe(Vres,Exp.Fdirection,Ham.S,Ham.I)
+                        localbasis=Assingstatestobasis(Vres)
+                        basis1=localbasis[i]
+                        basis2=localbasis[j]
+                        vecci=Vres[:,i]
+                        veccj=Vres[:,j]
+                        #Calculation for intensities
                         vecci/=np.linalg.norm(vecci)
-                        veccj/=np.linalg.norm(veccj)
+                        veccj/=np.linalg.norm(veccj) 
                         trament=veccj.conj().T@hmw@vecci
                         prob=np.abs(trament)**2
                         #Frecuency to field
@@ -1221,8 +1226,9 @@ def Music(Hamer,Exper,graph=True,table=True,relevance=1e-4):
                 Exp.Mexp[0].Frange[0]=1e-8    
             Blist=np.linspace(Exp.Mexp[0].Frange[0],Exp.Mexp[0].Frange[1],500)
             Elist,Vlist=EAdaptarray(Blist,h1,hze)
-            Elist,Vlist=ERetrack(Blist,Elist,Vlist)
+            #Elist,Vlist=ERetrack(Blist,Elist,Vlist)
             maxvector=Vlist[-1]
+            maxvector=Mfieldframe(maxvector,ndir,Sval,Ival,dimerq,Kroexpand)
             curvebasis=Assingstatestobasis(maxvector)
             #Cubic splines algorithm for the values
             splines=cubichers(Blist,Elist,axis=0)
@@ -1244,13 +1250,13 @@ def Music(Hamer,Exper,graph=True,table=True,relevance=1e-4):
                         try:
                             res=sci.optimize.root_scalar(deltaE,bracket=[bstart,bend],method='brentq')
                             if res.converged:
-                                t=(res.root-bstart)/(bend-bstart)
-                                vik,vik1=Vlist[k,:,i],Vlist[k+1,:,i]
-                                vjk,vjk1=Vlist[k,:,j],Vlist[k+1,:,j]
-                                vecci=(1-t)*vik+t*vik1
-                                veccj=(1-t)*vjk+t*vjk1
-                                vecci/=np.linalg.norm(vecci)
-                                veccj/=np.linalg.norm(veccj)
+                                Hres=h1+hze*res.root
+                                Eres,Vres=np.linalg.eigh(Hres)
+                                localbasis=Assingstatestobasis(Vres)
+                                basis1=localbasis[i]
+                                basis2=localbasis[j]
+                                vecci=Vres[:,i]
+                                veccj=Vres[:,j]
                                 trament=veccj.conj().T@hmw@vecci
                                 prob=np.abs(trament)**2
                                 dert=np.real(vecci.conj().T@hze@vecci)
@@ -1259,6 +1265,7 @@ def Music(Hamer,Exper,graph=True,table=True,relevance=1e-4):
                                 if gma<1e-6:
                                     gma=1e-6
                                 gema=1/gma
+                                pair=tuple(sorted((basis1,basis2)))
                                 Energz=splines(res.root)
                                 boltzman= EBoltfactor(Energz,i,j,Exp.Mexp[0].Temperature)
                                 ttyp="Forbidden"
