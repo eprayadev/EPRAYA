@@ -949,9 +949,10 @@ def Calpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk):
     isz=np.kron(np.eye(int(2*Ham.L+1)),isz)
     isz=np.asarray(isz,dtype=np.complex128)
     #Transition rate value
-    isx=Ham.g[0,0]*isx+Ham.g[0,1]*isy+Ham.g[0,2]*isz
-    isy=Ham.g[1,0]*isx+Ham.g[1,1]*isy+Ham.g[1,2]*isz
-    isz=Ham.g[2,0]*isx+Ham.g[2,1]*isy+Ham.g[2,2]*isz
+    issx=Ham.g[0,0]*isx+Ham.g[0,1]*isy+Ham.g[0,2]*isz
+    issy=Ham.g[1,0]*isx+Ham.g[1,1]*isy+Ham.g[1,2]*isz
+    issz=Ham.g[2,0]*isx+Ham.g[2,1]*isy+Ham.g[2,2]*isz
+    isx,isy,isz=issx,issy,issz
     E=Exp.Freq
     espac1=np.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
     beta=(scic.physical_constants["Bohr magneton"][0]/scic.physical_constants["Planck constant"][0])/1e12
