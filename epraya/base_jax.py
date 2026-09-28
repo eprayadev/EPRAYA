@@ -2130,7 +2130,7 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
     -8.85167972e-08, -8.84171157e-08, -8.83673152e-08], dtype=float64))
     '''
     frange0=jxn.where(Expe.Frange[0]<0.0,1e-4,Expe.Frange[0])
-    ndi1=np.asarray(Expe.Fdirection,dtype=float)
+    ndir1=np.asarray(Expe.Fdirection,dtype=float)
     mdir1=np.asarray(Expe.Mwdirection,dtype=float)
     norm2=np.linalg.norm(ndir1)
     norm3=np.linalg.norm(mdir1)
