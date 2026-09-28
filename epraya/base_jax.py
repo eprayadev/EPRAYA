@@ -1977,23 +1977,16 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None'):
     Elist=np.array(Elist)
     Vlist=np.array(Vlist)
     #For the energy diagrams
-    Elist,Vlist=JPretrack(Elist,Vlist)
+    #Elist,Vlist=JPretrack(Elist,Vlist)
     splines=cubichers(Blist,Elist,axis=0)
-    targettr=set()
-    targettr.update(tuple(sorted(p)) for p in transitions["allowed"])
-    targettr.update(tuple(sorted(p)) for p in transitions["for Dms2"])
     maxvector=Vlist[-1]
+    maxvector=Fieldframe(maxvector,Expe.Fdirection,Hamer.S,Hamer.I)
     curvebasis=Assingstatestobasis(maxvector)
     dim=Elist.shape[1]
     resfield=[]
     resonants=[]
     for i in range(dim):
         for j in range(i+1, dim):
-            basis1=curvebasis[i]
-            basis2=curvebasis[j]
-            pair=tuple(sorted((basis1,basis2)))
-            if pair not in targettr:
-                continue
             diffv=jxn.abs(Elist[:,j]-Elist[:,i])-Expe.Freq
             signch=np.where(np.diff(np.signbit(diffv)))[0]
             for k in signch:
@@ -2003,6 +1996,12 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None'):
                 try:
                     res=sci.optimize.root_scalar(deltaE,bracket=[bstart,bend],method='brentq')
                     if res.converged:
+                        Hres=h1+hze*res.root
+                        Eres,Vres=jnx.linalg.eigh(Hres)
+                        Vres=Fieldframe(Vres,Exp.Fdirection,Hamer.S,Hamer.I)
+                        localbasis=Assingstatestobasis(Vres)
+                        basis1=localbasis[i]
+                        basis2=localbasis[j]
                         ms1,ms2=slit[basis1],slit[basis2]
                         mi1,mi2=nlit[basis1],nlit[basis2]
                         dms=jxn.abs(ms1-ms2)
@@ -2875,6 +2874,7 @@ def Jcalmusic(maham,Expe,Nucl1='None',Nucl2='None',hifi=False):
     
     fielde : jax.np.array
         Array of the magnetic field.
+        
     specs : jax.np.array
         Array of the counts of the spectrum.
     
