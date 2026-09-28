@@ -627,7 +627,7 @@ def Spectre(Hamer,Expe,phi=0,orient='Z'):
     Bmin=Exp.Frange[0]
     dB=(Exp.Frange[1]-Exp.Frange[0])/(Exp.Points-1)
     Caltriangle(sketch,Bmin,dB,allres,allint,ntrans,hulk,weight)
-    fig,axs=plt.subplots(3,1,figsize=(12,13),sharex=True)
+    fig,axs=plt.subplots(3,1,figsize=(10,14),sharex=True)
     #Convolution of the function to create the derivated spectrum
     maxlenght=np.max(Ham.Hpp)*50
     kerpoint=int(maxlenght/dB)*2+1
