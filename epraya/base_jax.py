@@ -2250,7 +2250,7 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
     gammal=hppl*jxn.sqrt(3.0)
     gamma2l=gammal/2.0
     lbs=(gamma2l**2)/(dfe**2+gamma2l**2)
-    window=jxn.exp(-(dfe/jxn.maximum(5.0*jxn.maximum(hppg,hppl),50.0))** 2)
+    window=jxn.exp(-(dfe/0.3)**2)
     voigt=((lbs*etas)+(gbs*(1.0-etas)))*window
     spcint=jxn.sum(intensy*voigt,axis=1)
     dB=Blist[1]-Blist[0]
