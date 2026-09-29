@@ -1978,7 +1978,7 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None'):
     Elist=np.array(Elist)
     dim=h1.shape[0]
     splines=cubichers(Blist,Elist,axis=0)
-    resfield,intensy=[],[]
+    resfield,intensy,resonants=[],[],[]
     for i in range(dim):
         for j in range(i+1,dim):
             diffv=np.abs(Elist[:,j]-Elist[:,i])-Expe.Freq
