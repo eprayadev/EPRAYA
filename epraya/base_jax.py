@@ -1992,7 +1992,7 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None'):
     hze=nx*hzex+ny*hzey+nz*hzez
     Elist,Vlist,h2=JPadaptarray(Blist,h1,hzex,hzey,hzez,nx,ny,nz,False)
     #For the energy diagrams
-    Elist,Vlist=JPretrack(Elist,Vlist)
+    #Elist,Vlist=JPretrack(Elist,Vlist)
     splines=cubichers(Blist,Elist,axis=0)
     maxvector=Vlist[-1]
     maxvector=Fieldframe(maxvector,Expe.Fdirection,Hamer.S,Hamer.I)
@@ -2055,44 +2055,7 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None'):
         else:
             print("No resonant fields detected in selected range")
         if graph:
-            plt.figure(figsize=(10,6))
-            plt.plot(Blist,epc,color='navy',label='Spectrum')
-            plt.xlabel('Magnetic field [mT]')
-            plt.ylabel('Counts [A. U.]')
-            formatter=EngFormatter(sep='') 
-            plt.gca().yaxis.set_major_formatter(formatter)
-            plt.xlim(Expe.Frange[0],Expe.Frange[1])
-            plt.grid()
-            plt.legend()
-            plt.show(block=False)
-            
-            fig2,ax2=plt.subplots(figsize=(10,6))
-            numlevels=Elist.shape[1]
-            colenergy= cm.viridis(np.linspace(0,1,numlevels))
-            coljet=cm.jet(np.linspace(0,1,numlevels))
-            for elk in range(numlevels):
-                basidx=curvebasis[elk]
-                labelr=Getlabel(basidx,slit,nlit,llit,Hamer.L,Hamer.I)
-                ax2.plot(Blist,Elist[:,elk],color=colenergy[elk],label=labelr)
-
-            for r in resonants:
-                fv=r['field']
-                idi,idj =r['inx']
-                eni=splines(fv)[idi]
-                enj=splines(fv)[idj]
-                if r['type']=='Allowed':
-                    ax2.plot([fv,fv],[eni,enj],color=coljet[idi],marker='o',markersize=4,linestyle='-')
-                else:
-                    ax2.plot([fv,fv],[eni,enj],color='gray',marker='o',markersize=4,linestyle='-')
-
-            ax2.set_title('Energy VS Field',fontsize=18)
-            ax2.set_xlabel('Field [mT]')
-            ax2.set_ylabel('Energy [GHz]')
-            ax2.set_xlim(Blist[0],Blist[-1]+5)
-            ax2.grid(True,color='black',alpha=0.3,linestyle='-')
-            ax2.legend(bbox_to_anchor=(1.02,1),loc='upper left')
-            plt.tight_layout()
-            plt.show()
+            Plotsim(espac1=Blist,inten1=epc,resfield=resfield,espac2=Blist,enegria=Elist,curvebasis=curvebasis,splines=splines,resonants=resonants,Ham=Hamer,Exp=Expe)
     return Blist,epc
 
 def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
