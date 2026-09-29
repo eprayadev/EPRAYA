@@ -2202,73 +2202,37 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
         hzey-=nhzey
         hzez-=nhzez
     h1=jxn.asarray(h1,dtype=complex)
-    hze=nx*hzex+ny*hzey+nz*hzez
-    Blist=jxn.linspace(frange0,Exp.Frange[1],Exp.Points)
-    def Jdiagop(B):
-        h5=h1+B*hze
-        Elist,Vlist=containeigh(h5,hifi)
-        return Elist,Vlist
-    Elist,Vlist=jx.vmap(Jdiagop)(Blist)
-    spc=jxn.zeros(Expe.Points)
-    dim=Elist.shape[1]
-    iidx,jidx=jxn.triu_indices(dim,k=1)
-    Vdag=Vlist.conj().swapaxes(-1,-2)
-    Tx=Vdag@isx@Vlist
-    Ty=Vdag@isy@Vlist
-    Tz=Vdag@isz@Vlist
-    #Interpolate for intensities
-    Txij=Tx[:,iidx,jidx]
-    Tyij=Ty[:,iidx,jidx]
-    Tzij=Tz[:,iidx,jidx]
-    #Probability definition and interpolation
-    Mn=mx*Txij+my*Tyij+mz*Tzij
-    prob=jxn.abs(Mn)**2
-    #Frecuency to field
-    h22=jxn.real(Vdag@hze@Vlist)
-    h2diag=jxn.diagonal(h22,axis1=1,axis2=2)
-    dert=h2diag[:,iidx]
-    izrt=h2diag[:,jidx]
-    gma=jxn.abs(izrt-dert)
-    gma=jxn.where(gma<1e-4,1e-4,gma)
-    gema=1.0/gma
-    gmas=jxn.minimum(gema,100.0)
-    #Boltzmann distribution
-    conver=1e9*scc.h
-    Ej=Elist*conver
-    Temp=jxn.where(Exp.Temperature<=0.0,1.0,Exp.Temperature)
-    beta=1.0/(scc.k*Temp)
-    Emin=jxn.min(Ej,axis=-1,keepdims=True)
-    boltz=jxn.exp(-beta*(Ej-Emin))
-    Z=jxn.sum(boltz,axis=-1,keepdims=True)
-    boltz=boltz/Z
-    popui=boltz[:,iidx]
-    popuj=boltz[:,jidx]
-    boltzm=jxn.abs(popui-popuj)
-    boltzm=jxn.where(Exp.Temperature<=0.0,1.0,boltzm)
-    #Relevance of the transition
-    relev=prob*gmas
-    smax=jxn.max(relev)
-    mask=jxn.where(smax>0,relev>=(1e-4*smax),1.0)
-    deltaE=jxn.abs(Elist[:,jidx]-Elist[:,iidx])
-    dfe=deltaE-Exp.Freq
-    
-    intensy=prob*gmas*boltzm*mask
-    hppg=jxn.maximum(Ham.Hpp[0]*gma,0.01)
-    hppl=jxn.maximum(Ham.Hpp[1]*gma,0.01)
-    gammag=hppg*jxn.sqrt(jxn.log(2.0)/2.0)
-    gbs=jxn.exp(-jxn.log(2.0)*(dfe/gammag)**2)
-    gammal=hppl*jxn.sqrt(3.0)
-    gamma2l=gammal/2.0
-    lbs=(gamma2l**2)/(dfe**2+gamma2l**2)
-    window=jxn.exp(-(dfe/0.2)**2)
-    voigt=((lbs*etas)+(gbs*(1.0-etas)))*window
-    spcint=jxn.sum(intensy*voigt,axis=1)
-    dB=Blist[1]-Blist[0]
-    spc=jxn.gradient(spcint,dB)
-    if diagram:
-        return Blist,spc,Elist,Vlist,h1,hze
-    else:
-        return Blist,spc,[],[],[],[]
+    Blist1=jxn.linspace(frange0,Exp.Frange[1],500)
+    dB=(Exp.Frange[1]-Exp.Frange[0])/(Exp.Points-1)
+    Bmin=Exp.Frange[0]
+    Elist,Vlist,h2=JPadaptarray(Blist1,h1,hzex,hzey,hzez,nx,ny,nz,hifi)
+    resfield,intensy,ntrans=JNresina(Blist1,Elist,Vlist,dim,Exp.Freq,isx,isy,isz,nx,ny,nz,Exp.Temperature,Ham.Hpp,h2,hifi=hifi)
+    #1D projection of the orientation
+    diferb=(resfield-Bmin)/dB
+    vecl=jxn.floor(diferb).astype(jxn.int64)
+    vecr=vecl+1
+    fracr=diferb-vecl
+    fracl=1.0-fracr
+    Ilef=intensy*fracl
+    Irig=intensy*fracr
+    valid=(vecl>=0)&(vecl<Exp.Points)
+    vecl=jxn.where(valid,vecl,0)
+    vecr=jxn.where(valid&(vecr<Exp.Points),vecr,0)
+    Ilef=jxn.where(valid,Ilef,0.0)
+    Irig=jxn.where(valid,Irig,0.0)
+
+    sketch=jxn.zeros(Exp.Points)
+    sketch=sketch.at[vecl].add(Ilef)
+    sketch=sketch.at[vecr].add(Irig)
+
+    #FFT convolution as in JPowder
+    kpoints=int(Exp.Points)|1
+    kaxis=jxn.arange(-kpoints//2+1,kpoints//2+1)*dB
+    kvoigt=JVoigtp(kaxis,jxn.array([1.0]),jxn.array([0.0]),Ham.Hpp,etas)
+    espectotal=jsig.fftconvolve(sketch,kvoigt,mode='same')
+    Blist2=jxn.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
+
+    return Blist2, espectotal
    
 @jaxdatclass
 class Mjhval:
