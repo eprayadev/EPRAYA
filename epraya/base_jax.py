@@ -1985,7 +1985,7 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None'):
             signch=np.where(np.diff(np.signbit(diffv)))[0]
             for k in signch:
                 def deltaE(b,i=i,j=j):
-                    return np.abs(splines(b)[j]-splines(b)[i])-Freq
+                    return np.abs(splines(b)[j]-splines(b)[i])-Expe.Freq
                 try:
                     res=sci.optimize.brentq(deltaE,Blist[k],Blist[k+1],xtol=1e-9)
                     if res.converged:
