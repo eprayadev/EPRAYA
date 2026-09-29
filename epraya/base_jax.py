@@ -1988,29 +1988,28 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None'):
                     return np.abs(splines(b)[j]-splines(b)[i])-Expe.Freq
                 try:
                     res=sci.optimize.brentq(deltaE,Blist[k],Blist[k+1],xtol=1e-9)
-                    if res.converged:
-                        Hres=h1+hze*res.root
-                        Eres,Vres=jxn.linalg.eigh(Hres)
-                        Vres=Fieldframe(Vres,Expe.Fdirection,Hamer.S,Hamer.I)
-                        localbasis=Assingstatestobasis(Vres)
-                        basis1=localbasis[i]
-                        basis2=localbasis[j]
-                        ms1,ms2=slit[basis1],slit[basis2]
-                        mi1,mi2=nlit[basis1],nlit[basis2]
-                        dms=jxn.abs(ms1-ms2)
-                        dmi=jxn.abs(mi1-mi2)
-                        if np.isclose(dms,1) and np.isclose(dmi,0):
-                            ttyp="Allowed"
-                        elif np.isclose(dms,2):
-                            ttyp="Forbidden (2)"
-                        elif not np.isclose(dmi,0):
-                            ttyp="Forbidden (N)"
-                        else:
-                            ttyp="Forbidden"
-                            state1=Getlabel(basis1,slit,nlit,llit,Hamer.L,Hamer.I)
-                            state2=Getlabel(basis2,slit,nlit,llit,Hamer.L,Hamer.I)
-                            resonants.append({'field': res.root,'inx': (i, j),'bainx': (basis1,basis2),'type': ttyp,'transition': f"{state1} <-> {state2}"})
-                            resfield.append(res.root)
+                    Hres=h1+hze*res
+                    Eres,Vres=jxn.linalg.eigh(Hres)
+                    Vres=Fieldframe(Vres,Expe.Fdirection,Hamer.S,Hamer.I)
+                    localbasis=Assingstatestobasis(Vres)
+                    basis1=localbasis[i]
+                    basis2=localbasis[j]
+                    ms1,ms2=slit[basis1],slit[basis2]
+                    mi1,mi2=nlit[basis1],nlit[basis2]
+                    dms=jxn.abs(ms1-ms2)
+                    dmi=jxn.abs(mi1-mi2)
+                    if np.isclose(dms,1) and np.isclose(dmi,0):
+                        ttyp="Allowed"
+                    elif np.isclose(dms,2):
+                        ttyp="Forbidden (2)"
+                    elif not np.isclose(dmi,0):
+                        ttyp="Forbidden (N)"
+                    else:
+                        ttyp="Forbidden"
+                    state1=Getlabel(basis1,slit,nlit,llit,Hamer.L,Hamer.I)
+                    state2=Getlabel(basis2,slit,nlit,llit,Hamer.L,Hamer.I)
+                    resonants.append({'field': res,'inx': (i,j),'bainx': (basis1,basis2),'type': ttyp,'transition': f"{state1} <-> {state2}"})
+                    resfield.append(res.root)
                 except ValueError:
                     pass
     spcint=np.zeros(len(Blist))
