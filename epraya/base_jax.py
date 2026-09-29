@@ -42,6 +42,7 @@ import re
 from itertools import product as iterproduct
 from .base_powd import *
 from .base_ham import *
+from .base_cris import Plotsim
 from .base_fit import Fitresult,result,Selectvarian
 import matplotlib.cm as cm
 
