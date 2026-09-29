@@ -1984,10 +1984,12 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None'):
     '''
     slit,nlit,llit,transitions=Msmi(Hamer.I,Hamer.S,Hamer.L)
     Blist,epc,h1,hzex,hzey,hzez=Calresonant(Hamer,Expe,Nucl,diagram=True)
+
     Blist=np.array(Blist)
     ndir=jxn.array(Expe.Fdirection,dtype=jxn.float64)
     ndir=ndir/jxn.linalg.norm(ndir)
     nx,ny,nz=ndir[0],ndir[1],ndir[2]
+    hze=nx*hzex+ny*hzey+nz*hzez
     Elist,Vlist,h2=JPadaptarray(Blist,h1,hzex,hzey,hzez,nx,ny,nz,False)
     #For the energy diagrams
     Elist,Vlist=JPretrack(Elist,Vlist)
