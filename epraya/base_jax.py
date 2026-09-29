@@ -1475,7 +1475,6 @@ def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2,hifi=Fal
     dEl=diffv[:-1,:]
     dEr=diffv[1:,:]
     cross=(dEl*dEr<=0.0)&(dEl!=dEr)
-    cross=cross & (res>(Blist[0]+2.0))
     denom=dEr-dEl
     denom=jxn.where(denom==0.0,1e-8,denom)
     t=-dEl/denom
@@ -1483,6 +1482,7 @@ def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2,hifi=Fal
     Bl=Blist[:-1,None]
     Br=Blist[1:,None]
     res=Bl+t*(Br-Bl)
+    cross=cross & (res>(Blist[0]+2.0))
     #Normalize the eigenvectors
     def safenorm(v,axis,eps=1e-30):
         n=jxn.linalg.norm(v,axis=axis,keepdims=True)
