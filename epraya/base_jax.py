@@ -1983,7 +1983,7 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None'):
        :alt: Energy diagram of the Jresonant function
        :align: center    
     '''
-    slit,nlit,llit=JMsmi(Hamer.I,Hamer.S,Hamer.L)
+    slit,nlit,llit,_=Msmi(Hamer.I,Hamer.S,Hamer.L)
     Blist,epc,h1,hzex,hzey,hzez=Calresonant(Hamer,Expe,Nucl,diagram=True)
     Blist=np.array(Blist)
     ndir=jxn.array(Expe.Fdirection,dtype=jxn.float64)
