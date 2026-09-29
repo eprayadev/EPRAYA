@@ -1977,7 +1977,7 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None'):
     Blist=np.array(Blist)
     Elist=np.array(Elist)
     dim=h1.shape[0]
-    splines=interp.CubicSpline(Blist,Elist,axis=0)
+    splines=cubichers(Blist,Elist,axis=0)
     resfield,intensy=[],[]
     for i in range(dim):
         for j in range(i+1,dim):
