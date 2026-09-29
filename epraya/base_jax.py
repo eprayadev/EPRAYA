@@ -1982,9 +1982,8 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None'):
        :alt: Energy diagram of the Jresonant function
        :align: center    
     '''
-    slit,nlit,llit,transitions=Msmi(Hamer.I,Hamer.S,Hamer.L)
+    slit,nlit,llit,transitions=JMsmi(Hamer.I,Hamer.S,Hamer.L)
     Blist,epc,h1,hzex,hzey,hzez=Calresonant(Hamer,Expe,Nucl,diagram=True)
-
     Blist=np.array(Blist)
     ndir=jxn.array(Expe.Fdirection,dtype=jxn.float64)
     ndir=ndir/jxn.linalg.norm(ndir)
@@ -2000,6 +1999,7 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None'):
     dim=Elist.shape[1]
     resfield=[]
     resonants=[]
+    relev=[]
     for i in range(dim):
         for j in range(i+1, dim):
             diffv=jxn.abs(Elist[:,j]-Elist[:,i])-Expe.Freq
@@ -2019,12 +2019,14 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None'):
                         basis2=localbasis[j]
                         ms1,ms2=slit[basis1],slit[basis2]
                         mi1,mi2=nlit[basis1],nlit[basis2]
-                        dms=jxn.abs(ms1-ms2)
-                        dmi=jxn.abs(mi1-mi2)
+                        dms=np.abs(ms1-ms2)
+                        dmi=np.abs(mi1-mi2)
                         if np.isclose(dms,1) and np.isclose(dmi,0):
                             ttyp="Allowed"
                         elif np.isclose(dms,2):
                             ttyp="Forbidden (2)"
+                        elif np.isclose(dms,3):
+                            ttyp="Forbidden (3)"
                         elif not np.isclose(dmi,0):
                             ttyp="Forbidden (N)"
                         else:
@@ -2038,7 +2040,7 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None'):
     if len(resfield)>0:
         if table:
             df=DataFrame(data=resonants)
-            dfdis=df[['field', 'transition', 'type']].copy()
+            dfdis=df[['field','transition','type']].copy()
             dfl=dfdis.iloc[::2].reset_index(drop=True)
             dfr=dfdis.iloc[1::2].reset_index(drop=True)
             dfdis=concat([dfl, dfr],axis=1)
