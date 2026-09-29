@@ -2011,8 +2011,8 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None'):
                             state2=Getlabel(basis2,slit,nlit,llit,Hamer.L,Hamer.I)
                             resonants.append({'field': res.root,'inx': (i, j),'bainx': (basis1,basis2),'type': ttyp,'transition': f"{state1} <-> {state2}"})
                             resfield.append(res.root)
-                    except ValueError:
-                        pass
+                except ValueError:
+                    pass
     spcint=np.zeros(len(Blist))
     for res,inten in zip(resfield,intensy):
         spcint+=inten*Voigtp(Blist,1.0,res,Hpp,eta)
