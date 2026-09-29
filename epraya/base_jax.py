@@ -1983,12 +1983,12 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None'):
        :align: center    
     '''
     slit,nlit,llit,transitions=Msmi(Hamer.I,Hamer.S,Hamer.L)
-    Blist,epc,h1,hze=Calresonant(Hamer,Expe,Nucl,diagram=True)
+    Blist,epc,h1,hzex,hzey,hzez=Calresonant(Hamer,Expe,Nucl,diagram=True)
     Blist=np.array(Blist)
     ndir=jxn.array(Expe.Fdirection,dtype=jxn.float64)
     ndir=ndir/jxn.linalg.norm(ndir)
     nx,ny,nz=ndir[0],ndir[1],ndir[2]
-    Elist,Vlist,h2=JPadaptarray(Blist1,h1,hzex,hzey,hzez,nx,ny,nz,False)
+    Elist,Vlist,h2=JPadaptarray(Blist,h1,hzex,hzey,hzez,nx,ny,nz,False)
     #For the energy diagrams
     Elist,Vlist=JPretrack(Elist,Vlist)
     splines=cubichers(Blist,Elist,axis=0)
@@ -2202,7 +2202,6 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
         hzey-=nhzey
         hzez-=nhzez
     h1=jxn.asarray(h1,dtype=complex)
-    hze=nx*hzex+ny*hzey+nz*hzez
     Blist1=jxn.linspace(frange0,Exp.Frange[1],500)
     dB=(Exp.Frange[1]-Exp.Frange[0])/(Exp.Points-1)
     Bmin=Exp.Frange[0]
@@ -2233,7 +2232,7 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
     espectotal=jsig.fftconvolve(sketch,kvoigt,mode='same')
     Blist2=jxn.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
 
-    return Blist2,espectotal,h1,hze
+    return Blist2,espectotal,h1,hzex,hzey,hzez
    
 @jaxdatclass
 class Mjhval:
