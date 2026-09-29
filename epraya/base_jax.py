@@ -2087,7 +2087,6 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None'):
             ax2.legend(bbox_to_anchor=(1.02,1),loc='upper left')
             plt.tight_layout()
             plt.show()
-
     return Blist,epc
 
 def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
@@ -2202,6 +2201,7 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
         hzey-=nhzey
         hzez-=nhzez
     h1=jxn.asarray(h1,dtype=complex)
+    hze=nx*hzex+ny*hzey+nz*hzez
     Blist1=jxn.linspace(frange0,Exp.Frange[1],500)
     dB=(Exp.Frange[1]-Exp.Frange[0])/(Exp.Points-1)
     Bmin=Exp.Frange[0]
@@ -2232,7 +2232,7 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
     espectotal=jsig.fftconvolve(sketch,kvoigt,mode='same')
     Blist2=jxn.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
 
-    return Blist2, espectotal
+    return Blist2,espectotal,Elist,Vlist,h1,hze
    
 @jaxdatclass
 class Mjhval:
