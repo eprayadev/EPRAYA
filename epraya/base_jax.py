@@ -1973,9 +1973,12 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None'):
        :align: center    
     '''
     slit,nlit,llit,transitions=Msmi(Hamer.I,Hamer.S,Hamer.L)
-    Blist,epc,Elist,h1,hze=Calresonant(Hamer,Expe,Nucl,diagram=True) 
+    Blist,epc,Elist,Vlist,h1,hze=Calresonant(Hamer,Expe,Nucl,diagram=True) 
     Blist=np.array(Blist)
     Elist=np.array(Elist)
+    maxvector=Vlist[-1]
+    maxvector=Fieldframe(maxvector,Expe.Fdirection,Hamer.S,Hamer.I)
+    curvebasis=Assingstatestobasis(maxvector)
     dim=h1.shape[0]
     splines=cubichers(Blist,Elist,axis=0)
     resfield,intensy,resonants=[],[],[]
@@ -2248,9 +2251,9 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
     dB=Blist[1]-Blist[0]
     spc=jxn.gradient(spcint,dB)
     if diagram:
-        return Blist,spc,Elist,h1,hze
+        return Blist,spc,Elist,Vlist,h1,hze
     else:
-        return Blist,spc,[],[],[]
+        return Blist,spc,[],[],[],[]
    
 @jaxdatclass
 class Mjhval:
