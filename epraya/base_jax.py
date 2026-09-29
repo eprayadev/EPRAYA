@@ -1475,6 +1475,7 @@ def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2,hifi=Fal
     dEl=diffv[:-1,:]
     dEr=diffv[1:,:]
     cross=(dEl*dEr<=0.0)&(dEl!=dEr)
+    cross=cross & (res>(Blist[0]+2.0))
     denom=dEr-dEl
     denom=jxn.where(denom==0.0,1e-8,denom)
     t=-dEl/denom
@@ -2221,7 +2222,7 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
     Irig=intensy*fracr
     valid=(vecl>=0)&(vecl<Exp.Points)
     vecl=jxn.where(valid,vecl,0)
-    vecr=jxn.where(valid&(vecr<Exp.Points),vecr,0)
+    vecr=jxn.where(valid & (vecr<Exp.Points),vecr,0)
     Ilef=jxn.where(valid,Ilef,0.0)
     Irig=jxn.where(valid,Irig,0.0)
 
