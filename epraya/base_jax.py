@@ -2009,7 +2009,7 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None'):
                     state1=Getlabel(basis1,slit,nlit,llit,Hamer.L,Hamer.I)
                     state2=Getlabel(basis2,slit,nlit,llit,Hamer.L,Hamer.I)
                     resonants.append({'field': res,'inx': (i,j),'bainx': (basis1,basis2),'type': ttyp,'transition': f"{state1} <-> {state2}"})
-                    resfield.append(res.root)
+                    resfield.append(res)
                 except ValueError:
                     pass
     spcint=np.zeros(len(Blist))
