@@ -1983,69 +1983,70 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None'):
        :align: center    
     '''
     slit,nlit,llit,transitions=Msmi(Hamer.I,Hamer.S,Hamer.L)
-    Blist,epc,Elist,Vlist,h1,hze=Calresonant(Hamer,Expe,Nucl,diagram=True)
-    if graph:
-        Blist=np.array(Blist)
-        Elist=np.array(Elist)
-        Vlist=np.array(Vlist)
-        #For the energy diagrams
-        #Elist,Vlist=JPretrack(Elist,Vlist)
-        splines=cubichers(Blist,Elist,axis=0)
-        maxvector=Vlist[-1]
-        maxvector=Fieldframe(maxvector,Expe.Fdirection,Hamer.S,Hamer.I)
-        curvebasis=Assingstatestobasis(maxvector)
-        dim=Elist.shape[1]
-        resfield=[]
-        resonants=[]
-        for i in range(dim):
-            for j in range(i+1, dim):
-                diffv=jxn.abs(Elist[:,j]-Elist[:,i])-Expe.Freq
-                signch=np.where(np.diff(np.signbit(diffv)))[0]
-                for k in signch:
-                    bstart,bend=Blist[k],Blist[k+1]
-                    def deltaE(b):
-                        return np.real(jxn.abs(splines(b)[j]-splines(b)[i]))-Expe.Freq
-                    try:
-                        res=sci.optimize.root_scalar(deltaE,bracket=[bstart,bend],method='brentq')
-                        if res.converged:
-                            Hres=h1+hze*res.root
-                            Eres,Vres=jxn.linalg.eigh(Hres)
-                            Vres=Fieldframe(Vres,Expe.Fdirection,Hamer.S,Hamer.I)
-                            localbasis=Assingstatestobasis(Vres)
-                            basis1=localbasis[i]
-                            basis2=localbasis[j]
-                            ms1,ms2=slit[basis1],slit[basis2]
-                            mi1,mi2=nlit[basis1],nlit[basis2]
-                            dms=jxn.abs(ms1-ms2)
-                            dmi=jxn.abs(mi1-mi2)
-                            if np.isclose(dms,1) and np.isclose(dmi,0):
-                                ttyp="Allowed"
-                            elif np.isclose(dms,2):
-                                ttyp="Forbidden (2)"
-                            elif not np.isclose(dmi,0):
-                                ttyp="Forbidden (N)"
-                            else:
-                                ttyp="Forbidden"
-                            state1=Getlabel(basis1,slit,nlit,llit,Hamer.L,Hamer.I)
-                            state2=Getlabel(basis2,slit,nlit,llit,Hamer.L,Hamer.I)
-                            resonants.append({'field': res.root,'inx': (i, j),'bainx': (basis1,basis2),'type': ttyp,'transition': f"{state1} <-> {state2}"})
-                            resfield.append(res.root)
-                    except ValueError:
-                        pass
-        if len(resfield)>0:
-            if table:
-                df=DataFrame(data=resonants)
-                dfdis=df[['field', 'transition', 'type']].copy()
-                dfl=dfdis.iloc[::2].reset_index(drop=True)
-                dfr=dfdis.iloc[1::2].reset_index(drop=True)
-                dfdis=concat([dfl, dfr],axis=1)
-                dfdis.columns=['Field (mT)','Transition','Type','Field (mT)','Transition','Type']
-                dfdis['Field (mT)']=dfdis['Field (mT)'].round(3)
-                if is_notebook():
-                    from IPython.display import display
-                    display(dfdis)
-                else:
-                    print(dfdis)
+    Blist,epc,h1,hze=Calresonant(Hamer,Expe,Nucl,diagram=True)
+    Blist=np.array(Blist)
+    ndir=jxn.array(Expe.Fdirection,dtype=jxn.float64)
+    ndir=ndir/jxn.linalg.norm(ndir)
+    nx,ny,nz=ndir[0],ndir[1],ndir[2]
+    Elist,Vlist,h2=JPadaptarray(Blist1,h1,hzex,hzey,hzez,nx,ny,nz,False)
+    #For the energy diagrams
+    Elist,Vlist=JPretrack(Elist,Vlist)
+    splines=cubichers(Blist,Elist,axis=0)
+    maxvector=Vlist[-1]
+    maxvector=Fieldframe(maxvector,Expe.Fdirection,Hamer.S,Hamer.I)
+    curvebasis=Assingstatestobasis(maxvector)
+    dim=Elist.shape[1]
+    resfield=[]
+    resonants=[]
+    for i in range(dim):
+        for j in range(i+1, dim):
+            diffv=jxn.abs(Elist[:,j]-Elist[:,i])-Expe.Freq
+            signch=np.where(np.diff(np.signbit(diffv)))[0]
+            for k in signch:
+                bstart,bend=Blist[k],Blist[k+1]
+                def deltaE(b):
+                    return np.real(jxn.abs(splines(b)[j]-splines(b)[i]))-Expe.Freq
+                try:
+                    res=sci.optimize.root_scalar(deltaE,bracket=[bstart,bend],method='brentq')
+                    if res.converged:
+                        Hres=h1+hze*res.root
+                        Eres,Vres=jxn.linalg.eigh(Hres)
+                        Vres=Fieldframe(Vres,Expe.Fdirection,Hamer.S,Hamer.I)
+                        localbasis=Assingstatestobasis(Vres)
+                        basis1=localbasis[i]
+                        basis2=localbasis[j]
+                        ms1,ms2=slit[basis1],slit[basis2]
+                        mi1,mi2=nlit[basis1],nlit[basis2]
+                        dms=jxn.abs(ms1-ms2)
+                        dmi=jxn.abs(mi1-mi2)
+                        if np.isclose(dms,1) and np.isclose(dmi,0):
+                            ttyp="Allowed"
+                        elif np.isclose(dms,2):
+                            ttyp="Forbidden (2)"
+                        elif not np.isclose(dmi,0):
+                            ttyp="Forbidden (N)"
+                        else:
+                            ttyp="Forbidden"
+                        state1=Getlabel(basis1,slit,nlit,llit,Hamer.L,Hamer.I)
+                        state2=Getlabel(basis2,slit,nlit,llit,Hamer.L,Hamer.I)
+                        resonants.append({'field': res.root,'inx': (i, j),'bainx': (basis1,basis2),'type': ttyp,'transition': f"{state1} <-> {state2}"})
+                        resfield.append(res.root)
+                except ValueError:
+                    pass
+    if len(resfield)>0:
+        if table:
+            df=DataFrame(data=resonants)
+            dfdis=df[['field', 'transition', 'type']].copy()
+            dfl=dfdis.iloc[::2].reset_index(drop=True)
+            dfr=dfdis.iloc[1::2].reset_index(drop=True)
+            dfdis=concat([dfl, dfr],axis=1)
+            dfdis.columns=['Field (mT)','Transition','Type','Field (mT)','Transition','Type']
+            dfdis['Field (mT)']=dfdis['Field (mT)'].round(3)
+            if is_notebook():
+                from IPython.display import display
+                display(dfdis)
+            else:
+                print(dfdis)
         else:
             print("No resonant fields detected in selected range")
         if graph:
@@ -2232,7 +2233,7 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
     espectotal=jsig.fftconvolve(sketch,kvoigt,mode='same')
     Blist2=jxn.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
 
-    return Blist2,espectotal,Elist,Vlist,h1,hze
+    return Blist2,espectotal,h1,hze
    
 @jaxdatclass
 class Mjhval:
