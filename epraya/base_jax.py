@@ -2055,7 +2055,7 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None',Mcolor=True):
         else:
             print("No resonant fields detected in selected range")
         if graph:
-            Plotsim(espac1=Blist,inten1=epc,resfield=resfield,espac2=Blist,enegria=Elist,curvebasis=curvebasis,splines=splines,resonants=resonants,Ham=Hamer,Exp=Expe,Mcolor=Mcolor)
+            Plotsim(espac1=Blist,inten1=epc,resfield=resfield,espac2=Blist,enegria=Elist,vectors=Vlist,curvebasis=curvebasis,splines=splines,resonants=resonants,Ham=Hamer,Exp=Expe,Mcolor=Mcolor)
     return Blist,epc
 
 def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
