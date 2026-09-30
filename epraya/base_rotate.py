@@ -627,7 +627,6 @@ def Spectre(Hamer,Expe,phi=0,orient='Z'):
     Bmin=Exp.Frange[0]
     dB=(Exp.Frange[1]-Exp.Frange[0])/(Exp.Points-1)
     Caltriangle(sketch,Bmin,dB,allres,allint,ntrans,hulk,weight)
-    fig,axs=plt.subplots(3,1,figsize=(10,14),sharex=True)
     #Convolution of the function to create the derivated spectrum
     maxlenght=np.max(Ham.Hpp)*50
     kerpoint=int(maxlenght/dB)*2+1
@@ -635,145 +634,320 @@ def Spectre(Hamer,Expe,phi=0,orient='Z'):
     #Int=1, no resonant field
     kvoigt=Voigtp(kaxis,np.array([1.0]),np.array([0.0]),Ham.Hpp,eta)
     espectotal=scs.fftconvolve(sketch,kvoigt,mode='same')
-    axs[0].plot(espac1,espectotal,color='navy',label='EPR Spectrum')
-    formatter=EngFormatter(sep='') 
-    axs[0].yaxis.set_major_formatter(formatter)
-    axs[0].set_ylabel('Counts [U. A.]',fontsize=14)
-    axs[0].tick_params(axis='x',labelbottom=False)
-    axs[0].set_xlim(Exp.Frange[0], Exp.Frange[1])
-    axs[0].grid()
-    #Rotations
-    direct=[]
-    theta=np.linspace(0,180,181)
-    phi=np.deg2rad(phi)
-    theta=np.deg2rad(theta)
-    for alfa in theta:
-        nx=np.sin(alfa)*np.cos(phi)
-        ny=np.sin(alfa)*np.sin(phi)
-        nz=np.cos(alfa)
-        nd=np.array([nx,ny,nz])
-        nd=nd/np.linalg.norm(nd)
-        direct.append(nd)
-    fpoints=1000
-    cpoints=500
-    Blist3=np.linspace(Exp.Frange[0],Exp.Frange[1],cpoints)
-    Blist4=np.linspace(Exp.Frange[0],Exp.Frange[1],fpoints)
-    ZElist=None
-    ZVlist=None
-    anglexva=[]
-    fieldy=[]
-    intval=[]
-    for ang,ne in enumerate(direct):
-        nx,ny,nz=ne
-        Elist3,Vlist3,h2=Padaptarray(Blist3,h1,hzex,hzey,hzez,nx,ny,nz)
-        splines=cubichers(Blist3,Elist3,axis=0)
-        Elist4=splines(Blist4)
-        refil,intfil=Nresina(Blist4,Blist3,Elist4,Vlist3,dim,Exp.Freq,isx,isy,isz,nx,ny,nz,Exp.Temperature,h2)
-        if ang==0: 
-            ZElist=Elist3
-            ZVlist=Vlist3
-        if len(refil)>0:
-            anglexva.extend([theta[ang]]*len(refil))
-            fieldy.extend(refil)
-            intval.extend(intfil)
-    threshold=0.3
-    anglex=np.array(anglexva)*180/np.pi
-    fieldey=np.array(fieldy)
-    intens=np.array(intval)
-    imax=np.max(intens)
-    if imax>0:
-        normit=intens/imax
-    else:
-        normit=intens
-    formask=normit<=threshold
-    forx=anglex[formask]
-    fory=fieldey[formask]
-    formask=normit<=threshold
-    axs[1].set_xlim(Exp.Frange[0],Exp.Frange[1])
-    axs[1].scatter(fieldey[formask],anglex[formask],s=0.5,color='black',alpha=0.1,label='Forbidden')
-    
-    allmask=normit>threshold
-    axs[1].scatter(fieldey[allmask],anglex[allmask],s=1.0,color='black',alpha=0.8,label='Allowed')
-    axs[1].set_ylabel(r'Angle $\theta$ ($^{\circ}$)',fontsize=14)
-    axs[1].set_ylim(0,180)
-    axs[1].set_yticks(np.arange(0,181,30))
-    axs[1].tick_params(axis='x',labelbottom=False)
-    axs[1].grid(True)
-    slit,nlit,llit,transitions=Msmi(Ham.I,Ham.S,Ham.L)
-    fpoints=500
-    rfield=[]
-    if orient=='X':
-        alabel={'X':(1,0,0,hzex)}
-    if orient=='Y':
-        alabel={'Y':(0,1,0,hzey)}
-    if orient=='Z':
-        alabel={'Z':(0,0,1,hzez)}
-    for lab,(nx,ny,nz,hop) in alabel.items():
-        Elist5,Vlist5=ZElist,ZVlist
-        maxvec=Vlist5[-1]
-        maxvec=Fieldframe(maxvec,Exp.Fdirection,Ham.S,Ham.I)
-        curvebasis=Assingstatestobasis(maxvec)
-        resonants=[]
-        for i in range(dim):
-            for j in range(i+1,dim):                
-                diffv=np.abs(Elist5[:,j]-Elist5[:,i])-Exp.Freq
-                for k in range(len(diffv)-1):
-                    if (diffv[k]*diffv[k+1]<=0.0) and (diffv[k]!=diffv[k+1]):
-                        def deltaE(b,i=i,j=j):
-                            En=np.linalg.eigvalsh(h1+h2*b)
-                            return En[j]-En[i]-Exp.Freq
-                        try:
-                            res=sci.optimize.brentq(deltaE,Blist3[k],Blist3[k+1],xtol=1e-9)
-                        except ValueError:
-                            t=-diffv[k]/(diffv[k+1]-diffv[k])
-                            res=Blist3[k]+(t*(Blist3[k+1]-Blist3[k]))
-                        if res>Blist3[0]+2:
-                            Eres,Vres=np.linalg.eigh(h1+h2*res)
-                            localbasis=Assingstatestobasis(Fieldframe(Vres,[nx,ny,nz],Ham.S,Ham.I))
-                            basis1,basis2=localbasis[i],localbasis[j]
-                            pair=tuple(sorted((basis1,basis2)))
-                            ms1,ms2=slit[basis1],slit[basis2]
-                            mi1,mi2=nlit[basis1],nlit[basis2]
-                            dms=np.abs(ms1-ms2)
-                            dmi=np.abs(mi1-mi2)
-                            if np.isclose(dms,1) and np.isclose(dmi,0):
-                                ttyp="Allowed"
-                            elif np.isclose(dms,2):
-                                ttyp="Forbidden (2)"
-                            elif np.isclose(dms,3):
-                                ttyp="Forbidden (3)"
-                            elif not np.isclose(dmi,0):
-                                ttyp="Forbidden (N)"
-                            else:
-                                ttyp="Forbidden"
-                            #Transition probability with B1 perpendicular to B for the relevance of the resonant field
-                            vi,vj=Vlist5[k,:,i],Vlist5[k,:,j]
-                            T=np.array([vj.conj()@op@vi for op in (isx,isy,isz)])
-                            prob=float(np.real(np.sum(np.abs(T)**2)-np.abs(nx*T[0]+ny*T[1]+nz*T[2])**2))
-                            state1=Getlabel(basis1,slit,nlit,llit,Ham.L,Ham.I)
-                            state2=Getlabel(basis2,slit,nlit,llit,Ham.L,Ham.I)
-                            resonants.append({'field': res,'inx': (i, j),'bainx': (basis1,basis2),'type': ttyp,'transition': f"{state1} <-> {state2}"})
-
-    axs[2].set_xlim(Exp.Frange[0],Exp.Frange[1])
-    axs[2].set_xlabel('Field [mT]',fontsize=14)
-    axs[2].set_ylabel('Energy [GHz]',fontsize=14)
-    axs[2].grid()
-    for elk in range(0,len(Elist5[0])):
-        basidx=curvebasis[elk]
-        labelr=Getlabel(basidx,slit,nlit,llit,Ham.L,Ham.I)
-        axs[2].plot(Blist3,Elist5[:,elk],label=labelr)
-    for r in resonants:
-        fv=r['field']
-        idi,idj=r['inx']
-        eni=np.interp(fv,Blist3,Elist5[:,idi])
-        enj=np.interp(fv,Blist3,Elist5[:,idj])
-        if r['type']=='Allowed':
-            axs[0].axvline(x=fv,color='green',linestyle='--',linewidth=2.5,alpha=0.6,zorder=20)
-            axs[1].axvline(x=fv,color='green',linestyle='--',linewidth=2.5,alpha=0.6,zorder=20)
-            axs[2].axvline(x=fv,color='green',linestyle='--',linewidth=2.5,alpha=0.6,zorder=20)
-            axs[2].vlines(x=fv,ymin=eni,ymax=enj,color='green',linewidth=2.5,zorder=15)
+    if is_notebook():
+        #Rotations
+        direct=[]
+        theta=np.linspace(0,180,181)
+        phi=np.deg2rad(phi)
+        theta=np.deg2rad(theta)
+        for alfa in theta:
+            nx=np.sin(alfa)*np.cos(phi)
+            ny=np.sin(alfa)*np.sin(phi)
+            nz=np.cos(alfa)
+            nd=np.array([nx,ny,nz])
+            nd=nd/np.linalg.norm(nd)
+            direct.append(nd)
+        fpoints=1000
+        cpoints=500
+        Blist3=np.linspace(Exp.Frange[0],Exp.Frange[1],cpoints)
+        Blist4=np.linspace(Exp.Frange[0],Exp.Frange[1],fpoints)
+        ZElist=None
+        ZVlist=None
+        anglexva=[]
+        fieldy=[]
+        intval=[]
+        for ang,ne in enumerate(direct):
+            nx,ny,nz=ne
+            Elist3,Vlist3,h2=Padaptarray(Blist3,h1,hzex,hzey,hzez,nx,ny,nz)
+            splines=cubichers(Blist3,Elist3,axis=0)
+            Elist4=splines(Blist4)
+            refil,intfil=Nresina(Blist4,Blist3,Elist4,Vlist3,dim,Exp.Freq,isx,isy,isz,nx,ny,nz,Exp.Temperature,h2)
+            if ang==0: 
+                ZElist=Elist3
+                ZVlist=Vlist3
+            if len(refil)>0:
+                anglexva.extend([theta[ang]]*len(refil))
+                fieldy.extend(refil)
+                intval.extend(intfil)
+        threshold=0.3
+        anglex=np.array(anglexva)*180/np.pi
+        fieldey=np.array(fieldy)
+        intens=np.array(intval)
+        imax=np.max(intens)
+        if imax>0:
+            normit=intens/imax
         else:
-            axs[2].vlines(fv,ymin=eni,ymax=enj,color='grey')
-    fig.subplots_adjust(hspace=0.04)
-    plt.show()
+            normit=intens
+        formask=normit<=threshold
+        forx=anglex[formask]
+        fory=fieldey[formask]
+        formask=normit<=threshold
+        allmask=normit>threshold
+        slit,nlit,llit,transitions=Msmi(Ham.I,Ham.S,Ham.L)
+        fpoints=500
+        rfield=[]
+        if orient=='X':
+            alabel={'X':(1,0,0,hzex)}
+        if orient=='Y':
+            alabel={'Y':(0,1,0,hzey)}
+        if orient=='Z':
+            alabel={'Z':(0,0,1,hzez)}
+        for lab,(nx,ny,nz,hop) in alabel.items():
+            Elist5,Vlist5=ZElist,ZVlist
+            maxvec=Vlist5[-1]
+            maxvec=Fieldframe(maxvec,Exp.Fdirection,Ham.S,Ham.I)
+            curvebasis=Assingstatestobasis(maxvec)
+            resonants=[]
+            for i in range(dim):
+                for j in range(i+1,dim):                
+                    diffv=np.abs(Elist5[:,j]-Elist5[:,i])-Exp.Freq
+                    for k in range(len(diffv)-1):
+                        if (diffv[k]*diffv[k+1]<=0.0) and (diffv[k]!=diffv[k+1]):
+                            def deltaE(b,i=i,j=j):
+                                En=np.linalg.eigvalsh(h1+h2*b)
+                                return En[j]-En[i]-Exp.Freq
+                            try:
+                                res=sci.optimize.brentq(deltaE,Blist3[k],Blist3[k+1],xtol=1e-9)
+                            except ValueError:
+                                t=-diffv[k]/(diffv[k+1]-diffv[k])
+                                res=Blist3[k]+(t*(Blist3[k+1]-Blist3[k]))
+                            if res>Blist3[0]+2:
+                                Eres,Vres=np.linalg.eigh(h1+h2*res)
+                                localbasis=Assingstatestobasis(Fieldframe(Vres,[nx,ny,nz],Ham.S,Ham.I))
+                                basis1,basis2=localbasis[i],localbasis[j]
+                                pair=tuple(sorted((basis1,basis2)))
+                                ms1,ms2=slit[basis1],slit[basis2]
+                                mi1,mi2=nlit[basis1],nlit[basis2]
+                                dms=np.abs(ms1-ms2)
+                                dmi=np.abs(mi1-mi2)
+                                if np.isclose(dms,1) and np.isclose(dmi,0):
+                                    ttyp="Allowed"
+                                elif np.isclose(dms,2):
+                                    ttyp="Forbidden (2)"
+                                elif np.isclose(dms,3):
+                                    ttyp="Forbidden (3)"
+                                elif not np.isclose(dmi,0):
+                                    ttyp="Forbidden (N)"
+                                else:
+                                    ttyp="Forbidden"
+                                #Transition probability with B1 perpendicular to B for the relevance of the resonant field
+                                vi,vj=Vlist5[k,:,i],Vlist5[k,:,j]
+                                T=np.array([vj.conj()@op@vi for op in (isx,isy,isz)])
+                                prob=float(np.real(np.sum(np.abs(T)**2)-np.abs(nx*T[0]+ny*T[1]+nz*T[2])**2))
+                                state1=Getlabel(basis1,slit,nlit,llit,Ham.L,Ham.I)
+                                state2=Getlabel(basis2,slit,nlit,llit,Ham.L,Ham.I)
+                                resonants.append({'field': res,'inx': (i, j),'bainx': (basis1,basis2),'type': ttyp,'transition': f"{state1} <-> {state2}"})
+        for elk in range(0,len(Elist5[0])):
+            basidx=curvebasis[elk]
+            labelr=Getlabel(basidx,slit,nlit,llit,Ham.L,Ham.I)
+        import plotly.graph_objects as pgo
+        import plotly.colors as pc
+        from plotly.subplots import make_subplots
+        fig=make_subplots(rows=3,cols=1,shared_xaxes=True,vertical_spacing=0.02)
+        fig.add_trace(pgo.Scatter(x=espac1, y=espectotal,mode='lines',line=dict(color='navy',width=1.5),name='EPR Spectrum'),row=1,col=1)
+        fig.add_trace(pgo.Scatter(x=fieldey[formask],y=anglex[formask],mode='markers',marker=dict(size=3,color='rgba(0,0,0,0.2)'),name='Forbidden'),row=2,col=1)
+        fig.add_trace(pgo.Scatter(x=fieldey[allmask], y=anglex[allmask],mode='markers',marker=dict(size=4,color='rgba(0,0,0,0.8)'),name='Allowed'),row=2,col=1)
+        poin,lev=Elist5.shape
+        pointlabels=np.zeros((poin,lev),dtype=int)
+        for k in range(poin):
+            localbasis=Assingstatestobasis(Fieldframe(Vlist5[k],[nx,ny,nz],Ham.S,Ham.I))
+            for elk in range(lev):
+                pointlabels[k,elk]=localbasis[elk]
+        col=pc.sample_colorscale('Viridis',[k/(lev-1) for k in range(lev)])
+        legended=set()
+        for elk in range(lev):
+            accbasis=pointlabels[0,elk]
+            sstart=0
+            for k in range(1,poin):
+                changec=(pointlabels[k,elk]!=accbasis)
+                islast=(k==poin-1)
+                if changec or islast:
+                    lasti=k+1
+                    labelr=Getlabel(accbasis,slit,nlit,llit,Ham.L,Ham.I)
+                    fig.add_trace(pgo.Scatter(x=Blist3[sstart:lasti],y=Elist5[sstart:lasti,elk],mode='lines',line=dict(color=col[accbasis],width=2),
+                        name=labelr,showlegend=(accbasis not in legended),legendgroup=f"Basis_{accbasis}"),row=3,col=1)
+                    legended.add(accbasis)
+                    sstart=k
+                    accbasis=pointlabels[k,elk]
+        for r in resonants:
+            fv=r['field']
+            idi,idj=r['inx']
+            eni=np.interp(fv,Blist3,Elist5[:,idi])
+            enj=np.interp(fv,Blist3,Elist5[:,idj])
+            if r['type'] == 'Allowed':
+                fig.add_vline(x=fv,line_width=2,line_dash="dash",line_color='green',row="all")
+                fig.add_trace(pgo.Scatter(x=[fv,fv],y=[eni,enj],mode='lines+markers',line_width=2,line=dict(color='red'),marker=dict(size=4),showlegend=False,name=f"Field: {fv:.2f} mT"),row=3,col=1)
+            else:
+                fig.add_trace(pgo.Scatter(x=[fv, fv],y=[eni,enj],mode='lines',line_width=2,line=dict(color='gray',width=1.5,dash='dot'),showlegend=False,name=f"Field: {fv:.2f} mT"),row=3,col=1)
+            i+=1
+        fig.update_layout(height=1200,width=900,showlegend=True,template="plotly_white",margin=dict(l=70,r=40,t=60,b=60))
+        fig.update_xaxes(showline=True,linewidth=2,linecolor='black',mirror=True,showgrid=True,gridcolor='rgba(230,230,230,0.8)')
+        fig.update_yaxes(showline=True,linewidth=2,linecolor='black',mirror=True,showgrid=True,gridcolor='rgba(230,230,230,0.8)')
+        fig.update_xaxes(title_text="Field [mT]",range=[Exp.Frange[0],Exp.Frange[1]],row=3,col=1,showline=True,linecolor='black',mirror=True)
+        fig.update_yaxes(title_text="Counts [A. U.]",row=1,col=1,showline=True,linecolor='black',mirror=True)
+        fig.update_yaxes(title_text="Angle θ (°)",range=[0,180],dtick=30,row=2,col=1)
+        fig.update_yaxes(title_text="Energy [GHz]",row=3,col=1)
+        fig.show()        
+    else:
+        fig,axs=plt.subplots(3,1,figsize=(10,14),sharex=True)
+        axs[0].plot(espac1,espectotal,color='navy',label='EPR Spectrum')
+        formatter=EngFormatter(sep='') 
+        axs[0].yaxis.set_major_formatter(formatter)
+        axs[0].set_ylabel('Counts [U. A.]',fontsize=14)
+        axs[0].tick_params(axis='x',labelbottom=False)
+        axs[0].set_xlim(Exp.Frange[0], Exp.Frange[1])
+        axs[0].grid()
+        #Rotations
+        direct=[]
+        theta=np.linspace(0,180,181)
+        phi=np.deg2rad(phi)
+        theta=np.deg2rad(theta)
+        for alfa in theta:
+            nx=np.sin(alfa)*np.cos(phi)
+            ny=np.sin(alfa)*np.sin(phi)
+            nz=np.cos(alfa)
+            nd=np.array([nx,ny,nz])
+            nd=nd/np.linalg.norm(nd)
+            direct.append(nd)
+        fpoints=1000
+        cpoints=500
+        Blist3=np.linspace(Exp.Frange[0],Exp.Frange[1],cpoints)
+        Blist4=np.linspace(Exp.Frange[0],Exp.Frange[1],fpoints)
+        ZElist=None
+        ZVlist=None
+        anglexva=[]
+        fieldy=[]
+        intval=[]
+        for ang,ne in enumerate(direct):
+            nx,ny,nz=ne
+            Elist3,Vlist3,h2=Padaptarray(Blist3,h1,hzex,hzey,hzez,nx,ny,nz)
+            splines=cubichers(Blist3,Elist3,axis=0)
+            Elist4=splines(Blist4)
+            refil,intfil=Nresina(Blist4,Blist3,Elist4,Vlist3,dim,Exp.Freq,isx,isy,isz,nx,ny,nz,Exp.Temperature,h2)
+            if ang==0: 
+                ZElist=Elist3
+                ZVlist=Vlist3
+            if len(refil)>0:
+                anglexva.extend([theta[ang]]*len(refil))
+                fieldy.extend(refil)
+                intval.extend(intfil)
+        threshold=0.3
+        anglex=np.array(anglexva)*180/np.pi
+        fieldey=np.array(fieldy)
+        intens=np.array(intval)
+        imax=np.max(intens)
+        if imax>0:
+            normit=intens/imax
+        else:
+            normit=intens
+        formask=normit<=threshold
+        forx=anglex[formask]
+        fory=fieldey[formask]
+        formask=normit<=threshold
+        axs[1].set_xlim(Exp.Frange[0],Exp.Frange[1])
+        axs[1].scatter(fieldey[formask],anglex[formask],s=0.5,color='black',alpha=0.1,label='Forbidden')
+        
+        allmask=normit>threshold
+        axs[1].scatter(fieldey[allmask],anglex[allmask],s=1.0,color='black',alpha=0.8,label='Allowed')
+        axs[1].set_ylabel(r'Angle $\theta$ ($^{\circ}$)',fontsize=14)
+        axs[1].set_ylim(0,180)
+        axs[1].set_yticks(np.arange(0,181,30))
+        axs[1].tick_params(axis='x',labelbottom=False)
+        axs[1].grid(True)
+        slit,nlit,llit,transitions=Msmi(Ham.I,Ham.S,Ham.L)
+        fpoints=500
+        rfield=[]
+        if orient=='X':
+            alabel={'X':(1,0,0,hzex)}
+        if orient=='Y':
+            alabel={'Y':(0,1,0,hzey)}
+        if orient=='Z':
+            alabel={'Z':(0,0,1,hzez)}
+        for lab,(nx,ny,nz,hop) in alabel.items():
+            Elist5,Vlist5=ZElist,ZVlist
+            maxvec=Vlist5[-1]
+            maxvec=Fieldframe(maxvec,Exp.Fdirection,Ham.S,Ham.I)
+            curvebasis=Assingstatestobasis(maxvec)
+            resonants=[]
+            for i in range(dim):
+                for j in range(i+1,dim):                
+                    diffv=np.abs(Elist5[:,j]-Elist5[:,i])-Exp.Freq
+                    for k in range(len(diffv)-1):
+                        if (diffv[k]*diffv[k+1]<=0.0) and (diffv[k]!=diffv[k+1]):
+                            def deltaE(b,i=i,j=j):
+                                En=np.linalg.eigvalsh(h1+h2*b)
+                                return En[j]-En[i]-Exp.Freq
+                            try:
+                                res=sci.optimize.brentq(deltaE,Blist3[k],Blist3[k+1],xtol=1e-9)
+                            except ValueError:
+                                t=-diffv[k]/(diffv[k+1]-diffv[k])
+                                res=Blist3[k]+(t*(Blist3[k+1]-Blist3[k]))
+                            if res>Blist3[0]+2:
+                                Eres,Vres=np.linalg.eigh(h1+h2*res)
+                                localbasis=Assingstatestobasis(Fieldframe(Vres,[nx,ny,nz],Ham.S,Ham.I))
+                                basis1,basis2=localbasis[i],localbasis[j]
+                                pair=tuple(sorted((basis1,basis2)))
+                                ms1,ms2=slit[basis1],slit[basis2]
+                                mi1,mi2=nlit[basis1],nlit[basis2]
+                                dms=np.abs(ms1-ms2)
+                                dmi=np.abs(mi1-mi2)
+                                if np.isclose(dms,1) and np.isclose(dmi,0):
+                                    ttyp="Allowed"
+                                elif np.isclose(dms,2):
+                                    ttyp="Forbidden (2)"
+                                elif np.isclose(dms,3):
+                                    ttyp="Forbidden (3)"
+                                elif not np.isclose(dmi,0):
+                                    ttyp="Forbidden (N)"
+                                else:
+                                    ttyp="Forbidden"
+                                #Transition probability with B1 perpendicular to B for the relevance of the resonant field
+                                vi,vj=Vlist5[k,:,i],Vlist5[k,:,j]
+                                T=np.array([vj.conj()@op@vi for op in (isx,isy,isz)])
+                                prob=float(np.real(np.sum(np.abs(T)**2)-np.abs(nx*T[0]+ny*T[1]+nz*T[2])**2))
+                                state1=Getlabel(basis1,slit,nlit,llit,Ham.L,Ham.I)
+                                state2=Getlabel(basis2,slit,nlit,llit,Ham.L,Ham.I)
+                                resonants.append({'field': res,'inx': (i, j),'bainx': (basis1,basis2),'type': ttyp,'transition': f"{state1} <-> {state2}"})
+    
+        poin,lev=Elist5.shape
+        pointlabels=np.zeros((poin,lev),dtype=int)
+        for k in range(poin):
+            localbasis_k=Assingstatestobasis(Fieldframe(Vlist5[k],[nx,ny,nz],Ham.S,Ham.I))
+            for elk in range(lev):
+                pointlabels[k,elk]=localbasis_k[elk]
+        
+        axs[2].set_xlim(Exp.Frange[0],Exp.Frange[1])
+        axs[2].set_xlabel('Field [mT]',fontsize=14)
+        axs[2].set_ylabel('Energy [GHz]',fontsize=14)
+        axs[2].grid()
+        
+        cmap=plt.cm.viridis(np.linspace(0,1,lev))
+        legended=set()
+        for elk in range(lev):
+            accbasis=pointlabels[0,elk]
+            sstart=0
+            for k in range(1,poin):
+                changec=(pointlabels[k,elk]!=accbasis)
+                islast=(k==poin-1)
+                if changec or islast:
+                    lasti=k+1
+                    labelr=Getlabel(accbasis,slit,nlit,llit,Ham.L,Ham.I)
+                    axs[2].plot(Blist3[sstart:lasti],Elist5[sstart:lasti,elk],color=cmap[accbasis],label=(labelr if accbasis not in legended else None))
+                    legended.add(accbasis)
+                    sstart=k
+                    accbasis=pointlabels[k,elk]
+        for r in resonants:
+            fv=r['field']
+            idi,idj=r['inx']
+            eni=np.interp(fv,Blist3,Elist5[:,idi])
+            enj=np.interp(fv,Blist3,Elist5[:,idj])
+            if r['type']=='Allowed':
+                axs[0].axvline(x=fv,color='green',linestyle='--',linewidth=2.5,alpha=0.6,zorder=20)
+                axs[1].axvline(x=fv,color='green',linestyle='--',linewidth=2.5,alpha=0.6,zorder=20)
+                axs[2].axvline(x=fv,color='green',linestyle='--',linewidth=2.5,alpha=0.6,zorder=20)
+                axs[2].vlines(x=fv,ymin=eni,ymax=enj,color='green',linewidth=2.5,zorder=15)
+            else:
+                axs[2].vlines(fv,ymin=eni,ymax=enj,color='grey')
+        fig.subplots_adjust(hspace=0.04)
+        plt.show()
     return espac1,espectotal
