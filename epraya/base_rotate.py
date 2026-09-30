@@ -209,7 +209,7 @@ def Nrotate(Hamer,Expe,phi=0):
     plt.show()
     return anglex,fieldey,intens
 
-def Pot(espac2,enegria,curvebasis,resonants,lab,espac1,Ham,):
+def Pot(espac2,enegria,vectors,resonants,lab,alabel,espac1,Ham):
       '''
       Plotting for the Ori function energy diagrams. 
       
@@ -220,14 +220,14 @@ def Pot(espac2,enegria,curvebasis,resonants,lab,espac1,Ham,):
         Array of the magnetic field values to calculate the energy diagram.
       enegria : np.array
         Array of the energy values.
-      curvebasis : np.array
-        Base of the quantum state.
-      splines : Scipy class
-        Third order polinomium that is use to find the resonant fields.
+      vectors : np.array
+        Eigen vectors of the hamiltonian
       resonants : dictionary
         Contains transition type and resonant fields information.
       lab : dictionary
-        Orientations of the energy diagrams.
+        Key of the dictionary of orientations of the energy diagrams.
+      alabel : dictionary
+        Orientation of the energy diagrams
       espac1 : np.array
         Array of the magnetic field values.  
       Ham : Class
@@ -240,12 +240,32 @@ def Pot(espac2,enegria,curvebasis,resonants,lab,espac1,Ham,):
           import plotly.colors as pc
           graphe=pgo.Figure()
           elk=0
-          col=pc.sample_colorscale('Viridis',[k/(len(enegria[0])-1) for k in range(len(enegria[0]))])
+          poin,lev=enegria.shape
+          pointlabels=np.zeros((poin,lev),dtype=int)
+          for k in range(poin):
+              localbasis=Assingstatestobasis(Fieldframe(vectors[k],[alabel[lab][0],alabel[lab][1],alabel[lab][2]],Ham.S,Ham.I))
+              for elk in range(lev):
+                  pointlabels[k,elk]=localbasis[elk]
+          col=pc.sample_colorscale('Viridis',[k/(lev-1) for k in range(lev)])
+          legended=set()
+          for elk in range(lev):
+              accbasis=pointlabels[0,elk]
+              sstart=0
+              erfd=0
+              for k in range(1,poin):
+                  changec=(pointlabels[k,elk]!=accbasis)
+                  islast=(k==poin-1)
+                  isfirst=(accbasis not in legended)
+                  if changec or islast:
+                      lasti=k+1
+                      labelr=Getlabel(accbasis,slit,nlit,llit,Ham.L,Ham.I)
+                      graphe.add_trace(pgo.Scatter(x=espac2[sstart:lasti],y=enegria[sstart:lasti,elk],mode='lines',line=dict(color=col[accbasis],width=2),name=labelr,showlegend=(accbasis not in legended),
+                legendgroup="En",legendgrouptitle_text=("Energies" if isfirst and erfd==0 else None)))
+                      legended.add(accbasis)
+                      erfd+=1
+                      sstart=k
+                      accbasis=pointlabels[k,elk]
           coel=pc.sample_colorscale('Jet',[k/(len(enegria[0])-1) for k in range(len(enegria[0]))])
-          for elk in range(0,len(enegria[0])):
-            basidx=curvebasis[elk]
-            labelr=Getlabel(basidx,slit,nlit,llit,Ham.L,Ham.I)
-            graphe.add_trace(pgo.Scatter(x=espac2,y=enegria[:,elk],mode='lines',line=dict(color=col[elk]),name=labelr,legendgroup="En",legendgrouptitle_text="Energies",legend="legend"))
           for r in resonants:
             fv=r['field']
             idi,idj=r['inx']
@@ -293,15 +313,36 @@ def Pot(espac2,enegria,curvebasis,resonants,lab,espac1,Ham,):
           graphe.show()
       else:
         fig,ax=plt.subplots(figsize=(12,6))
-        numlevels=enegria.shape[1]
-        colenergy=cm.viridis(np.linspace(0,1,numlevels))
-        coljet=cm.jet(np.linspace(0,1,numlevels))
+        poin,lev=enegria.shape
+        pointlabels=np.zeros((poin,lev),dtype=int)
+        for k in range(poin):
+            localbasis=Assingstatestobasis(Fieldframe(vectors[k],[alabel[lab][0],alabel[lab][1],alabel[lab][2]],Ham.S,Ham.I))
+            for elk in range(lev):
+                pointlabels[k,elk]=localbasis[elk]
+        ax.set_xlim(Exp.Frange[0],Exp.Frange[1])
+        ax.set_xlabel('Field [mT]',fontsize=14)
+        ax.set_ylabel('Energy [GHz]',fontsize=14)
+        ax.grid()
+        
+        cmap=plt.cm.viridis(np.linspace(0,1,lev))
+        legended=set()
         energye=[]
-        for elk in range(numlevels):
-            basidx=curvebasis[elk]
-            labelr=Getlabel(basidx,slit,nlit,llit,Ham.L,Ham.I)
-            line,=ax.plot(espac2,enegria[:,elk],color=colenergy[elk],label=labelr)
-            energye.append(line)
+        for elk in range(lev):
+            accbasis=pointlabels[0,elk]
+            sstart=0
+            for k in range(1,poin):
+                changec=(pointlabels[k,elk]!=accbasis)
+                islast=(k==poin-1)
+                if changec or islast:
+                    lasti=k+1
+                    labelr=Getlabel(accbasis,slit,nlit,llit,Ham.L,Ham.I)
+                    ere,=ax.plot(espac2[sstart:lasti],enegria[sstart:lasti,elk],color=cmap[accbasis],label=(labelr if accbasis not in legended else None))
+                    if accbasis not in legended:
+                        energye.append(ere)
+                    legended.add(accbasis)
+                    sstart=k
+                    accbasis=pointlabels[k,elk]
+        coljet=plt.cm.viridis(np.linspace(0,1,lev))
         fielde=[]
         for r in resonants:
             fv=r['field']
@@ -325,6 +366,7 @@ def Pot(espac2,enegria,curvebasis,resonants,lab,espac1,Ham,):
             ax.legend(handles=fielde,title="R. Fields",bbox_to_anchor=(1.22, 1),loc='upper left')
         plt.tight_layout()
         plt.show()
+          
 def Ori(Hamer,Expe):
     '''
     Creates the energy diagrams for orientations parallel to the X, Y and Z axis.
@@ -436,7 +478,6 @@ def Ori(Hamer,Expe):
         resonants=[]
         for i in range(dim):
             for j in range(i+1,dim):
-                
                 diffv=np.abs(Elist[:,j]-Elist[:,i])-Exp.Freq
                 for k in range(len(diffv)-1):
                     if (diffv[k]*diffv[k+1]<=0.0) and (diffv[k]!=diffv[k+1]):
@@ -478,7 +519,7 @@ def Ori(Hamer,Expe):
         if resonants:
             smax=max(r['relevance'] for r in resonants)
             resonants=[r for r in resonants if smax>0 and r['relevance']>=1e-4*smax]
-        Pot(Blist,Elist,curvebasis,resonants,lab,espac1,Ham)
+        Pot(Blist,Elist,Vlist,resonants,lab,alabel,espac1,Ham)
         
 def Spectre(Hamer,Expe,phi=0,orient='Z'):
     '''
@@ -912,9 +953,9 @@ def Spectre(Hamer,Expe,phi=0,orient='Z'):
         poin,lev=Elist5.shape
         pointlabels=np.zeros((poin,lev),dtype=int)
         for k in range(poin):
-            localbasis_k=Assingstatestobasis(Fieldframe(Vlist5[k],[nx,ny,nz],Ham.S,Ham.I))
+            localbasis=Assingstatestobasis(Fieldframe(Vlist5[k],[nx,ny,nz],Ham.S,Ham.I))
             for elk in range(lev):
-                pointlabels[k,elk]=localbasis_k[elk]
+                pointlabels[k,elk]=localbasis[elk]
         
         axs[2].set_xlim(Exp.Frange[0],Exp.Frange[1])
         axs[2].set_xlabel('Field [mT]',fontsize=14)
