@@ -1912,7 +1912,7 @@ def oneori(nx,ny,nz):
         return resfield,intensy,ntrans   
         
         
-def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None'):
+def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None',Mcolor=True):
     '''
     Wrap function for the simulation of the EPR spectrum for monocrystal samples. Also creates the table of transitions and energy diagrams of the system.
 
@@ -1933,9 +1933,8 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None'):
     Nucl : str
         Isotope of the sample. Can be the quantum number and the element or only the element ('55Mn' or 'Mn') 
 
-
-
-        
+    Mcolor : Bool
+        Bool value to follow with colors the change in the expectation value for |mS| near anticrossings.
 
     Returns
     -------
@@ -2056,7 +2055,7 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None'):
         else:
             print("No resonant fields detected in selected range")
         if graph:
-            Plotsim(espac1=Blist,inten1=epc,resfield=resfield,espac2=Blist,enegria=Elist,curvebasis=curvebasis,splines=splines,resonants=resonants,Ham=Hamer,Exp=Expe)
+            Plotsim(espac1=Blist,inten1=epc,resfield=resfield,espac2=Blist,enegria=Elist,curvebasis=curvebasis,splines=splines,resonants=resonants,Ham=Hamer,Exp=Expe,Mcolor=Mcolor)
     return Blist,epc
 
 def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
