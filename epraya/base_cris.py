@@ -534,11 +534,11 @@ def Eresonant(Hamer,Expe,graph=True,table=True,relevance=1e-4,Mcolor=True):  #Fu
         print("No transition probability in range")
     else:
         if graph:
-            Plotsim(espac1,inten1,resfield,Blist,Elist,curvebasis,splines,resonants,Ham,Exp,Mcolor)
+            Plotsim(espac1,inten1,resfield,Blist,Elist,Vlist,curvebasis,splines,resonants,Ham,Exp,Mcolor)
 
     return espac1,inten1
 
-def Plotsim(espac1,inten1,resfield,espac2,enegria,vectors,splines,resonants,Ham,Exp,Mcolor):
+def Plotsim(espac1,inten1,resfield,espac2,enegria,vectors,curvebasis,splines,resonants,Ham,Exp,Mcolor):
     '''
     Function to produce the graph of the spectrum and the energy diagram.
     
@@ -557,6 +557,8 @@ def Plotsim(espac1,inten1,resfield,espac2,enegria,vectors,splines,resonants,Ham,
         Array of the energy values.
     vectors : np.array
         Eigen vectors of the hamiltonian.
+    curvebasis : np.array
+        Array of the states at high field.
     splines : Scipy class
         Third order polinomium that is use to find the resonant fields.
     resonants : dictionary
