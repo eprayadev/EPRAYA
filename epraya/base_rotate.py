@@ -209,7 +209,7 @@ def Nrotate(Hamer,Expe,phi=0):
     plt.show()
     return anglex,fieldey,intens
 
-def Pot(espac2,enegria,vectors,resonants,lab,alabel,espac1,Ham,Mcolor):
+def Pot(espac2,enegria,vectors,resonants,curvebasis,lab,alabel,espac1,Ham,Mcolor):
       '''
       Plotting for the Ori function energy diagrams. 
       
@@ -224,6 +224,8 @@ def Pot(espac2,enegria,vectors,resonants,lab,alabel,espac1,Ham,Mcolor):
         Eigen vectors of the hamiltonian
       resonants : dictionary
         Contains transition type and resonant fields information.
+     curvebasis : np.array
+         Array of the state configuration at high field.
       lab : dictionary
         Key of the dictionary of orientations of the energy diagrams.
       alabel : dictionary
@@ -613,7 +615,7 @@ def Ori(Hamer,Expe,Mcolor=False):
         if resonants:
             smax=max(r['relevance'] for r in resonants)
             resonants=[r for r in resonants if smax>0 and r['relevance']>=1e-4*smax]
-        Pot(Blist,Elist,Vlist,resonants,lab,alabel,espac1,Ham,Mcolor)
+        Pot(Blist,Elist,Vlist,resonants,curvebasis,lab,alabel,espac1,Ham,Mcolor)
         
 def Spectre(Hamer,Expe,Mcolor=True,phi=0,orient='Z'):
     '''
