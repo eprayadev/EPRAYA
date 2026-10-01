@@ -1985,7 +1985,7 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None',Mcolor=True,relevance
        :align: center    
     '''
     slit,nlit,llit,_=Msmi(Hamer.I,Hamer.S,Hamer.L)
-    Blist,epc,h1,hzex,hzey,hzez,hwm=Calresonant(Hamer,Expe,Nucl,diagram=True)
+    Blist,epc,h1,hzex,hzey,hzez,hmw=Calresonant(Hamer,Expe,Nucl,diagram=True)
     Blist=np.array(Blist)
     ndir=jxn.array(Expe.Fdirection,dtype=jxn.float64)
     ndir=ndir/jxn.linalg.norm(ndir)
@@ -2120,7 +2120,7 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
         Zeeman matrix in the x direction.
     hzez : jax.np.array
         Zeeman matrix in the x direction.
-    hwm : jax.np.array
+    hmw : jax.np.array
         Microwave field Zeeman interaction.
     Example
     -------
@@ -2191,7 +2191,7 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
     hzex=jxn.asarray(beta*JHze(sx,sy,sz,Ham.g,[1,0,0],dim),dtype=complex)
     hzey=jxn.asarray(beta*JHze(sx,sy,sz,Ham.g,[0,1,0],dim),dtype=complex)
     hzez=jxn.asarray(beta*JHze(sx,sy,sz,Ham.g,[0,0,1],dim),dtype=complex)
-    hwm=jxn.asarray(beta*JHze(sx,sy,sz,Ham.g,Exp.Mwdirection,dim),dtype=complex)
+    hmw=jxn.asarray(beta*JHze(sx,sy,sz,Ham.g,Exp.Mwdirection,dim),dtype=complex)
     h1=jxn.zeros((dim,dim),dtype='complex64')
     if Ham.S>=1:
         h1=h1+JStevensO(sx,sy,sz,Ham.S,Ham,dim)
@@ -2238,7 +2238,7 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
     espectotal=jsig.fftconvolve(sketch,kvoigt,mode='same')
     Blist2=jxn.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
 
-    return Blist2,espectotal,h1,hzex,hzey,hzez,hwm
+    return Blist2,espectotal,h1,hzex,hzey,hzez,hmw
    
 @jaxdatclass
 class Mjhval:
