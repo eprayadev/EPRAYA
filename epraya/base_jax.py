@@ -1912,7 +1912,7 @@ def oneori(nx,ny,nz):
         return resfield,intensy,ntrans   
         
         
-def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None',Mcolor=True):
+def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None',Mcolor=True,relevance=1e-4):
     '''
     Wrap function for the simulation of the EPR spectrum for monocrystal samples. Also creates the table of transitions and energy diagrams of the system.
 
@@ -1935,7 +1935,8 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None',Mcolor=True):
 
     Mcolor : Bool
         Bool value to follow with colors the change in the expectation value for |mS| near anticrossings.
-
+    relevance : float
+        Relative threshold for the transition strength (Intensity/Boltzmann factor), if lower it is discarded. Default is 1e-4.
     Returns
     -------
     
@@ -2018,6 +2019,20 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None',Mcolor=True):
                         localbasis=Assingstatestobasis(Vres)
                         basis1=localbasis[i]
                         basis2=localbasis[j]
+                        vecci=Vres[:,i]
+                        veccj=Vres[:,j]
+                        #Calculation for intensities
+                        vecci/=np.linalg.norm(vecci)
+                        veccj/=np.linalg.norm(veccj)
+                        trament=veccj.conj().T@hmw@vecci
+                        prob=np.abs(trament)**2
+                        #Frecuency to field
+                        dert=vecci.conj().T@hze@vecci
+                        izrt=veccj.conj().T@hze@veccj
+                        gma=np.abs(izrt-dert)
+                        if gma<1e-6:
+                            gma=1e-6
+                        gema=1/gma
                         ms1,ms2=slit[basis1],slit[basis2]
                         mi1,mi2=nlit[basis1],nlit[basis2]
                         dms=np.abs(ms1-ms2)
@@ -2036,8 +2051,21 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None',Mcolor=True):
                         state2=Getlabel(basis2,slit,nlit,llit,Hamer.L,Hamer.I)
                         resonants.append({'field': res.root,'inx': (i, j),'bainx': (basis1,basis2),'type': ttyp,'transition': f"{state1} <-> {state2}"})
                         resfield.append(res.root)
+                        relev.append(prob*gema)
                 except ValueError:
                     pass
+    #Discard the lower relevance resonances
+    if len(relev)>0:
+        smax=max(relev)
+        keep=[]
+        if smax>0:
+            for k in range(len(relev)):
+                if relev[k]>=relevance*smax:
+                    keep.append(k)
+        resonants=[resonants[k] for k in keep]
+        resfield=[resfield[k] for k in keep]
+        for r in resonants:
+            r['relevance']=r['relevance']/smax
     if len(resfield)>0:
         if table:
             df=DataFrame(data=resonants)
@@ -2076,6 +2104,7 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
         To pass the Energy data.
     hifi : Bool
         Bool to calculate the Jacobian matrix.
+        
     Returns
     -------
     
@@ -2083,6 +2112,14 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
         Array of the magnetic field.
     epc : jax.np.array
         Array of the counts of the spectrum.
+    h1 : jax.np.array
+        All not Zeeman interaction matrix
+    hzex : jax.np.array
+        Zeeman matrix in the x direction
+    hzey : jax.np.array
+        Zeeman matrix in the x direction
+    hzez : jax.np.array
+        Zeeman matrix in the x direction
     
     Example
     -------
@@ -2101,7 +2138,7 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
     >>> Exp.Points=4096
     >>> Exp.Temperature=300
     >>> Exp.Frange=[0,800]
-    >>> print(epr.Calresonant(Ham,Exp))
+    >>> print(epr.Calresonant(Ham,Exp)[:2])
     (Array([0.00000000e+00, 1.95360195e-01, 3.90720391e-01, ...,
        7.99609280e+02, 7.99804640e+02, 8.00000000e+02], dtype=float64),
     Array([-1.64840330e-07, -1.10427100e-07, -8.03249933e-08, ...,
@@ -2873,8 +2910,8 @@ def Jcalmusic(maham,Expe,Nucl1='None',Nucl2='None',hifi=False):
     Exp2.Freq,Exp2.Points,Exp2.Temperature,Exp2.Fdirection,Exp2.Mwdirection,Exp2.Frange,Exp2.Sampleframe,Exp2.Molframe,Exp2.gframe,Exp2.Aframe,Exp2.Dframe,Exp2.Qframe=Expe.Freq,Expe.Points,Expe.Temperature,Expe.Fdirection,Expe.Mwdirection,Expe.Frange,Expe.Sampleframe2,Expe.Molframe2,Expe.gframe2,Expe.Aframe2,Expe.Dframe2,Expe.Qframe2
 
     if np.allclose(maham.X1_2,0.0) and np.allclose(maham.A1_2,0.0) and np.allclose(maham.A2_1,0.0):
-        fielde,specs1=Calresonant(Ham1,Exp1,Nucl1,hifi=hifi)
-        _,specs2=Calresonant(Ham2,Exp2,Nucl2,hifi=hifi)
+        fielde,specs1,_,_,_,_=Calresonant(Ham1,Exp1,Nucl1,hifi=hifi)
+        _,specs2,_,_,_=Calresonant(Ham2,Exp2,Nucl2,hifi=hifi)
         specs=specs1+specs2
     else:
         frange0=jxn.where(Exp1.Frange[0]<0.0,1e-4,Exp1.Frange[0])
@@ -3270,7 +3307,7 @@ def Residualsjax(pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk):
     if mode=='p':
         _,simul=JCalpowder(Hat,Exp,iwas,jwas,kwas,weight,hulk,hifi=True)
     else:
-        _,simul=Calresonant(Hat,Exp,graph=False,table=False,hifi=True)
+        _,simul,_,_,_=Calresonant(Hat,Exp,graph=False,table=False,hifi=True)
     simuln=simul/jxn.maximum(jxn.max(jxn.abs(simul)),1e-8)
     experen=expr/jxn.maximum(jxn.max(jxn.abs(expr)),1e-8)
     return simuln-experen
@@ -3282,7 +3319,7 @@ def BuildresJax(pravals,Ham,Exp,expr,Vary,mode,method,iwas=None,jwas=None,kwas=N
     if mode=='p':
         Blis,espc=JCalpowder(Hat,Exp,iwas,jwas,kwas,weight,hulk)
     else:
-        Blis,espc=Calresonant(Hat,Exp,graph=False,table=False)
+        Blis,espc,_,_,_=Calresonant(Hat,Exp,graph=False,table=False)
 
     residuals=Residualsjax(pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk)
     n,p=len(residuals),len(pflat)
@@ -3512,7 +3549,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70):
           if mode=='p':
               _,simul=JCalpowder(Hame,dExp,iwas,jwas,kwas,weight,hulk)
           elif mode=='c':
-              _,simul=Calresonant(Hame,dExp)
+              _,simul,_,_,_=Calresonant(Hame,dExp)
           maxl=jxn.maximum(jxn.max(jxn.abs(simul)),1e-8)
           simul=simul/maxl
           maxe=jxn.maximum(jxn.max(jxn.abs(exper)),1e-8)
