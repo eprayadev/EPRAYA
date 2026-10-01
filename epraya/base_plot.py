@@ -558,7 +558,8 @@ def Spmanipulation(fig,axes,field,count,lt=51,pol=3,startl=0,endli=-1,einmal=0,a
         maxinteg=np.max((integ))
         if maxinteg!=0:
             peaks,_=scs.find_peaks(integ/np.max(integ),1)
-        prominences=scs.peak_prominences(integ/np.max(integ),peaks)[0]
+            if np.max(integ)>0:
+                prominences=scs.peak_prominences(integ/np.max(integ),peaks)[0]
         tempa,val=[],[] #tempa= values of the field in the peaks, val= Values of the peaks that follow the epsilon condition
         for ir in range (0,len(prominences)):
             if prominences[ir]>epsilon:
