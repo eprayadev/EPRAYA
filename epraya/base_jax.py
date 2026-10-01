@@ -1985,7 +1985,7 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None',Mcolor=True,relevance
        :align: center    
     '''
     slit,nlit,llit,_=Msmi(Hamer.I,Hamer.S,Hamer.L)
-    Blist,epc,h1,hzex,hzey,hzez=Calresonant(Hamer,Expe,Nucl,diagram=True)
+    Blist,epc,h1,hzex,hzey,hzez,hwm=Calresonant(Hamer,Expe,Nucl,diagram=True)
     Blist=np.array(Blist)
     ndir=jxn.array(Expe.Fdirection,dtype=jxn.float64)
     ndir=ndir/jxn.linalg.norm(ndir)
@@ -2113,14 +2113,15 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
     epc : jax.np.array
         Array of the counts of the spectrum.
     h1 : jax.np.array
-        All not Zeeman interaction matrix
+        All not Zeeman interaction matrix.
     hzex : jax.np.array
-        Zeeman matrix in the x direction
+        Zeeman matrix in the x direction.
     hzey : jax.np.array
-        Zeeman matrix in the x direction
+        Zeeman matrix in the x direction.
     hzez : jax.np.array
-        Zeeman matrix in the x direction
-    
+        Zeeman matrix in the x direction.
+    hwm : jax.np.array
+        Microwave field Zeeman interaction.
     Example
     -------
 
@@ -2237,7 +2238,7 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
     espectotal=jsig.fftconvolve(sketch,kvoigt,mode='same')
     Blist2=jxn.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
 
-    return Blist2,espectotal,h1,hzex,hzey,hzez
+    return Blist2,espectotal,h1,hzex,hzey,hzez,hwm
    
 @jaxdatclass
 class Mjhval:
@@ -2910,8 +2911,8 @@ def Jcalmusic(maham,Expe,Nucl1='None',Nucl2='None',hifi=False):
     Exp2.Freq,Exp2.Points,Exp2.Temperature,Exp2.Fdirection,Exp2.Mwdirection,Exp2.Frange,Exp2.Sampleframe,Exp2.Molframe,Exp2.gframe,Exp2.Aframe,Exp2.Dframe,Exp2.Qframe=Expe.Freq,Expe.Points,Expe.Temperature,Expe.Fdirection,Expe.Mwdirection,Expe.Frange,Expe.Sampleframe2,Expe.Molframe2,Expe.gframe2,Expe.Aframe2,Expe.Dframe2,Expe.Qframe2
 
     if np.allclose(maham.X1_2,0.0) and np.allclose(maham.A1_2,0.0) and np.allclose(maham.A2_1,0.0):
-        fielde,specs1,_,_,_,_=Calresonant(Ham1,Exp1,Nucl1,hifi=hifi)
-        _,specs2,_,_,_=Calresonant(Ham2,Exp2,Nucl2,hifi=hifi)
+        fielde,specs1,_,_,_,_,_=Calresonant(Ham1,Exp1,Nucl1,hifi=hifi)
+        _,specs2,_,_,_,_,_=Calresonant(Ham2,Exp2,Nucl2,hifi=hifi)
         specs=specs1+specs2
     else:
         frange0=jxn.where(Exp1.Frange[0]<0.0,1e-4,Exp1.Frange[0])
@@ -3307,7 +3308,7 @@ def Residualsjax(pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk):
     if mode=='p':
         _,simul=JCalpowder(Hat,Exp,iwas,jwas,kwas,weight,hulk,hifi=True)
     else:
-        _,simul,_,_,_=Calresonant(Hat,Exp,graph=False,table=False,hifi=True)
+        _,simul,_,_,_,_,_=Calresonant(Hat,Exp,graph=False,table=False,hifi=True)
     simuln=simul/jxn.maximum(jxn.max(jxn.abs(simul)),1e-8)
     experen=expr/jxn.maximum(jxn.max(jxn.abs(expr)),1e-8)
     return simuln-experen
@@ -3319,7 +3320,7 @@ def BuildresJax(pravals,Ham,Exp,expr,Vary,mode,method,iwas=None,jwas=None,kwas=N
     if mode=='p':
         Blis,espc=JCalpowder(Hat,Exp,iwas,jwas,kwas,weight,hulk)
     else:
-        Blis,espc,_,_,_=Calresonant(Hat,Exp,graph=False,table=False)
+        Blis,espc,_,_,_,_,_=Calresonant(Hat,Exp,graph=False,table=False)
 
     residuals=Residualsjax(pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk)
     n,p=len(residuals),len(pflat)
@@ -3549,7 +3550,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70):
           if mode=='p':
               _,simul=JCalpowder(Hame,dExp,iwas,jwas,kwas,weight,hulk)
           elif mode=='c':
-              _,simul,_,_,_=Calresonant(Hame,dExp)
+              _,simul,_,_,_,_,_=Calresonant(Hame,dExp)
           maxl=jxn.maximum(jxn.max(jxn.abs(simul)),1e-8)
           simul=simul/maxl
           maxe=jxn.maximum(jxn.max(jxn.abs(exper)),1e-8)
