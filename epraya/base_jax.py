@@ -1481,7 +1481,7 @@ def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2,hifi=Fal
     cross=cross&(res>(Blist[0]+2.0))
     ntrans=jxn.sum(cross).astype(jxn.float64)
     #Scores for transition possibility
-    Ktra=1500 if hifi else 500
+    Ktra=2500 if hifi else 1000
     Ktra=min(Ktra,cross.size)
     scores=jxn.where(cross.reshape(-1),1.0,-1.0)
     topv,idx=jx.lax.top_k(scores,Ktra)
@@ -1513,8 +1513,10 @@ def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2,hifi=Fal
     Mn=nx*T[:,0]+ny*T[:,1]+nz*T[:,2]
     prob=M2-jxn.abs(Mn)**2
     #Frequency to field
-    dert=jxn.real(jxn.sum(jxn.conj(vik)*(vik@h2.T),axis=1))
-    izrt=jxn.real(jxn.sum(jxn.conj(vjk)*(vjk@h2.T),axis=1))
+    h2vik=jxn.einsum('de,ke->kd',h2,vik)
+    h2vjk=jxn.einsum('de,ke->kd',h2,vjk)
+    dert=jxn.real(jxn.sum(jxn.conj(vik)*h2vik,axis=1))
+    izrt=jxn.real(jxn.sum(jxn.conj(vjk)*h2vjk,axis=1))
     gma=jxn.abs(izrt-dert)
     gma=jxn.where(gma<1e-6,1e-6,gma)
     gema=1.0/gma
