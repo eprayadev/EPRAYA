@@ -1650,7 +1650,7 @@ def JCaltriangle(Bmin,dB,allres,allint,transi,hulk,weight,points):
         n1,n2,n3=transi[i1],transi[i2],transi[i3]
         taketrian=(n1==n2)&(n2==n3)&(n1>0)&valid
         return jxn.where(taketrian,sketch1,jxn.zeros_like(sketch1))
-    csize=50
+    csize=200
     nreal=hulk.shape[0]
     pad=(csize-(nreal%csize))%csize
     hulkpad=jxn.pad(hulk,((0,pad),(0,0)),constant_values=0)
@@ -1863,7 +1863,7 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None',hifi=False):
         resfield,intensy,ntrans=JNresina(Blist1,Elist,Vlist,dim,Exp.Freq,isx,isy,isz,nx,ny,nz,Exp.Temperature,Ham.Hpp,h2,hifi=hifi)
         return resfield,intensy,ntrans
     voneori=jx.vmap(Oneori,in_axes=(0,0,0))
-    csize=30 #Divides the orientations blocks so the RAM doesn't explote
+    csize=50 #Divides the orientations blocks so the RAM doesn't explote
     tlen=len(weight)
     plen=(csize-(tlen%csize))%csize
     pdw=jxn.pad(weight,(0,plen))
