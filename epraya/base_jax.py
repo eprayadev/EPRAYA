@@ -1469,82 +1469,93 @@ def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2,hifi=Fal
     
     iidx,jidx=jxn.triu_indices(dim,k=1)
     npairs=iidx.shape[0]
-    parr=jxn.arange(npairs)
-
-    #FInd resonant fields and Search for crossings
-    diffv=jxn.abs(Elist[:,jidx]-Elist[:,iidx])-Freq
-    dEl=diffv[:-1,:]
-    dEr=diffv[1:,:]
-    cross=(dEl*dEr<=0.0)&(dEl!=dEr)
-    denom=dEr-dEl
-    denom=jxn.where(denom==0.0,1e-8,denom)
-    t=-dEl/denom
-    t=jxn.where(cross,t,0.0)
-    Bl=Blist[:-1,None]
-    Br=Blist[1:,None]
-    res=Bl+t*(Br-Bl)
-    cross=cross & (res>(Blist[0]+2.0))
-    #Normalize the eigenvectors
-    def safenorm(v,axis,eps=1e-30):
-        n=jxn.linalg.norm(v,axis=axis,keepdims=True)
-        n=jxn.where(n<eps,eps,n)
-        return v/n
-    #(Nfield, dim, npairs)
-    Vi=Vlist[:,:,iidx]          
-    Vj=Vlist[:,:,jidx]
-    Vi0,Vi1=Vi[:-1],Vi[1:]
-    Vj0,Vj1=Vj[:-1],Vj[1:]
-    tb=t[:,None,:]
-    vik=safenorm((1.0-tb)*Vi0+tb*Vi1, axis=1)
-    vjk=safenorm((1.0-tb)*Vj0+tb*Vj1, axis=1)
-
-    #Calculates in the resonant field its intensity
-    isxv=jxn.einsum('ed,fdp->fep',isx,vik)
-    isyv=jxn.einsum('ed,fdp->fep',isy,vik)
-    iszv=jxn.einsum('ed,fdp->fep',isz,vik)
-    Tx=jxn.einsum('fdp,fdp->fp',jxn.conj(vjk),isxv)
-    Ty=jxn.einsum('fdp,fdp->fp',jxn.conj(vjk),isyv)
-    Tz=jxn.einsum('fdp,fdp->fp',jxn.conj(vjk),iszv)
-    M2=jxn.real(Tx*jxn.conj(Tx))+jxn.real(Ty*jxn.conj(Ty))+jxn.real(Tz*jxn.conj(Tz))
-    Mn=nx*Tx+ny*Ty+nz*Tz
-    prob=M2-jxn.abs(Mn)**2
-    #Frequency to field
-    h2vik=jxn.einsum('ed,fdp->fep',h2,vik)
-    h2vjk=jxn.einsum('ed,fdp->fep',h2,vjk)
-    dert=jxn.real(jxn.einsum('fdp,fdp->fp',jxn.conj(vik),h2vik))
-    izrt=jxn.real(jxn.einsum('fdp,fdp->fp',jxn.conj(vjk),h2vjk))
-    gma=jxn.abs(izrt-dert)
-    gma=jxn.where(gma<1e-6,1e-6,gma)
-    gema=1.0/gma
-    #Boltzman distribution
-    El0,El1=Elist[:-1],Elist[1:]
-    Eres=(1.0-t)[:,:,None]*El0[:,None,:]+t[:,:,None]*El1[:,None,:]
-    conver=1e9*scc.h
-    Ej=Eres*conver
-    Temp=jxn.where(Tem<=0.0,1.0,Tem)
-    beta=1.0/(scc.k*Temp)
-    Emin=jxn.min(Ej,axis=-1,keepdims=True)
-    boltz=jxn.exp(-beta*(Ej-Emin))
-    Z=jxn.sum(boltz,axis=-1,keepdims=True)
-    boltz=boltz/Z
-    popui=boltz[:,parr,iidx]
-    popuj=boltz[:,parr,jidx]
-    boltzm=jxn.abs(popui-popuj)
-    boltzm=jxn.where(Tem<=0.0,1.0,boltzm)
-    eintensy=prob*gema*boltzm
-
-    fres=jxn.where(cross,res,0.0).flatten()
-    fint=jxn.where(cross,eintensy,0.0).flatten()
-    cross=cross.flatten()
-    ntrans=jxn.sum(cross).astype(jxn.float64)
+    blocksize=64
+    #Find resonant fields and Search for crossings by blocks to reduce memory consumption
+    @jx.checkpoint
+    def Resinablocks(container,numblock)
+        iidxb,jidxb=numblock
+        parrb=jxn.arange(iidxb.shape[0])
+        diffv=jxn.abs(Elist[:,jidxb]-Elist[:,iidxb])-Freq
+        dEl=diffv[:-1,:]
+        dEr=diffv[1:,:]
+        cross=(dEl*dEr<=0.0)&(dEl!=dEr)
+        denom=dEr-dEl
+        denom=jxn.where(denom==0.0,1e-8,denom)
+        t=-dEl/denom
+        t=jxn.where(cross,t,0.0)
+        Bl=Blist[:-1,None]
+        Br=Blist[1:,None]
+        res=Bl+t*(Br-Bl)
+        cross=cross & (res>(Blist[0]+2.0))
+        #Normalize the eigenvectors
+        def safenorm(v,axis,eps=1e-30):
+            n=jxn.linalg.norm(v,axis=axis,keepdims=True)
+            n=jxn.where(n<eps,eps,n)
+            return v/n
+        Vi=Vlist[:,:,iidxb]          
+        Vj=Vlist[:,:,jidxb]
+        Vi0,Vi1=Vi[:-1],Vi[1:]
+        Vj0,Vj1=Vj[:-1],Vj[1:]
+        tb=t[:,None,:]
+        vik=safenorm((1.0-tb)*Vi0+tb*Vi1, axis=1)
+        vjk=safenorm((1.0-tb)*Vj0+tb*Vj1, axis=1)
+        #Calculates in the resonant field its intensity
+        isxv=jxn.einsum('ed,fdp->fep',isx,vik)
+        isyv=jxn.einsum('ed,fdp->fep',isy,vik)
+        iszv=jxn.einsum('ed,fdp->fep',isz,vik)
+        Tx=jxn.einsum('fdp,fdp->fp',jxn.conj(vjk),isxv)
+        Ty=jxn.einsum('fdp,fdp->fp',jxn.conj(vjk),isyv)
+        Tz=jxn.einsum('fdp,fdp->fp',jxn.conj(vjk),iszv)
+        M2=jxn.real(Tx*jxn.conj(Tx))+jxn.real(Ty*jxn.conj(Ty))+jxn.real(Tz*jxn.conj(Tz))
+        Mn=nx*Tx+ny*Ty+nz*Tz
+        prob=M2-jxn.abs(Mn)**2
+        #Frequency to field
+        h2vik=jxn.einsum('ed,fdp->fep',h2,vik)
+        h2vjk=jxn.einsum('ed,fdp->fep',h2,vjk)
+        dert=jxn.real(jxn.einsum('fdp,fdp->fp',jxn.conj(vik),h2vik))
+        izrt=jxn.real(jxn.einsum('fdp,fdp->fp',jxn.conj(vjk),h2vjk))
+        gma=jxn.abs(izrt-dert)
+        gma=jxn.where(gma<1e-6,1e-6,gma)
+        gema=1.0/gma
+        #Boltzman distribution
+        El0,El1=Elist[:-1],Elist[1:]
+        Eres=(1.0-t)[:,:,None]*El0[:,None,:]+t[:,:,None]*El1[:,None,:]
+        conver=1e9*scc.h
+        Ej=Eres*conver
+        Temp=jxn.where(Tem<=0.0,1.0,Tem)
+        beta=1.0/(scc.k*Temp)
+        Emin=jxn.min(Ej,axis=-1,keepdims=True)
+        boltz=jxn.exp(-beta*(Ej-Emin))
+        Z=jxn.sum(boltz,axis=-1,keepdims=True)
+        boltz=boltz/Z
+        popui=boltz[:,parrb,iidxb]
+        popuj=boltz[:,parrb,jidxb]
+        boltzm=jxn.abs(popui-popuj)
+        boltzm=jxn.where(Tem<=0.0,1.0,boltzm)
+        eintensy=prob*gema*boltzm
+        fresb=jxn.where(cross,res,0.0).flatten()
+        fintb=jxn.where(cross,eintensy,0.0).flatten()
+        crossb=cross.flatten()
+        return container,(fresb,fintb,crossb)
+    pad=(blocksize-(npairs%blocksize))%blocksize
+    iidxp=jxn.pad(iidx,(0,pad))
+    jidxp=jxn.pad(jidx,(0,pad))
+    nblocks=len(iidxp)//blocksize
+    iidxe=iidxp.reshape(nblocks,blocksize)
+    jidxe=jidxp.reshape(nblocks,blocksize)
+    _,(fresll,fintll,crossll)=jx.lax.scan(Resinablocks,None,(iidxe,jidxe))   
+    fresll=fresll.reshape(-1)
+    fintll=fintll.reshape(-1)
+    crossll=crossll.reshape(-1)
+    ntrans=jxn.sum(crossll).astype(jxn.float64)
     #Scores for transition possibility
     Ktra=1500 if hifi else 500
-    scores=jxn.where(cross,1.0+fint,-1.0)
+    scores=jxn.where(crossll,1.0+fintll,-1.0)
     Ktra=min(Ktra,scores.shape[0])
     topones,toponesind=jx.lax.top_k(scores,Ktra)
     toponesind=jx.lax.stop_gradient(toponesind)
-    ffres=fres[toponesind]
-    ffint=fint[toponesind]
+    ffres=fresll[toponesind]
+    ffint=fintll[toponesind]
     maski=topones>0.0
     ffres=jxn.where(maski,ffres,0.0)
     ffint=jxn.where(maski,ffint,0.0)
@@ -1842,7 +1853,7 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None',hifi=False):
         hzey-=nhzey
         hzez-=nhzez
     h1=jxn.asarray(h1,dtype=complex)
-    Blist1=jxn.linspace(frange0,Exp.Frange[1],300)
+    Blist1=jxn.linspace(frange0,Exp.Frange[1],500)
     dB=(Exp.Frange[1]-Exp.Frange[0])/(Exp.Points-1)
     Bmin=Exp.Frange[0]
     
@@ -1852,7 +1863,7 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None',hifi=False):
         resfield,intensy,ntrans=JNresina(Blist1,Elist,Vlist,dim,Exp.Freq,isx,isy,isz,nx,ny,nz,Exp.Temperature,Ham.Hpp,h2,hifi=hifi)
         return resfield,intensy,ntrans
     voneori=jx.vmap(Oneori,in_axes=(0,0,0))
-    csize=20 #Divides the orientations blocks so the RAM doesn't explote
+    csize=30 #Divides the orientations blocks so the RAM doesn't explote
     tlen=len(weight)
     plen=(csize-(tlen%csize))%csize
     pdw=jxn.pad(weight,(0,plen))
