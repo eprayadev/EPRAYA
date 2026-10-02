@@ -1810,9 +1810,9 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None',hifi=False):
     E=Exp.Freq
     beta=(scic.physical_constants["Bohr magneton"][0]/scic.physical_constants["Planck constant"][0])/1e12
     betan=(scic.physical_constants["nuclear magneton"][0]/scic.physical_constants["Planck constant"][0])/1e12
-    hzex=jxn.asarray(beta*JHze(sx,sy,sz,Ham.g,[1,0,0],dim),dtype=complex)
-    hzey=jxn.asarray(beta*JHze(sx,sy,sz,Ham.g,[0,1,0],dim),dtype=complex)
-    hzez=jxn.asarray(beta*JHze(sx,sy,sz,Ham.g,[0,0,1],dim),dtype=complex)
+    hzex=jxn.asarray(beta*JHze(sx,sy,sz,Ham.g,[1,0,0],dim),dtype=jxn.complex64)
+    hzey=jxn.asarray(beta*JHze(sx,sy,sz,Ham.g,[0,1,0],dim),dtype=jxn.complex64)
+    hzez=jxn.asarray(beta*JHze(sx,sy,sz,Ham.g,[0,0,1],dim),dtype=jxn.complex64)
     h1=jxn.zeros((dim,dim),dtype='complex64')
     if Ham.S>=1:
         h1=h1+JStevensO(sx,sy,sz,Ham.S,Ham,dim)
@@ -1822,13 +1822,13 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None',hifi=False):
         h1=h1+JHfi(sx,sy,sz,ix,iy,iz,Ham.A,dim)
         h1=h1+JQii(ix,iy,iz,Ham.Q,dim)
         gnk=gnfactor(Nucl)
-        nhzex=jxn.asarray(betan*JNhze(Ham.I,ix,iy,iz,dim,gnk,[1,0,0]),dtype=complex)
-        nhzey=jxn.asarray(betan*JNhze(Ham.I,ix,iy,iz,dim,gnk,[0,1,0]),dtype=complex)
-        nhzez=jxn.asarray(betan*JNhze(Ham.I,ix,iy,iz,dim,gnk,[0,0,1]),dtype=complex)
+        nhzex=jxn.asarray(betan*JNhze(Ham.I,ix,iy,iz,dim,gnk,[1,0,0]),dtype=jxn.complex64)
+        nhzey=jxn.asarray(betan*JNhze(Ham.I,ix,iy,iz,dim,gnk,[0,1,0]),dtype=jxn.complex64)
+        nhzez=jxn.asarray(betan*JNhze(Ham.I,ix,iy,iz,dim,gnk,[0,0,1]),dtype=jxn.complex64)
         hzex-=nhzex
         hzey-=nhzey
         hzez-=nhzez
-    h1=jxn.asarray(h1,dtype=complex)
+    h1=jxn.asarray(h1,dtype=jxn.complex64)
     Blist1=jxn.linspace(frange0,Exp.Frange[1],400)
     dB=(Exp.Frange[1]-Exp.Frange[0])/(Exp.Points-1)
     Bmin=Exp.Frange[0]
@@ -1839,7 +1839,7 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None',hifi=False):
         resfield,intensy,ntrans=JNresina(Blist1,Elist,Vlist,dim,Exp.Freq,isx,isy,isz,nx,ny,nz,Exp.Temperature,Ham.Hpp,h2,hifi=hifi)
         return resfield,intensy,ntrans
     voneori=jx.vmap(Oneori,in_axes=(0,0,0))
-    csize=300 #Divides the orientations blocks so the RAM doesn't explote
+    csize=100 #Divides the orientations blocks so the RAM doesn't explote
     tlen=len(weight)
     plen=(csize-(tlen%csize))%csize
     pdw=jxn.pad(weight,(0,plen))
