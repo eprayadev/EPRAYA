@@ -2049,7 +2049,7 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None',Mcolor=True,relevance
                             ttyp="Forbidden"
                         state1=Getlabel(basis1,slit,nlit,llit,Hamer.L,Hamer.I)
                         state2=Getlabel(basis2,slit,nlit,llit,Hamer.L,Hamer.I)
-                        resonants.append({'field': res.root,'inx': (i, j),'bainx': (basis1,basis2),'type': ttyp,'transition': f"{state1} <-> {state2}"})
+                        resonants.append({'field': res.root,'inx': (i, j),'bainx': (basis1,basis2),'type': ttyp,'transition': f"{state1} <-> {state2}",'relevance': prob*gema})
                         resfield.append(res.root)
                         relev.append(prob*gema)
                 except ValueError:
