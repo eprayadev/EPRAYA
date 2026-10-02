@@ -1842,7 +1842,7 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None',hifi=False):
         hzey-=nhzey
         hzez-=nhzez
     h1=jxn.asarray(h1,dtype=complex)
-    Blist1=jxn.linspace(frange0,Exp.Frange[1],500)
+    Blist1=jxn.linspace(frange0,Exp.Frange[1],300)
     dB=(Exp.Frange[1]-Exp.Frange[0])/(Exp.Points-1)
     Bmin=Exp.Frange[0]
     
@@ -1852,7 +1852,7 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None',hifi=False):
         resfield,intensy,ntrans=JNresina(Blist1,Elist,Vlist,dim,Exp.Freq,isx,isy,isz,nx,ny,nz,Exp.Temperature,Ham.Hpp,h2,hifi=hifi)
         return resfield,intensy,ntrans
     voneori=jx.vmap(Oneori,in_axes=(0,0,0))
-    csize=10 #Divides the orientations blocks so the RAM doesn't explote
+    csize=20 #Divides the orientations blocks so the RAM doesn't explote
     tlen=len(weight)
     plen=(csize-(tlen%csize))%csize
     pdw=jxn.pad(weight,(0,plen))
