@@ -1472,7 +1472,7 @@ def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2,hifi=Fal
     blocksize=64
     #Find resonant fields and Search for crossings by blocks to reduce memory consumption
     @jx.checkpoint
-    def Resinablocks(container,numblock)
+    def Resinablocks(container,numblock):
         iidxb,jidxb=numblock
         parrb=jxn.arange(iidxb.shape[0])
         diffv=jxn.abs(Elist[:,jidxb]-Elist[:,iidxb])-Freq
