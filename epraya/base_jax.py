@@ -1867,11 +1867,11 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None',hifi=False):
         batres,batint,batntras=voneori(bnx,bny,bnz)
         return curspect,(batres,batint,batntras)
     @partial(jx.pmap,in_axes=(0,0,0))
-    def ProcesaEnDispositivo(batid,batjd,batkd):
-    _,(allresd,allintd,ntransd)=jx.lax.scan(Processvmap,None,(batid,batjd,batkd))
-    return allresd,allintd,ntran_d
+    def Processpvmap(batid,batjd,batkd):
+        _,(allresd,allintd,ntransd)=jx.lax.scan(Processvmap,None,(batid,batjd,batkd))
+        return allresd,allintd,ntran_d
 
-    allresdev,allintdev,ntransdev=ProcesaEnDispositivo(batidev,batjdev,batkdev)
+    allresdev,allintdev,ntransdev=Processpvmap(batidev,batjdev,batkdev)
     allres=allresdev.reshape(-1,allresdev.shape[-1])[:tlen]
     allint=allintsdev.reshape(-1,allintdev.shape[-1])[:tlen]
     ntrans=ntransdev.reshape(-1)[:tlen]
