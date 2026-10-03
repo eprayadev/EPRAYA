@@ -46,8 +46,9 @@ from .base_cris import Plotsim
 from .base_fit import Fitresult,result,Selectvarian
 import matplotlib.cm as cm
 
-jx.config.update("jax_enable_x64", True)
-
+jx.config.update("jax_enable_x64",True)
+os.environ["XLA_FLAGS"]=f"--xla_force_host_platform_device_count={os.cpu_count()-2}"
+os.environ["OMP_NUM_THREADS"]=str(os.cpu_count()-2)
 
 @jaxdatclass
 class JHval:
@@ -1781,6 +1782,7 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None',hifi=False):
     Array([ 1.48600800e-22,  1.06329540e-21,  6.49499460e-22, ...,
         2.06205909e-21,  5.04622598e-22, -1.50266650e-21], dtype=float64))   
     '''
+    ndev=jx.devices() #Number of cores to use
     frange0=jxn.where(Expe.Frange[0]<0.0,1e-4,Expe.Frange[0])
     Ham=Hamer.replace(A=jxn.asarray(Hamer.A)/1000.0,D=jxn.asarray(Hamer.D)/1000.0,Hpp=jxn.asarray(Hamer.Hpp)/1.0,Q=jxn.asarray(Hamer.Q)/1000.0,
                      Bk2=jxn.asarray(Hamer.Bk2)/1000.0,Bk4=jxn.asarray(Hamer.Bk4)/1000.0,Bk6=jxn.asarray(Hamer.Bk6)/1000.0)
@@ -1829,7 +1831,7 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None',hifi=False):
         hzey-=nhzey
         hzez-=nhzez
     h1=jxn.asarray(h1,dtype=jxn.complex64)
-    Blist1=jxn.linspace(frange0,Exp.Frange[1],400)
+    Blist1=jxn.linspace(frange0,Exp.Frange[1],500)
     dB=(Exp.Frange[1]-Exp.Frange[0])/(Exp.Points-1)
     Bmin=Exp.Frange[0]
     
@@ -1839,7 +1841,7 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None',hifi=False):
         resfield,intensy,ntrans=JNresina(Blist1,Elist,Vlist,dim,Exp.Freq,isx,isy,isz,nx,ny,nz,Exp.Temperature,Ham.Hpp,h2,hifi=hifi)
         return resfield,intensy,ntrans
     voneori=jx.vmap(Oneori,in_axes=(0,0,0))
-    csize=200 #Divides the orientations blocks so the RAM doesn't explote
+    csize=100 #Divides the orientations blocks so the RAM doesn't explote
     tlen=len(weight)
     plen=(csize-(tlen%csize))%csize
     pdw=jxn.pad(weight,(0,plen))
@@ -1850,15 +1852,35 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None',hifi=False):
     bati=pdi.reshape(nparts,csize)
     batj=pdj.reshape(nparts,csize)
     batk=pdk.reshape(nparts,csize)
+    partbydev=(nparts+ndev-1)//ndev
+    paddev=partbydev*ndev-nparts
+    batie=jxn.pad(bati,((0,paddev),(0,0)))
+    batidev=batie.reshape(ndev,partbydev,csize)
+    batje=jxn.pad(batj,((0,paddev),(0,0)))
+    batjdev=batje.reshape(ndev,partbydev,csize)
+    batke=jxn.pad(batk,((0,paddev),(0,0)))
+    batkdev=batke.reshape(ndev,partbydev,csize)
+    
     @jx.checkpoint
     def Processvmap(curspect,bat):
         bnx,bny,bnz=bat
         batres,batint,batntras=voneori(bnx,bny,bnz)
         return curspect,(batres,batint,batntras)
+    @partial(jx.pmap,in_axes=(0,0,0))
+    def ProcesaEnDispositivo(batid,batjd,batkd):
+    _,(allresd,allintd,ntransd)=jx.lax.scan(Processvmap,None,(batid,batjd,batkd))
+    return allresd,allintd,ntran_d
+
+    allresdev,allintdev,ntransdev=ProcesaEnDispositivo(batidev,batjdev,batkdev)
+    allres=allresdev.reshape(-1,allresdev.shape[-1])[:tlen]
+    allint=allintsdev.reshape(-1,allintdev.shape[-1])[:tlen]
+    ntrans=ntransdev.reshape(-1)[:tlen]
+    '''
     _,(allres,allint,ntrans)=jx.lax.scan(Processvmap,None,(bati,batj,batk))
     allres=allres.reshape(-1,allres.shape[-1])[:tlen]
     allint=allint.reshape(-1,allint.shape[-1])[:tlen]
     ntrans=ntrans.reshape(-1)[:tlen]
+    '''
     sketch=JCaltriangle(Bmin,dB,allres,allint,ntrans,hulk,weight,Exp.Points)
     maxlenght=jxn.max(jxn.array(Ham.Hpp))*50
     kpoints=int(Exp.Points)|1 
