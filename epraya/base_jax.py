@@ -1839,7 +1839,7 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None',hifi=False):
         resfield,intensy,ntrans=JNresina(Blist1,Elist,Vlist,dim,Exp.Freq,isx,isy,isz,nx,ny,nz,Exp.Temperature,Ham.Hpp,h2,hifi=hifi)
         return resfield,intensy,ntrans
     voneori=jx.vmap(Oneori,in_axes=(0,0,0))
-    csize=200 #Divides the orientations blocks so the RAM doesn't explote
+    csize=100 #Divides the orientations blocks so the RAM doesn't explote
     tlen=len(weight)
     plen=(csize-(tlen%csize))%csize
     pdw=jxn.pad(weight,(0,plen))
