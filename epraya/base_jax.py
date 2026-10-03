@@ -46,7 +46,7 @@ from .base_cris import Plotsim
 from .base_fit import Fitresult,result,Selectvarian
 import matplotlib.cm as cm
 
-jx.config.update("jax_enable_x64", True)
+#jx.config.update("jax_enable_x64", True)
 
 
 @jaxdatclass
