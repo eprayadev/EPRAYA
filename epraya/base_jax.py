@@ -1873,7 +1873,7 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None',hifi=False):
         return allresd,allintd,ntransd
     allresdev,allintdev,ntransdev=Processpvmap(batidev,batjdev,batkdev)
     allres=allresdev.reshape(-1,allresdev.shape[-1])[:tlen]
-    allint=allintsdev.reshape(-1,allintdev.shape[-1])[:tlen]
+    allint=allintdev.reshape(-1,allintdev.shape[-1])[:tlen]
     ntrans=ntransdev.reshape(-1)[:tlen]
     '''
     _,(allres,allint,ntrans)=jx.lax.scan(Processvmap,None,(bati,batj,batk))
