@@ -388,7 +388,7 @@ def Nelder1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p',
                         price[la]=Fincost(rad,funcname)
                     continue
                 else:
-                    print("Data converged.")
+                    print("Stopped the process.")
                     break
             if itera%10==0:
                 print(f"Iteration: {itera} | Best cost: {cmelhor:.5e}")
@@ -651,7 +651,7 @@ def Nelder2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p',
                         price[la]=Fincost(rad,funcname)
                     continue
                 else:
-                    print("Data converged.")
+                    print("Stopped the process.")
                     break
             if itera%10==0:
                 print(f"Iteration: {itera} | Best cost: {cmelhor:.5e}")
@@ -798,7 +798,7 @@ def Nelder(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p',s
 
 def CostfG(exper,intens,metric='rmse'):
     norm=np.sum(intens*intens)
-    if norm==0 or np.max(intens)<1e-10:
+    if norm==0 or np.max(np.abs(intens))<1e-10:
         return 1e6
     maxe=np.max(np.abs(exper))
     maxi=np.max(np.abs(intens))
@@ -981,6 +981,7 @@ def Genio1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p',see
             bcost=fitprice[0]
             bplayer=np.copy(population[0])
             if itea%5==0:
+                _=Fincost(bplayer,funcname)
                 print(f"Generation: {itea} | Best cost: {bcost:.5e}")
                 print("="*50)
                 if Var.g!=0.0:
@@ -993,8 +994,6 @@ def Genio1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p',see
                     print(f'D={Ham.D[0]} | E={Ham.D[1]}')
                 if np.any(Var.Hpp):
                     print(f'Hppg={Ham.Hpp[0]} | Hppl={Ham.Hpp[1]}')
-            
-
             if bcost<eps:
                 print("Data converged.")
                 break
@@ -1024,6 +1023,7 @@ def Genio1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p',see
             
             itea+=1
     except KeyboardInterrupt:
+        _=Fincost(bplayer,funcname)
         print("\n"+"="*50)
         print(f"Process stopped at generation: {itea}, with best cost: {bcost:.5e}")
         print("="*50)
@@ -1039,6 +1039,7 @@ def Genio1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p',see
             print(f'Hppg={Ham.Hpp[0]} | Hppl={Ham.Hpp[1]}')
         fitresult=Buildres(bplayer,Ham,Exp,exper,Var,funcname,Mr,method='Genethic A',success=False,message='Genetic algorithm stopped by user',iterations=itea)
         return fitresult.Ham,fitresult
+    _=Fincost(bplayer,funcname)        
     print("\n"+"="*50)
     print(f"Process stopped at generation: {itea}, with best cost: {bcost:.5e}")
     print("="*50)
@@ -1205,6 +1206,7 @@ def Genio2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p',see
             bcost=fitprice[0]
             bplayer=np.copy(population[0])
             if itea%5==0:
+                _=Fincost(bplayer,funcname)
                 print(f"Generation: {itea} | Best cost: {bcost:.5e}")
                 for i in range(len(Ham.Mulham)):
                     print(f"--- System {i+1} ---")
@@ -1246,6 +1248,7 @@ def Genio2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p',see
                     fitprice[jae]=Fincost(population[jae],funcname)
             itea+=1
     except KeyboardInterrupt:
+        _=Fincost(bplayer,funcname)
         print("\n"+"="*50)
         print(f"Process stopped at generation: {itea}, with best cost: {bcost:.5e}")
         print("="*50)
