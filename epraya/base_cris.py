@@ -814,7 +814,7 @@ def Plotsim(espac1,inten1,resfield,espac2,enegria,vectors,curvebasis,splines,res
             for elk in range(numlevels):
                 basidx=curvebasis[elk]
                 labelr=Getlabel(basidx,slit,nlit,llit,Ham.L,Ham.I)
-                ax2.plot(espac2,enegria[:,elk],color=navy,color=colenergy[elk],label=labelr)
+                ax2.plot(espac2,enegria[:,elk],color=colenergy[elk],label=labelr)
             for r in resonants:
                 fv=r['field']
                 idi,idj =r['inx']
