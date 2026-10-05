@@ -685,7 +685,8 @@ def Plotsim(espac1,inten1,resfield,espac2,enegria,vectors,curvebasis,splines,res
               for elk in range(0,len(enegria[0])):
                 basidx=curvebasis[elk]
                 labelr=Getlabel(basidx,slit,nlit,llit,Ham.L,Ham.I)
-                graphe.add_trace(pgo.Scatter(x=espac2,y=enegria[:,elk],mode='lines',line=dict(color=col[elk]),name=labelr,legendgroup="En",legendgrouptitle_text="Energies",legend="legend"))
+                graphe.add_trace(pgo.Scatter(x=espac2,y=enegria[:,elk],mode='lines',line=dict(color='navy'),name=labelr,legendgroup="En",legendgrouptitle_text="Energies",legend="legend"))
+                graphe.add_trace(pgo.Scatter(x=espac2[-1],y=enegria[-1,elk],mode='lines',line=dict(color=col[elk]),name=labelr,legendgroup="En",legendgrouptitle_text="Energies",legend="legend"))
               for r in resonants:
                 fv=r['field']
                 idi,idj=r['inx']
@@ -814,8 +815,8 @@ def Plotsim(espac1,inten1,resfield,espac2,enegria,vectors,curvebasis,splines,res
             for elk in range(numlevels):
                 basidx=curvebasis[elk]
                 labelr=Getlabel(basidx,slit,nlit,llit,Ham.L,Ham.I)
-                ax2.plot(espac2,enegria[:,elk],color=colenergy[elk],label=labelr)
-    
+                ax2.plot(espac2,enegria[:,elk],color=navy)
+                ax2.plot(espac2[-1],enegria[-1,elk],color=colenergy[elk],label=labelr)
             for r in resonants:
                 fv=r['field']
                 idi,idj =r['inx']
