@@ -2105,6 +2105,8 @@ def Packtoscipy(Ham,Var):
             hifron.extend([Var.Hpp[1]+0.0001,Var.Hpp[3]])
         elif Var.Hpp[2]==Var.Hpp[3]:
             hifron.extend([Var.Hpp[1],Var.Hpp[3]+0.0001])
+        else:
+            hifron.extend([Var.Hpp[1],Var.Hpp[3]])
     pointx=np.array(pointx,dtype=float)
     lowfron=np.array(lowfron,dtype=float)
     hifron=np.array(hifron,dtype=float)
