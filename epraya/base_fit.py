@@ -2191,7 +2191,7 @@ def LSquare1(Ham1,Expe,Vary,exper,maximal=1000,mode='p',Mr=70):
     pointx=np.clip(pointx,lowfron+eps,hifron-eps)
     leasts
     try:
-        res=leasts(fun=Residuals,args=(Ham1,Expe,exper,Vary,funcname,Mr),x0=pointx,bounds=frontier,method='trf',max_nfev=maximal,verbose=2,diff_step=1e-3,xtol=1e-10,ftol=1e-10,gtol=1e-10)
+        res=leasts(fun=Residuals,args=(Ham1,Expe,exper,Vary,funcname,Mr),x0=pointx,bounds=frontier,method='trf',max_nfev=maximal,verbose=2,diff_step=1e-3,xtol=1e-14,ftol=1e-14,gtol=1e-14)
         bestone=res.x
         cost=res.cost
         success,message,iterations,J=res.success,res.message,res.nfev,res.jac          
@@ -2331,7 +2331,7 @@ def LSquare2(Ham1,Expe,Vary,exper,maximal=1000,mode='p',Mr=70):
     pointx=np.clip(pointx,lowfron+eps,hifron-eps)
     leasts
     try:
-        res=leasts(fun=Residuals,args=(Ham1,Expe,exper,Vary,funcname,Mr),x0=pointx,bounds=frontier,method='trf',max_nfev=maximal,verbose=2,diff_step=1e-3,xtol=1e-10,ftol=1e-10,gtol=1e-10)
+        res=leasts(fun=Residuals,args=(Ham1,Expe,exper,Vary,funcname,Mr),x0=pointx,bounds=frontier,method='trf',max_nfev=maximal,verbose=2,diff_step=1e-3,xtol=1e-14,ftol=1e-14,gtol=1e-14)
         bestone=res.x
         cost=res.cost
         success,message,iterations,J=res.success,res.message,res.nfev,res.jac       
