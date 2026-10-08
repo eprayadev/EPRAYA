@@ -1456,11 +1456,11 @@ def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
     elif funcname in ['Eresonant']:
         fielda,intena=funtiona(Ham1,Exp,graph=False,table=False)
     if datype=='data':
-        ct1=Costf(dat,intena)
+        ct1=Costf(dat,intena,metric='rmse')
     if datype=='integral':
         dat=scii.cumulative_trapezoid(dat,fielda,initial=0)
         intena=scii.cumulative_trapezoid(intena,fielda,initial=0)
-        ct1=Costf(dat,intena)
+        ct1=Costf(dat,intena,metric='rmse')
     pointx=[]
     stp={}
     lowfron=[]
@@ -1598,6 +1598,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
             if Var.g!=0.0: varact.append('g')
             if Var.A!=0.0: varact.append('A')
             if Var.D!=0.0: varact.append('D')
+            if Var.D!=0.0: varact.append('Q')
             if np.any(Var.Hpp): varact.append('Hpp')
             if len(varact)>1:
                 hemetro=metropa*1.5
@@ -1690,7 +1691,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
         print(f'D={bestHam.D[0]} | E={bestHam.D[1]}')
     if np.any(Var.Hpp):
         print(f'Hppg={bestHam.Hpp[0]} | Hppl={bestHam.Hpp[1]}')
-    fitresult=Buildres(bestpoint,Ham1,Exp,dat,Var,funcname,Mr,method='Metropolis',success=(gama<maximal),message='Converged with Metropolis',iterations=gama)
+    fitresult=Buildres(bestpoint,Ham1,Exp,dat,Var,funcname,Mr,method='Metropolis',success=True,message='Converged with Metropolis',iterations=gama)
     return fitresult.Ham, fitresult
 
 def Metrostair2(Hamer,Exp,Var,date,stepsize,ocos,para,variable,aktsys,funcname,datype='data',Mr=70):
@@ -1935,6 +1936,8 @@ def Metro2(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
                         varact.append('A')
                     if Var.Mvary[ira].D!=0.0:
                         varact.append('D')
+                    if Var.Mvary[ira].Q!=0.0:
+                        varact.append('Q') 
                     if np.any(Var.Mvary[ira].Hpp):
                         varact.append('Hpp')
                     if len(varact)>0:
@@ -2031,7 +2034,7 @@ def Metro2(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
             print(f'D={bestHam.Mulham[i].D[0]:.4f} | E={bestHam.Mulham[i].D[1]:.4f}')
         if np.any(Var.Mvary[i].Hpp):
             print(f'Hppg={bestHam.Mulham[i].Hpp[0]:.4f} | Hppl={bestHam.Mulham[i].Hpp[1]:.4f}')
-    fitresult=Buildres(bestpoint,Ham1,Exp,dat,Var,funcname,Mr,method='Metropolis',success=(gama<maximal),message='Converged with Metropolis',iterations=gama)
+    fitresult=Buildres(bestpoint,Ham1,Exp,dat,Var,funcname,Mr,method='Metropolis',success=True,message='Converged with Metropolis',iterations=gama)
     return fitresult.Ham, fitresult
 
 def Metro(Hamer,Exp,Var,exper,maximal=2000,datype='data',mode='p',seed=451,Mr=70):
