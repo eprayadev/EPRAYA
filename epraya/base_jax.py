@@ -3309,7 +3309,7 @@ def Toconsiderset(pravals,Vary,J,residuals,tol=1e-6):
     grad=J.T@np.asarray(residuals)            # d(chi2/2)/dp
     atlo=(~fixed)&(frac<=tol)&(grad>0.0)
     athi=(~fixed)&(frac>=1.0-tol)&(grad<0.0)
-    return fixed|atlo|athi
+    return fixed|atlo|athi,span
 
 
 def BuildresJax(pravals,Ham,Exp,expr,Vary,mode,method,iwas=None,jwas=None,kwas=None,weight=None,hulk=None,success=True,message='',iterations=None):
@@ -3323,21 +3323,19 @@ def BuildresJax(pravals,Ham,Exp,expr,Vary,mode,method,iwas=None,jwas=None,kwas=N
 
     residuals=Residualsjax(pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk)
     J=Computejacobian(Residualsjax,pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk)
-    active=Toconsiderset(pravals,Vary,J,residuals)
+    active,span=Toconsiderset(pravals,Vary,J,residuals)
     free=~active
+    n,p=len(residuals),J.shape[1]
+    perr=np.full(p,np.nan)
+    variance=np.full((p,p),np.nan)
     deno=max(n-int(free.sum()),1)
     chi2=float(jxn.sum(residuals**2))
     redchi2=chi2/deno
-    varf,perrf,identificable=Selectvarian(J[:,free],redchi2)
-    perr=np.full(len(pflat),np.nan)
-    if perrf is not None:
-        perr[free]=np.asarray(perrf)
-    n,p=len(residuals),len(pflat)
-    deno=max(n-p,1)
-    chi2=float(jxn.sum(residuals**2))
-    redchi2=chi2/deno
-    if varf is not None:
-        variance=np.full((len(pflat),)*2,np.nan); variance[np.ix_(free,free)]=varf
+    if free.any():
+        sf=span[free]
+        varu,perru,_=Selectvarian(J[:,free]*sf,redchi2)
+        perr[free]=perru*sf
+        variance[np.ix_(free,free)]=varu*np.outer(sf,sf)
     errdict=unrav(perr)
     return Fitresult(Ham=Hat,spc=espc,params=np.asarray(pflat),method=method,chi2=chi2,redchi2=redchi2,residuals=np.asarray(residuals),denochi=deno,variance=variance,paramerrors=perr,paramerrorsdict=errdict,success=success,message=message,iterations=iterations),Blis
 
@@ -3362,28 +3360,39 @@ def BuildresJax2(pravals,Ham,Exp,expr,Vary,mode,method,success=True,message='',i
         Blis,espc=JMusic(Hat,Exp,graph=False)
     residuals=Residualsjax2(pflat,unrav,Ham,Exp,expr,mode)
     J=ComputeJacobianSequential(Residualsjax2,pflat,unrav,Ham,Exp,expr,mode)
+    active,span=Toconsiderset(pravals,Vary,J,residuals)
     free=~active
+    n,p=len(residuals),J.shape[1]
+    perr=np.full(p,np.nan)
+    variance=np.full((p,p),np.nan)
     deno=max(n-int(free.sum()),1)
     chi2=float(jxn.sum(residuals**2))
     redchi2=chi2/deno
-    varf,perrf,identificable=Selectvarian(J[:,free],redchi2)
-    perr=np.full(len(pflat),np.nan)
-    if perrf is not None:
-        perr[free]=np.asarray(perrf)
-    n,p=len(residuals),len(pflat)
-    deno=max(n-p,1)
-    chi2=float(jxn.sum(residuals**2))
-    redchi2=chi2/deno
-    if varf is not None:
-        variance=np.full((len(pflat),)*2,np.nan); variance[np.ix_(free,free)]=varf
+    if free.any():
+        sf=span[free]
+        varu,perru,_=Selectvarian(J[:,free]*sf,redchi2)
+        perr[free]=perru*sf
+        variance[np.ix_(free,free)]=varu*np.outer(sf,sf)
     errdict=unrav(perr)
     
     return Fitresult(Ham=Hat,spc=espc,params=np.asarray(pflat),method=method,chi2=chi2,redchi2=redchi2,residuals=np.asarray(residuals),denochi=deno,variance=variance,paramerrors=perr,paramerrorsdict=errdict,success=success,message=message,iterations=iterations),Blis
 
-def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70):
+
+def Proyectar(p): 
+    return jx.tree.map(lambda x:jxn.clip(x,0.,1.),p)
+
+def Progradnorm(p,g):
+    #Gradient norm without the components blocked by an active bound
+    def free(x,gx):
+        blocked=((x<=0.0)&(gx>0.0))|((x>=1.0)&(gx<0.0))
+        return jxn.where(blocked,0.0,gx)
+    return optax.global_norm(jx.tree.map(free,p,g))
+
+
+
+def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70,gtoler=1e-5):
     '''
-    Fitting function for the experimental data using the ADAM Algorithm. Uses the *Optax* (part of the Deepmind proyect) ADAM algorithm implementation with a learning rate of 0.1. The parameters are changed and evaluated using a normalized sigmoid function in the range from the *Vary* container. 
-    
+    Fitting function for the experimental data using the ADAM Algorithm. Uses the *Optax* (part of the Deepmind proyect) ADAM algorithm implementation with a learning rate of 0.007. The parameters are normalized to [0,1] within the range given in *Vary* 
     It's recommended to use the function in VS code, Jupyter or Colab, because the process can be stop at any moment using the stop process button of the notebook.
     
     Parameters
@@ -3405,6 +3414,8 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70):
         Defines the sample type, 'p' for powder and 'c' for monocristal.
     M : int
         Number of divisions for the Delaunay grid.
+    gtoler : float
+        Relative tolerance of the projected gradient norm with respect to the error. Default is 1e-5.
     Returns
     -------
     Ham : Class
@@ -3558,7 +3569,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70):
           return param
       param=initpara(Ham,Vary)
       optimus=optax.adam
-      optimus=optax.chain(optax.clip_by_global_norm(1.0),optax.adam(learning_rate=0.1))#,optax.zero_nans(),optax.adam(learning_rate=0.007))
+      optimus=optax.chain(optax.clip_by_global_norm(1.0),optax.adam(learning_rate=0.007))#,optax.zero_nans(),optax.adam(learning_rate=0.007))
       state=optimus.init(param)
 
       def Errorcost1(params,exper):
@@ -3575,17 +3586,6 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70):
 
       Degrad=jx.value_and_grad(Errorcost1,argnums=0)
       step=0
-
-      def Proyectar(p): 
-          return jx.tree.map(lambda x,l,h:jnp.clip(x,0.,1.),p)
-
-      def Progradnorm(p,g):
-          #Gradient norm without the components blocked by an active bound
-          def free(x,gx):
-              blocked=((x<=0.0)&(gx>0.0))|((x>=1.0)&(gx<0.0))
-              return jxn.where(blocked,0.0,gx)
-          return optax.global_norm(jx.tree.map(free,p,g))
-
       @jx.jit
       def updatenext(parats,current,exper):
           error,grad=Degrad(parats,exper)
@@ -3597,7 +3597,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70):
       try:
           while step<(maximal):
               param,state,error,gnorm=updatenext(param,state,expr)
-              if error<eps or gnorm<(1e-5)*error:
+              if error<eps or gnorm<(gtoler)*error:
                   converged=True
                   break
               if step%10==0:
@@ -3716,7 +3716,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70):
           return param
       param=initpara2(Ham,Vary)
       optimus=optax.adam
-      optimus=optax.chain(optax.clip_by_global_norm(1.0),optax.adam(learning_rate=0.1))#,optax.zero_nans(),optax.adam(learning_rate=0.1))
+      optimus=optax.chain(optax.clip_by_global_norm(1.0),optax.adam(learning_rate=0.007))#,optax.zero_nans(),optax.adam(learning_rate=0.1))
       state=optimus.init(param)
       def Errorcost2(params,exper):
           Hame,_=Fromsigtophy2(params,SHam,Vary)
@@ -3731,8 +3731,6 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70):
           return jxn.mean((simul-exper)**2)
       Degrad=jx.value_and_grad(Errorcost2,argnums=0)
       step=0
-      T=4.0
-
       @jx.jit
       def updatenext(parats,current,exper):
           error,grad=Degrad(parats,exper)
@@ -3743,8 +3741,8 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70):
       converged=False
       try:
           while step<(maximal):
-              param,state,error=updatenext(param,state,expr)
-              if error<eps or gnorm<(1e-5)*error:
+              param,state,error,gnorm=updatenext(param,state,expr)
+              if error<eps or gnorm<(gtoler)*error:
                   converged=True
                   break
               if step%10==0:
@@ -3781,7 +3779,6 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70):
         print(f"Parameters error (1 sigma): {Jformaterrors(fitres.paramerrorsdict)}")
       Plotbriggs(Blis,expr,fitres.spc)
       return fitres.Ham,fitres
-
 @partial(jx.custom_jvp,nondiff_argnums=(1,2))
 def containeigh(A,hifi=False,epse=50):
     '''
