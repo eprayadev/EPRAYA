@@ -3073,113 +3073,110 @@ def Jcalmusic(maham,Expe,Nucl1='None',Nucl2='None',hifi=False):
     return fielde,specs
  
 def Showparam(param,Vary):
-    T=4.0
     if 'gx' in param.keys():
-        gxf1=Vary.g[0]+(Vary.g[1]-Vary.g[0])*jnn.sigmoid(param['gx']/T)
-        gyf1=Vary.g[2]+(Vary.g[3]-Vary.g[2])*jnn.sigmoid(param['gy']/T)
-        gzf1=Vary.g[4]+(Vary.g[5]-Vary.g[4])*jnn.sigmoid(param['gz']/T)
+        gxf1=Vary.g[0]+(Vary.g[1]-Vary.g[0])*param['gx']
+        gyf1=Vary.g[2]+(Vary.g[3]-Vary.g[2])*param['gy']
+        gzf1=Vary.g[4]+(Vary.g[5]-Vary.g[4])*param['gz']
         print(f"| gx: {gxf1:.4f} | gy: {gyf1:.4f} | gz: {gzf1:.4f} |")
     if 'Ax' in param.keys():
-        Axf1=Vary.A[0]+(Vary.A[1]-Vary.A[0])*jnn.sigmoid(param['Ax']/T)
-        Ayf1=Vary.A[2]+(Vary.A[3]-Vary.A[2])*jnn.sigmoid(param['Ay']/T)
-        Azf1=Vary.A[4]+(Vary.A[5]-Vary.A[4])*jnn.sigmoid(param['Az']/T)
+        Axf1=Vary.A[0]+(Vary.A[1]-Vary.A[0])*param['Ax']
+        Ayf1=Vary.A[2]+(Vary.A[3]-Vary.A[2])*param['Ay']
+        Azf1=Vary.A[4]+(Vary.A[5]-Vary.A[4])*param['Az']
         print(f"| Ax: {Axf1:.4f} | Ay: {Ayf1:.4f} | Az: {Azf1:.4f} |")
     if 'D' in param.keys():
-        Dx1=Vary.D[0]+(Vary.D[1]-Vary.D[0])*jnn.sigmoid(param['D']/T)
-        Ey1=Vary.D[2]+(Vary.D[3]-Vary.D[2])*jnn.sigmoid(param['E']/T)
+        Dx1=Vary.D[0]+(Vary.D[1]-Vary.D[0])*param['D']
+        Ey1=Vary.D[2]+(Vary.D[3]-Vary.D[2])*param['E']
         print(f"| D: {Dx1:.1f} | E: {Ey1:.1f} |")
     if 'Qx' in param.keys():
-        Qxf1=Vary.Q[0]+(Vary.Q[1]-Vary.Q[0])*jnn.sigmoid(param['Qx']/T)
-        Qyf1=Vary.Q[2]+(Vary.Q[3]-Vary.Q[2])*jnn.sigmoid(param['Qy']/T)
-        Qzf1=Vary.Q[4]+(Vary.Q[5]-Vary.Q[4])*jnn.sigmoid(param['Qz']/T)
+        Qxf1=Vary.Q[0]+(Vary.Q[1]-Vary.Q[0])*param['Qx']
+        Qyf1=Vary.Q[2]+(Vary.Q[3]-Vary.Q[2])*param['Qy']
+        Qzf1=Vary.Q[4]+(Vary.Q[5]-Vary.Q[4])*param['Qz']
         print(f"| Qx: {Qxf1:.4f} | Qy: {Qyf1:.4f} | Qz: {Qzf1:.4f} |")
     if 'Hpp1' in param.keys():
-        Hppx=Vary.Hpp[0]+(Vary.Hpp[1]-Vary.Hpp[0])*jnn.sigmoid(param['Hpp1']/T)
-        Hppy=Vary.Hpp[2]+(Vary.Hpp[3]-Vary.Hpp[2])*jnn.sigmoid(param['Hpp2']/T)
+        Hppx=Vary.Hpp[0]+(Vary.Hpp[1]-Vary.Hpp[0])*param['Hpp1']
+        Hppy=Vary.Hpp[2]+(Vary.Hpp[3]-Vary.Hpp[2])*param['Hpp2']
         print(f"| Hppg: {Hppx:.1f} | Hppl: {Hppy:.1f} |") 
         
 def Showparam2(param,Vary):
-    T=4.0
     if 'gx1' in param.keys():
-        gxf1=Vary.g1[0]+(Vary.g1[1]-Vary.g1[0])*jnn.sigmoid(param['gx1']/T)
-        gyf1=Vary.g1[2]+(Vary.g1[3]-Vary.g1[2])*jnn.sigmoid(param['gy1']/T)
-        gzf1=Vary.g1[4]+(Vary.g1[5]-Vary.g1[4])*jnn.sigmoid(param['gz1']/T)
+        gxf1=Vary.g1[0]+(Vary.g1[1]-Vary.g1[0])*param['gx1']
+        gyf1=Vary.g1[2]+(Vary.g1[3]-Vary.g1[2])*param['gy1']
+        gzf1=Vary.g1[4]+(Vary.g1[5]-Vary.g1[4])*param['gz1']
         print(f"| gx1: {gxf1:.4f} | gy1: {gyf1:.4f} | gz1: {gzf1:.4f} |")
     if 'gx2' in param.keys():
-        gxf2=Vary.g2[0]+(Vary.g2[1]-Vary.g2[0])*jnn.sigmoid(param['gx2']/T)
-        gyf2=Vary.g2[2]+(Vary.g2[3]-Vary.g2[2])*jnn.sigmoid(param['gy2']/T)
-        gzf2=Vary.g2[4]+(Vary.g2[5]-Vary.g2[4])*jnn.sigmoid(param['gz2']/T)
+        gxf2=Vary.g2[0]+(Vary.g2[1]-Vary.g2[0])*param['gx2']
+        gyf2=Vary.g2[2]+(Vary.g2[3]-Vary.g2[2])*param['gy2']
+        gzf2=Vary.g2[4]+(Vary.g2[5]-Vary.g2[4])*param['gz2']
         print(f"| gx2: {gxf2:.4f} | gy2: {gyf2:.4f} | gz2: {gzf2:.4f} |")
     if 'Ax1' in param.keys():
-        Axf1=Vary.A1[0]+(Vary.A1[1]-Vary.A1[0])*jnn.sigmoid(param['Ax1']/T)
-        Ayf1=Vary.A1[2]+(Vary.A1[3]-Vary.A1[2])*jnn.sigmoid(param['Ay1']/T)
-        Azf1=Vary.A1[4]+(Vary.A1[5]-Vary.A1[4])*jnn.sigmoid(param['Az1']/T)
+        Axf1=Vary.A1[0]+(Vary.A1[1]-Vary.A1[0])*param['Ax1']
+        Ayf1=Vary.A1[2]+(Vary.A1[3]-Vary.A1[2])*param['Ay1']
+        Azf1=Vary.A1[4]+(Vary.A1[5]-Vary.A1[4])*param['Az1']
         print(f"| Ax1: {Axf1:.4f} | Ay1: {Ayf1:.4f} | Az1: {Azf1:.4f} |")
     if 'Ax2' in param.keys():
-        Axf2=Vary.A2[0]+(Vary.A2[1]-Vary.A2[0])*jnn.sigmoid(param['Ax2']/T)
-        Ayf2=Vary.A2[2]+(Vary.A2[3]-Vary.A2[2])*jnn.sigmoid(param['Ay2']/T)
-        Azf2=Vary.A2[4]+(Vary.A2[5]-Vary.A2[4])*jnn.sigmoid(param['Az2']/T)
+        Axf2=Vary.A2[0]+(Vary.A2[1]-Vary.A2[0])*param['Ax2']
+        Ayf2=Vary.A2[2]+(Vary.A2[3]-Vary.A2[2])*param['Ay2']
+        Azf2=Vary.A2[4]+(Vary.A2[5]-Vary.A2[4])*param['Az2']
         print(f"| Ax2: {Axf2:.4f} | Ay2: {Ayf2:.4f} | Az2: {Azf2:.4f} |")
     if 'D1' in param.keys():
-        Dx1=Vary.D1[0]+(Vary.D1[1]-Vary.D1[0])*jnn.sigmoid(param['D1']/T)
-        Ey1=Vary.D1[2]+(Vary.D1[3]-Vary.D1[2])*jnn.sigmoid(param['E1']/T)
+        Dx1=Vary.D1[0]+(Vary.D1[1]-Vary.D1[0])*param['D1']
+        Ey1=Vary.D1[2]+(Vary.D1[3]-Vary.D1[2])*param['E1']
         print(f"| D1: {Dx1:.1f} | E1: {Ey1:.1f} |")
     if 'D2' in param.keys():
-        Dx2=Vary.D2[0]+(Vary.D2[1]-Vary.D2[0])*jnn.sigmoid(param['D2']/T)
-        Ey2=Vary.D2[2]+(Vary.D2[3]-Vary.D2[2])*jnn.sigmoid(param['E2']/T)
+        Dx2=Vary.D2[0]+(Vary.D2[1]-Vary.D2[0])*param['D2']
+        Ey2=Vary.D2[2]+(Vary.D2[3]-Vary.D2[2])*param['E2']
         print(f"| D2: {Dx2:.1f} | E2: {Ey2:.1f} |")
     if 'Qx1' in param.keys():
-        Qxf1=Vary.Q1[0]+(Vary.Q1[1]-Vary.Q1[0])*jnn.sigmoid(param['Qx1']/T)
-        Qyf1=Vary.Q1[2]+(Vary.Q1[3]-Vary.Q1[2])*jnn.sigmoid(param['Qy1']/T)
-        Qzf1=Vary.Q1[4]+(Vary.Q1[5]-Vary.Q1[4])*jnn.sigmoid(param['Qz1']/T)
+        Qxf1=Vary.Q1[0]+(Vary.Q1[1]-Vary.Q1[0])*param['Qx1']
+        Qyf1=Vary.Q1[2]+(Vary.Q1[3]-Vary.Q1[2])*param['Qy1']
+        Qzf1=Vary.Q1[4]+(Vary.Q1[5]-Vary.Q1[4])*param['Qz1']
         print(f"| Qx1: {Qxf1:.4f} | Qy1: {Qyf1:.4f} | Qz1: {Qzf1:.4f} |")
     if 'Qx2' in param.keys():
-        Qxf2=Vary.Q2[0]+(Vary.Q2[1]-Vary.Q2[0])*jnn.sigmoid(param['Qx2']/T)
-        Qyf2=Vary.Q2[2]+(Vary.Q2[3]-Vary.Q2[2])*jnn.sigmoid(param['Qy2']/T)
-        Qzf2=Vary.Q2[4]+(Vary.Q2[5]-Vary.Q2[4])*jnn.sigmoid(param['Qz2']/T)
+        Qxf2=Vary.Q2[0]+(Vary.Q2[1]-Vary.Q2[0])*param['Qx2']
+        Qyf2=Vary.Q2[2]+(Vary.Q2[3]-Vary.Q2[2])*param['Qy2']
+        Qzf2=Vary.Q2[4]+(Vary.Q2[5]-Vary.Q2[4])*param['Qz2']
         print(f"| Qx2: {Qxf2:.4f} | Qy2: {Qyf2:.4f} | Qz2: {Qzf2:.4f} |")
     if 'Hpp1' in param.keys():
-        Hppx=Vary.Hpp[0]+(Vary.Hpp[1]-Vary.Hpp[0])*jnn.sigmoid(param['Hpp1']/T)
-        Hppy=Vary.Hpp[2]+(Vary.Hpp[3]-Vary.Hpp[2])*jnn.sigmoid(param['Hpp2']/T)
+        Hppx=Vary.Hpp[0]+(Vary.Hpp[1]-Vary.Hpp[0])*param['Hpp1']
+        Hppy=Vary.Hpp[2]+(Vary.Hpp[3]-Vary.Hpp[2])*param['Hpp2']
         print(f"| Hppg: {Hppx:.1f} | Hppl: {Hppy:.1f} |")
 
 def Fromsigtophy(param,Ham,Vary):
     pravals={}
-    T=4.0
     if 'gx' in param.keys():
-        gx=Vary.g[0]+(Vary.g[1]-Vary.g[0])*jnn.sigmoid(param['gx']/T)
-        gy=Vary.g[2]+(Vary.g[3]-Vary.g[2])*jnn.sigmoid(param['gy']/T)
-        gz=Vary.g[4]+(Vary.g[5]-Vary.g[4])*jnn.sigmoid(param['gz']/T)
+        gx=Vary.g[0]+(Vary.g[1]-Vary.g[0])*param['gx']
+        gy=Vary.g[2]+(Vary.g[3]-Vary.g[2])*param['gy']
+        gz=Vary.g[4]+(Vary.g[5]-Vary.g[4])*param['gz']
         gg=jxn.array([gx,gy,gz])
         pravals['g']=gg
     else:
         gg=Ham.g
     if 'Ax' in param.keys():
-        Ax=Vary.A[0]+(Vary.A[1]-Vary.A[0])*jnn.sigmoid(param['Ax']/T)
-        Ay=Vary.A[2]+(Vary.A[3]-Vary.A[2])*jnn.sigmoid(param['Ay']/T)
-        Az=Vary.A[4]+(Vary.A[5]-Vary.A[4])*jnn.sigmoid(param['Az']/T)
+        Ax=Vary.A[0]+(Vary.A[1]-Vary.A[0])*param['Ax']
+        Ay=Vary.A[2]+(Vary.A[3]-Vary.A[2])*param['Ay']
+        Az=Vary.A[4]+(Vary.A[5]-Vary.A[4])*param['Az']
         AA=jxn.array([Ax,Ay,Az])
         pravals['A']=AA
     else:
         AA=Ham.A
     if 'D' in param.keys():
-        Dx=Vary.D[0]+(Vary.D[1]-Vary.D[0])*jnn.sigmoid(param['D']/T)
-        Ey=Vary.D[2]+(Vary.D[3]-Vary.D[2])*jnn.sigmoid(param['E']/T)
+        Dx=Vary.D[0]+(Vary.D[1]-Vary.D[0])*param['D']
+        Ey=Vary.D[2]+(Vary.D[3]-Vary.D[2])*param['E']
         DD=jxn.array([Dx,Ey])
         pravals['D']=DD
     else:
         DD=Ham.D
     if 'Qx' in param.keys():
-        Qx=Vary.Q[0]+(Vary.Q[1]-Vary.Q[0])*jnn.sigmoid(param['Qx']/T)
-        Qy=Vary.Q[2]+(Vary.Q[3]-Vary.Q[2])*jnn.sigmoid(param['Qy']/T)
-        Qz=Vary.Q[4]+(Vary.Q[5]-Vary.Q[4])*jnn.sigmoid(param['Qz']/T)
+        Qx=Vary.Q[0]+(Vary.Q[1]-Vary.Q[0])*param['Qx']
+        Qy=Vary.Q[2]+(Vary.Q[3]-Vary.Q[2])*param['Qy']
+        Qz=Vary.Q[4]+(Vary.Q[5]-Vary.Q[4])*param['Qz']
         QQ=jxn.array([Qx,Qy,Qz])
         pravals['Q']=QQ
     else:
         QQ=Ham.Q
     if 'Hpp1' in param.keys():
-        Hppx=Vary.Hpp[0]+(Vary.Hpp[1]-Vary.Hpp[0])*jnn.sigmoid(param['Hpp1']/T)
-        Hppy=Vary.Hpp[2]+(Vary.Hpp[3]-Vary.Hpp[2])*jnn.sigmoid(param['Hpp2']/T)
+        Hppx=Vary.Hpp[0]+(Vary.Hpp[1]-Vary.Hpp[0])*param['Hpp1']
+        Hppy=Vary.Hpp[2]+(Vary.Hpp[3]-Vary.Hpp[2])*param['Hpp2']
         HHpp=jxn.array([Hppx,Hppy])
         pravals['Hpp']=HHpp
     else:
@@ -3189,72 +3186,71 @@ def Fromsigtophy(param,Ham,Vary):
 
 def Fromsigtophy2(param,Ham,Vary):
     pravals={}
-    T=4.0
     if 'gx1' in param.keys():
-        gx1=Vary.g1[0]+(Vary.g1[1]-Vary.g1[0])*jnn.sigmoid(param['gx1']/T)
-        gy1=Vary.g1[2]+(Vary.g1[3]-Vary.g1[2])*jnn.sigmoid(param['gy1']/T)
-        gz1=Vary.g1[4]+(Vary.g1[5]-Vary.g1[4])*jnn.sigmoid(param['gz1']/T)
+        gx1=Vary.g1[0]+(Vary.g1[1]-Vary.g1[0])*param['gx1']
+        gy1=Vary.g1[2]+(Vary.g1[3]-Vary.g1[2])*param['gy1']
+        gz1=Vary.g1[4]+(Vary.g1[5]-Vary.g1[4])*param['gz1']
         gg1=jxn.array([gx1,gy1,gz1])
         pravals['g1']=gg1
     else:
         gg1=Ham.g1
     if 'gx2' in param.keys():
-        gx2=Vary.g2[0]+(Vary.g2[1]-Vary.g2[0])*jnn.sigmoid(param['gx2']/T)
-        gy2=Vary.g2[2]+(Vary.g2[3]-Vary.g2[2])*jnn.sigmoid(param['gy2']/T)
-        gz2=Vary.g2[4]+(Vary.g2[5]-Vary.g2[4])*jnn.sigmoid(param['gz2']/T)
+        gx2=Vary.g2[0]+(Vary.g2[1]-Vary.g2[0])*param['gx2']
+        gy2=Vary.g2[2]+(Vary.g2[3]-Vary.g2[2])*param['gy2']
+        gz2=Vary.g2[4]+(Vary.g2[5]-Vary.g2[4])*param['gz2']
         gg2=jxn.array([gx2,gy2,gz2])
         pravals['g2']=gg2
     else:
         gg2=Ham.g2
     if 'Ax1' in param.keys():
-        Ax1=Vary.A1[0]+(Vary.A1[1]-Vary.A1[0])*jnn.sigmoid(param['Ax1']/T)
-        Ay1=Vary.A1[2]+(Vary.A1[3]-Vary.A1[2])*jnn.sigmoid(param['Ay1']/T)
-        Az1=Vary.A1[4]+(Vary.A1[5]-Vary.A1[4])*jnn.sigmoid(param['Az1']/T)
+        Ax1=Vary.A1[0]+(Vary.A1[1]-Vary.A1[0])*param['Ax1']
+        Ay1=Vary.A1[2]+(Vary.A1[3]-Vary.A1[2])*param['Ay1']
+        Az1=Vary.A1[4]+(Vary.A1[5]-Vary.A1[4])*param['Az1']
         AA1=jxn.array([Ax1,Ay1,Az1])
         pravals['A1']=AA1
     else:
         AA1=Ham.A1
     if 'Ax2' in param.keys():
-        Ax2=Vary.A2[0]+(Vary.A2[1]-Vary.A2[0])*jnn.sigmoid(param['Ax2']/T)
-        Ay2=Vary.A2[2]+(Vary.A2[3]-Vary.A2[2])*jnn.sigmoid(param['Ay2']/T)
-        Az2=Vary.A2[4]+(Vary.A2[5]-Vary.A2[4])*jnn.sigmoid(param['Az2']/T)
+        Ax2=Vary.A2[0]+(Vary.A2[1]-Vary.A2[0])*param['Ax2']
+        Ay2=Vary.A2[2]+(Vary.A2[3]-Vary.A2[2])*param['Ay2']
+        Az2=Vary.A2[4]+(Vary.A2[5]-Vary.A2[4])*param['Az2']
         AA2=jxn.array([Ax2,Ay2,Az2])
         pravals['A2']=AA2
     else:
         AA2=Ham.A2
     if 'D1' in param.keys():
-        Dx1=Vary.D1[0]+(Vary.D1[1]-Vary.D1[0])*jnn.sigmoid(param['D1']/T)
-        Ey1=Vary.D1[2]+(Vary.D1[3]-Vary.D1[2])*jnn.sigmoid(param['E1']/T)
+        Dx1=Vary.D1[0]+(Vary.D1[1]-Vary.D1[0])*param['D1']
+        Ey1=Vary.D1[2]+(Vary.D1[3]-Vary.D1[2])*param['E1']
         DD1=jxn.array([Dx1,Ey1])
         pravals['D1']=DD1
     else:
         DD1=Ham.D1
     if 'D2' in param.keys():
-        Dx2=Vary.D2[0]+(Vary.D2[1]-Vary.D2[0])*jnn.sigmoid(param['D2']/T)
-        Ey2=Vary.D2[2]+(Vary.D2[3]-Vary.D2[2])*jnn.sigmoid(param['E2']/T)
+        Dx2=Vary.D2[0]+(Vary.D2[1]-Vary.D2[0])*param['D2']
+        Ey2=Vary.D2[2]+(Vary.D2[3]-Vary.D2[2])*param['E2']
         DD2=jxn.array([Dx2,Ey2])
         pravals['D2']=DD2
     else:
         DD2=Ham.D2
     if 'Qx1' in param.keys():
-        Qx1=Vary.Q1[0]+(Vary.Q1[1]-Vary.Q1[0])*jnn.sigmoid(param['Qx1']/T)
-        Qy1=Vary.Q1[2]+(Vary.Q1[3]-Vary.Q1[2])*jnn.sigmoid(param['Qy1']/T)
-        Qz1=Vary.Q1[4]+(Vary.Q1[5]-Vary.Q1[4])*jnn.sigmoid(param['Qz1']/T)
+        Qx1=Vary.Q1[0]+(Vary.Q1[1]-Vary.Q1[0])*param['Qx1']
+        Qy1=Vary.Q1[2]+(Vary.Q1[3]-Vary.Q1[2])*param['Qy1']
+        Qz1=Vary.Q1[4]+(Vary.Q1[5]-Vary.Q1[4])*param['Qz1']
         QQ1=jxn.array([Qx1,Qy1,Qz1])
         pravals['Q1']=QQ1
     else:
         QQ1=Ham.Q1
     if 'Qx2' in param.keys():
-        Qx2=Vary.Q2[0]+(Vary.Q2[1]-Vary.Q2[0])*jnn.sigmoid(param['Qx2']/T)
-        Qy2=Vary.Q2[2]+(Vary.Q2[3]-Vary.Q2[2])*jnn.sigmoid(param['Qy2']/T)
-        Qz2=Vary.Q2[4]+(Vary.Q2[5]-Vary.Q2[4])*jnn.sigmoid(param['Qz2']/T)
+        Qx2=Vary.Q2[0]+(Vary.Q2[1]-Vary.Q2[0])*param['Qx2']
+        Qy2=Vary.Q2[2]+(Vary.Q2[3]-Vary.Q2[2])*param['Qy2']
+        Qz2=Vary.Q2[4]+(Vary.Q2[5]-Vary.Q2[4])*param['Qz2']
         QQ2=jxn.array([Qx2,Qy2,Qz2])
         pravals['Q2']=QQ2
     else:
         QQ2=Ham.Q2
     if 'Hpp1' in param.keys():
-        Hppx=Vary.Hpp[0]+(Vary.Hpp[1]-Vary.Hpp[0])*jnn.sigmoid(param['Hpp1']/T)
-        Hppy=Vary.Hpp[2]+(Vary.Hpp[3]-Vary.Hpp[2])*jnn.sigmoid(param['Hpp2']/T)
+        Hppx=Vary.Hpp[0]+(Vary.Hpp[1]-Vary.Hpp[0])*param['Hpp1']
+        Hppy=Vary.Hpp[2]+(Vary.Hpp[3]-Vary.Hpp[2])*param['Hpp2']
         HHpp=jxn.array([Hppx,Hppy])
         pravals['Hpp']=HHpp
     else:
@@ -3300,6 +3296,22 @@ def Residualsjax(pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk):
     experen=expr/jxn.maximum(jxn.max(jxn.abs(expr)),1e-8)
     return simuln-experen
 
+def Toconsiderset(pravals,Vary,J,residuals,tol=1e-6):
+    from jax.flatten_util import ravel_pytree
+    p,_=ravel_pytree(pravals)
+    lo,_=ravel_pytree({k:jxn.asarray(getattr(Vary,k),dtype=float)[0::2] for k in pravals})
+    hi,_=ravel_pytree({k:jxn.asarray(getattr(Vary,k),dtype=float)[1::2] for k in pravals})
+    p,lo,hi=np.asarray(p),np.asarray(lo),np.asarray(hi)
+    span=hi-lo
+    fixed=span<=0.0
+    frac=(p-lo)/np.where(fixed,1.0,span)
+    #Get chi2/2 derivative respect to parameters
+    grad=J.T@np.asarray(residuals)            # d(chi2/2)/dp
+    atlo=(~fixed)&(frac<=tol)&(grad>0.0)
+    athi=(~fixed)&(frac>=1.0-tol)&(grad<0.0)
+    return fixed|atlo|athi
+
+
 def BuildresJax(pravals,Ham,Exp,expr,Vary,mode,method,iwas=None,jwas=None,kwas=None,weight=None,hulk=None,success=True,message='',iterations=None):
     from jax.flatten_util import ravel_pytree
     pflat,unrav=ravel_pytree(pravals)
@@ -3310,14 +3322,23 @@ def BuildresJax(pravals,Ham,Exp,expr,Vary,mode,method,iwas=None,jwas=None,kwas=N
         Blis,espc,_,_,_,_,_=Calresonant(Hat,Exp,graph=False,table=False)
 
     residuals=Residualsjax(pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk)
+    J=Computejacobian(Residualsjax,pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk)
+    active=Toconsiderset(pravals,Vary,J,residuals)
+    free=~active
+    deno=max(n-int(free.sum()),1)
+    chi2=float(jxn.sum(residuals**2))
+    redchi2=chi2/deno
+    varf,perrf,identificable=Selectvarian(J[:,free],redchi2)
+    perr=np.full(len(pflat),np.nan)
+    if perrf is not None:
+        perr[free]=np.asarray(perrf)
     n,p=len(residuals),len(pflat)
     deno=max(n-p,1)
     chi2=float(jxn.sum(residuals**2))
     redchi2=chi2/deno
-    J=Computejacobian(Residualsjax,pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk)
-    variance,perr,identificable=Selectvarian(J,redchi2)
-    errdict=unrav(perr) if perr is not None else None
-    
+    if varf is not None:
+        variance=np.full((len(pflat),)*2,np.nan); variance[np.ix_(free,free)]=varf
+    errdict=unrav(perr)
     return Fitresult(Ham=Hat,spc=espc,params=np.asarray(pflat),method=method,chi2=chi2,redchi2=redchi2,residuals=np.asarray(residuals),denochi=deno,variance=variance,paramerrors=perr,paramerrorsdict=errdict,success=success,message=message,iterations=iterations),Blis
 
 def Residualsjax2(pflat,unrav,Ham,Exp,expr,mode):
@@ -3340,13 +3361,22 @@ def BuildresJax2(pravals,Ham,Exp,expr,Vary,mode,method,success=True,message='',i
     else:
         Blis,espc=JMusic(Hat,Exp,graph=False)
     residuals=Residualsjax2(pflat,unrav,Ham,Exp,expr,mode)
+    J=ComputeJacobianSequential(Residualsjax2,pflat,unrav,Ham,Exp,expr,mode)
+    free=~active
+    deno=max(n-int(free.sum()),1)
+    chi2=float(jxn.sum(residuals**2))
+    redchi2=chi2/deno
+    varf,perrf,identificable=Selectvarian(J[:,free],redchi2)
+    perr=np.full(len(pflat),np.nan)
+    if perrf is not None:
+        perr[free]=np.asarray(perrf)
     n,p=len(residuals),len(pflat)
     deno=max(n-p,1)
     chi2=float(jxn.sum(residuals**2))
     redchi2=chi2/deno
-    J=ComputeJacobianSequential(Residualsjax2,pflat,unrav,Ham,Exp,expr,mode)
-    variance,perr,identificable=Selectvarian(J,redchi2)
-    errdict=unrav(perr) if perr is not None else None
+    if varf is not None:
+        variance=np.full((len(pflat),)*2,np.nan); variance[np.ix_(free,free)]=varf
+    errdict=unrav(perr)
     
     return Fitresult(Ham=Hat,spc=espc,params=np.asarray(pflat),method=method,chi2=chi2,redchi2=redchi2,residuals=np.asarray(residuals),denochi=deno,variance=variance,paramerrors=perr,paramerrorsdict=errdict,success=success,message=message,iterations=iterations),Blis
 
@@ -3505,9 +3535,8 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70):
           def safelog(val,under,over):
               div=jxn.where(over==under,1e-10,over-under)
               frat=(val-under)/div
-              safe=jxn.clip(frat,1e-4,1.0-1e-4)
-              T=4.0
-              return jsp.logit(safe)*T
+              safe=jxn.clip(frat,0,1)
+              return safe
           if Vara.g!=0.0:
               param['gx']=safelog(Ham.g[0],Vara.g[0],Vara.g[1])
               param['gy']=safelog(Ham.g[1],Vara.g[2],Vara.g[3])
@@ -3529,7 +3558,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70):
           return param
       param=initpara(Ham,Vary)
       optimus=optax.adam
-      optimus=optax.chain(optax.clip_by_global_norm(1.0),optax.adam(learning_rate=0.1))#,optax.zero_nans(),optax.adam(learning_rate=0.1))
+      optimus=optax.chain(optax.clip_by_global_norm(1.0),optax.adam(learning_rate=0.1))#,optax.zero_nans(),optax.adam(learning_rate=0.007))
       state=optimus.init(param)
 
       def Errorcost1(params,exper):
@@ -3546,18 +3575,30 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70):
 
       Degrad=jx.value_and_grad(Errorcost1,argnums=0)
       step=0
-      T=4.0
+
+      def Proyectar(p): 
+          return jx.tree.map(lambda x,l,h:jnp.clip(x,0.,1.),p)
+
+      def Progradnorm(p,g):
+          #Gradient norm without the components blocked by an active bound
+          def free(x,gx):
+              blocked=((x<=0.0)&(gx>0.0))|((x>=1.0)&(gx<0.0))
+              return jxn.where(blocked,0.0,gx)
+          return optax.global_norm(jx.tree.map(free,p,g))
 
       @jx.jit
       def updatenext(parats,current,exper):
           error,grad=Degrad(parats,exper)
+          gnorm=Progradnorm(parats,grad)
           next,state=optimus.update(grad,current,parats)
-          param=optax.apply_updates(parats,next)
-          return param,state,error
+          param=Proyectar(optax.apply_updates(parats,next))
+          return param,state,error,gnorm
+      converged=False
       try:
           while step<(maximal):
-              param,state,error=updatenext(param,state,expr)
-              if error<eps:
+              param,state,error,gnorm=updatenext(param,state,expr)
+              if error<eps or gnorm<(1e-5)*error:
+                  converged=True
                   break
               if step%10==0:
                   print(f"Step {step+1:3d} | Error: {error:.5e} |")
@@ -3583,7 +3624,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70):
       Hat,praval=Fromsigtophy(param,Ham,Vary)
       Showparam(param,Vary)
       fitres,Blis=BuildresJax(praval,Hat,Exp,expr,Vary,mode,method='Adam',iwas=iwas,jwas=jwas,kwas=kwas,weight=weight,hulk=hulk,
-                                success=True,message='Converged',iterations=step)
+                                success=converged,message='Converged' if converged else 'Maximum iterations reached',iterations=step)
       
       result['Ham']=fitres.Ham
       result['fit']=fitres
@@ -3637,9 +3678,8 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70):
           def safelog(val,under,over):
               div=jxn.where(over==under,1e-10,over-under)
               frat=(val-under)/div
-              safe=jxn.clip(frat,1e-4,1.0-1e-4)
-              T=4.0
-              return jsp.logit(safe)*T
+              safe=jxn.clip(frat,0,1)
+              return safe
           if Vara.g1!=0.0:
               param['gx1']=safelog(Ham.g1[0],Vara.g1[0],Vara.g1[1])
               param['gy1']=safelog(Ham.g1[1],Vara.g1[2],Vara.g1[3])
@@ -3696,13 +3736,16 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70):
       @jx.jit
       def updatenext(parats,current,exper):
           error,grad=Degrad(parats,exper)
+          gnorm=Progradnorm(parats,grad)
           next,state=optimus.update(grad,current,parats)
-          param=optax.apply_updates(parats,next)
-          return param,state,error
+          param=Proyectar(optax.apply_updates(parats,next))
+          return param,state,error,gnorm
+      converged=False
       try:
           while step<(maximal):
               param,state,error=updatenext(param,state,expr)
-              if error<eps:
+              if error<eps or gnorm<(1e-5)*error:
+                  converged=True
                   break
               if step%10==0:
                   print(f"Step {step+1:3d} | Error: {error:.5e} |")
@@ -3728,7 +3771,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70):
       Hat,praval=Fromsigtophy2(param,Ham,Vary)
       Showparam2(param,Vary)
       fitres,Blis=BuildresJax2(praval,Hat,Exp,expr,Vary,mode,method='Adam',
-                                success=True,message='Converged',iterations=step)
+                                success=converged,message='Converged' if converged else 'Maximum iterations reached',iterations=step)
       
 
       result['Ham']=fitres.Ham
@@ -3738,7 +3781,6 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70):
         print(f"Parameters error (1 sigma): {Jformaterrors(fitres.paramerrorsdict)}")
       Plotbriggs(Blis,expr,fitres.spc)
       return fitres.Ham,fitres
-          
 
 @partial(jx.custom_jvp,nondiff_argnums=(1,2))
 def containeigh(A,hifi=False,epse=50):
