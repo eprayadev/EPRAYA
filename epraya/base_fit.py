@@ -205,7 +205,7 @@ def Buildres(bestpoint,Ham1,Exp,exper,Vary,functiona,Mr,method,J=None,success=Tr
         spect=Music(besHam,Exp,graph=False,table=False)[1]
     labels=Formatvar(Ham1,Vary)
     if J is None:
-        J=Jacobian(resfu,bestpoint,args=(Ham1,Exp,exper,Vary,functiona,Mr,datype),bounds=(lo,hi))
+        J=Jacobian(resfu,bestpoint,args=(Ham1,Exp,exper,Vary,functiona,Mr,datype),bounds=(baixo,alto))
     active=Toconsideset(np.asarray(bestpoint,float),baixo,alto,J,residuals)
     free=~active
     n,p=len(residuals),len(bestpoint)
