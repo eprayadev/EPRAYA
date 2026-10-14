@@ -124,7 +124,7 @@ def Jacobian(fx,x0,args=(),eps=1e-6,bounds=None):
             xm[i]=max(xm[i],bounds[0][i])
         if xp[i]==xm[i]:
             continue
-        f1=fx(xpx,*args)
+        f1=fx(xp,*args)
         f2=fx(xm,*args)
         J[:,i]=(f1-f2)/(xp[i]-xm[i])
     return J
@@ -133,7 +133,7 @@ def Jacobian(fx,x0,args=(),eps=1e-6,bounds=None):
 def Toconsideset(point,baixo,alto,J,residuals,tol=1e-6):
     span=alto-baixo
     fixed=span<=2e-4
-    frac=(point-lo)/np.where(span>0,span,1.0)
+    frac=(point-baixo)/np.where(span>0,span,1.0)
     #Get chi2/2 derivative respect to parameters
     grad=J.T@residuals                      # d(chi2/2)/dx
     atlo=(~fixed)&(frac<=tol)&(grad>0.0)
@@ -186,14 +186,23 @@ def Formaterrors(perr,labels):
             parame.append(f"{n}: {v:.4g}")
     return " | ".join(parame)
 
-def Buildres(bestpoint,Ham1,Exp,exper,Vary,functiona,Mr,method,J=None,success=True,message='',iterations=None):
+def Buildres(bestpoint,Ham1,Exp,exper,Vary,functiona,Mr,method,J=None,success=True,message='',iterations=None,dattype='data'):
     back=findtypeham(Ham1)
     if back is None:
         raise TypeError(f'Wrong Hamiltoinan type: {type(Ham1)}.')
     unpack=back['unpack']
     resfu=back['res']
-     _,baixo,alto=back['pack'](Ham1,Vary)
+    _,baixo,alto=back['pack'](Ham1,Vary)
     besHam=unpack(bestpoint,Ham1,Vary)
+    residuals=resfu(bestpoint,Ham1,Exp,exper,Vary,functiona,Mr,dattype)
+    if functiona in ['Powder']:
+        spect=Powder(besHam,Exp,M=Mr,graph=False)[1]
+    elif functiona in ['Eresonant']:
+        spect=Eresonant(besHam,Exp,graph=False,table=False)[1]
+    elif functiona in ['Mulpol']:
+        spect=Mulpol(besHam,Exp,M=Mr,graph=False)[1]
+    elif functiona in ['Music']:
+        spect=Music(besHam,Exp,graph=False,table=False)[1]
     labels=Formatvar(Ham1,Vary)
     if J is None:
         J=Jacobian(resfu,bestpoint,args=(Ham1,Exp,exper,Vary,functiona,Mr,datype),bounds=(lo,hi))
@@ -327,6 +336,7 @@ def Nelder1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p',
     Ham=deepcopy(Hamer)
     Exp=deepcopy(Expe)
     Var=deepcopy(Vara)
+    initexper=exper
     if mode=='p':
         funtiona=Powder#(Ham,Exp,graph=False)
     elif mode=='c':
@@ -486,7 +496,7 @@ def Nelder1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p',
             print(f'D={Ham.D[0]} | E={Ham.D[1]}')
         if np.any(Var.Hpp):
             print(f'Hppg={Ham.Hpp[0]} | Hppl={Ham.Hpp[1]}')
-        fitresult=Buildres(melhor,Ham,Exp,exper,Var,funcname,Mr,method='Nelder-Mead',success=False,message='Nelder-Mead stopped by user',iterations=itera)
+        fitresult=Buildres(melhor,Ham,Exp,initexper,Var,funcname,Mr,method='Nelder-Mead',success=False,message='Nelder-Mead stopped by user',iterations=itera,dattype=datype)
         return fitresult.Ham,fitresult
     _=Fincost(melhor,funcname)
     print("\n"+"="*50)
@@ -502,7 +512,7 @@ def Nelder1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p',
         print(f'D={Ham.D[0]} | E={Ham.D[1]}')
     if np.any(Var.Hpp):
         print(f'Hppg={Ham.Hpp[0]} | Hppl={Ham.Hpp[1]}')
-    fitresult=Buildres(melhor,Ham,Exp,exper,Var,funcname,Mr,method='Nelder-Mead',success=(itera<maximal),message='Converged with Nelder-Mead',iterations=itera)
+    fitresult=Buildres(melhor,Ham,Exp,initexper,Var,funcname,Mr,method='Nelder-Mead',success=(itera<maximal),message='Converged with Nelder-Mead',iterations=itera,dattype=datype)
     return fitresult.Ham,fitresult
 
 def Nelder2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p',seed=451,Mr=70):
@@ -589,6 +599,7 @@ def Nelder2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p',
     Ham=deepcopy(Hamer)
     Exp=deepcopy(Expe)
     Var=deepcopy(Vara)
+    initexper=exper
     if mode=='p':
         funtiona=Mulpol#(Ham,Exp,graph=False)
     elif mode=='c':
@@ -755,7 +766,7 @@ def Nelder2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p',
                 print(f'D={Ham.Mulham[i].D[0]:.4f} | E={Ham.Mulham[i].D[1]:.4f}')
             if np.any(Var.Mvary[i].Hpp):
                 print(f'Hppg={Ham.Mulham[i].Hpp[0]:.4f} | Hppl={Ham.Mulham[i].Hpp[1]:.4f}')
-        fitresult=Buildres(melhor,Ham,Exp,exper,Var,funcname,Mr,method='Nelder-Mead',success=False,message='Nelder-Mead stopped by user',iterations=itera)
+        fitresult=Buildres(melhor,Ham,Exp,initexper,Var,funcname,Mr,method='Nelder-Mead',success=False,message='Nelder-Mead stopped by user',iterations=itera,dattype=datype)
         return fitresult.Ham,fitresult
     _=Fincost(melhor,funcname)
     print("\n"+"="*50)
@@ -773,7 +784,7 @@ def Nelder2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p',
             print(f'D={Ham.Mulham[i].D[0]:.4f} | E={Ham.Mulham[i].D[1]:.4f}')
         if np.any(Var.Mvary[i].Hpp):
             print(f'Hppg={Ham.Mulham[i].Hpp[0]:.4f} | Hppl={Ham.Mulham[i].Hpp[1]:.4f}')
-    fitresult=Buildres(melhor,Ham,Exp,exper,Var,funcname,Mr,method='Nelder-Mead',success=(itera<maximal),message='Converged with Nelder-Mead',iterations=itera)
+    fitresult=Buildres(melhor,Ham,Exp,initexper,Var,funcname,Mr,method='Nelder-Mead',success=(itera<maximal),message='Converged with Nelder-Mead',iterations=itera,dattype=datype)
     return fitresult.Ham,fitresult
 
 def Nelder(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p',seed=451,Mr=70):
@@ -974,6 +985,7 @@ def Genio1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p',see
     Ham=deepcopy(Hamer)
     Exp=deepcopy(Expe)
     Var=deepcopy(Vara)
+    initexper=exper
     lowfron=[]
     hifron=[]
     bplayer=0
@@ -1089,7 +1101,7 @@ def Genio1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p',see
             print(f'D={Ham.D[0]} | E={Ham.D[1]}')
         if np.any(Var.Hpp):
             print(f'Hppg={Ham.Hpp[0]} | Hppl={Ham.Hpp[1]}')
-        fitresult=Buildres(bplayer,Ham,Exp,exper,Var,funcname,Mr,method='Genethic A',success=False,message='Genetic algorithm stopped by user',iterations=itea)
+        fitresult=Buildres(bplayer,Ham,Exp,initexper,Var,funcname,Mr,method='Genethic A',success=False,message='Genetic algorithm stopped by user',iterations=itea,dattype=datype)
         return fitresult.Ham,fitresult
     _=Fincost(bplayer,funcname)        
     print("\n"+"="*50)
@@ -1105,7 +1117,7 @@ def Genio1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p',see
         print(f'D={Ham.D[0]} | E={Ham.D[1]}')
     if np.any(Var.Hpp):
         print(f'Hppg={Ham.Hpp[0]} | Hppl={Ham.Hpp[1]}')
-    fitresult=Buildres(bplayer,Ham,Exp,exper,Var,funcname,Mr,method='Genethic A',success=(itea<maximal),message='Converged with the genetic algorithm',iterations=itea)
+    fitresult=Buildres(bplayer,Ham,Exp,initexper,Var,funcname,Mr,method='Genethic A',success=(itea<maximal),message='Converged with the genetic algorithm',iterations=itea,dattype=datype)
     return fitresult.Ham,fitresult
 
 def Genio2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p',seed=451,Mr=70):
@@ -1191,6 +1203,7 @@ def Genio2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p',see
     Ham=deepcopy(Hamer)
     Exp=deepcopy(Expe)
     Var=deepcopy(Vara)
+    initexper=exper
     lowfron=[]
     hifron=[]
     bplayer=0
@@ -1319,7 +1332,7 @@ def Genio2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p',see
                 print(f'D={Ham.Mulham[i].D[0]:.4f} | E={Ham.Mulham[i].D[1]:.4f}')
             if np.any(Var.Mvary[i].Hpp):
                 print(f'Hppg={Ham.Mulham[i].Hpp[0]:.4f} | Hppl={Ham.Mulham[i].Hpp[1]:.4f}')
-        fitresult=Buildres(bplayer,Ham,Exp,exper,Var,funcname,Mr,method='Genethic A',success=False,message='Genetic algorithm stopped by user',iterations=itea)
+        fitresult=Buildres(bplayer,Ham,Exp,initexper,Var,funcname,Mr,method='Genethic A',success=False,message='Genetic algorithm stopped by user',iterations=itea,dattype=datype)
         return fitresult.Ham,fitresult
     print("\n"+"="*50)
     print(f"Process stopped at generation: {itea}, with best cost: {bcost:.5e}")
@@ -1337,7 +1350,7 @@ def Genio2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p',see
             print(f'D={Ham.Mulham[i].D[0]:.4f} | E={Ham.Mulham[i].D[1]:.4f}')
         if np.any(Var.Mvary[i].Hpp):
             print(f'Hppg={Ham.Mulham[i].Hpp[0]:.4f} | Hppl={Ham.Mulham[i].Hpp[1]:.4f}')
-    fitresult=Buildres(bplayer,Ham,Exp,exper,Var,funcname,Mr,method='Genethic A',success=(itea<maximal),message='Converged with the genetic algorithm',iterations=itea)
+    fitresult=Buildres(bplayer,Ham,Exp,initexper,Var,funcname,Mr,method='Genethic A',success=(itea<maximal),message='Converged with the genetic algorithm',iterations=itea,dattype=datype)
     return fitresult.Ham,fitresult
 
 def Genio(Hamer,Expe,Vara,exper,eps=1e-10,maximal=100,datype='data',mode='p',seed=451,Mr=70):
@@ -1511,6 +1524,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
     '''
     np.random.seed(int(seed))
     Ham1=deepcopy(Hamer)
+    initdat=dat
     iwas,jwas,kwas,weight,hulk=Delaunay(Exp)
     if mode=='p':
         funtiona=Calpowder#(Ham,Exp,graph=False)
@@ -1525,11 +1539,11 @@ def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
     elif funcname in ['Eresonant']:
         fielda,intena=funtiona(Ham1,Exp,graph=False,table=False)
     if datype=='data':
-        ct1=Costf(dat,intena,metric='rmse')
+        ct1=Costf(dat,intena)
     if datype=='integral':
         dat=scii.cumulative_trapezoid(dat,fielda,initial=0)
         intena=scii.cumulative_trapezoid(intena,fielda,initial=0)
-        ct1=Costf(dat,intena,metric='rmse')
+        ct1=Costf(dat,intena)
     pointx=[]
     stp={}
     lowfron=[]
@@ -1744,7 +1758,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
             print(f'D={bestHam.D[0]},E={bestHam.D[1]}')
         if np.any(Var.Hpp):
             print(f'Hppg={bestHam.Hpp[0]},Hppl={bestHam.Hpp[1]}')
-        fitresult=Buildres(bestpoint,Ham1,Exp,dat,Var,funcname,Mr,method='Metropolis',success=False,message='Metropolis stopped by user',iterations=gama)
+        fitresult=Buildres(bestpoint,Ham1,Exp,initdat,Var,funcname,Mr,method='Metropolis',success=False,message='Metropolis stopped by user',iterations=gama,dattype=datype)
         return fitresult.Ham, fitresult
     bestpoint,_,_=Packtoscipy(bestHam,Var)
     print("\n"+"="*50)
@@ -1760,7 +1774,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
         print(f'D={bestHam.D[0]} | E={bestHam.D[1]}')
     if np.any(Var.Hpp):
         print(f'Hppg={bestHam.Hpp[0]} | Hppl={bestHam.Hpp[1]}')
-    fitresult=Buildres(bestpoint,Ham1,Exp,dat,Var,funcname,Mr,method='Metropolis',success=True,message='Converged with Metropolis',iterations=gama)
+    fitresult=Buildres(bestpoint,Ham1,Exp,initdat,Var,funcname,Mr,method='Metropolis',success=True,message='Converged with Metropolis',iterations=gama,dattype=datype)
     return fitresult.Ham, fitresult
 
 def Metrostair2(Hamer,Exp,Var,date,stepsize,ocos,para,variable,aktsys,funcname,datype='data',Mr=70):
@@ -1855,6 +1869,7 @@ def Metro2(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
         Best adjusted spectrum using the Mulpol or Music functions.
     '''
     Ham1=deepcopy(Hamer)
+    initdat=dat        
     if mode=='p':
         funtiona=Mulpol#(Ham,Exp,graph=False)
     elif mode=='c':
@@ -2085,7 +2100,7 @@ def Metro2(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
                 print(f'D={bestHam.Mulham[i].D[0]:.4f} | E={bestHam.Mulham[i].D[1]:.4f}')
             if np.any(Var.Mvary[i].Hpp):
                 print(f'Hppg={bestHam.Mulham[i].Hpp[0]:.4f} | Hppl={bestHam.Mulham[i].Hpp[1]:.4f}')
-        fitresult=Buildres(bestpoint,Ham1,Exp,dat,Var,funcname,Mr,method='Metropolis',success=False,message='Metropolis stopped by user',iterations=gama)
+        fitresult=Buildres(bestpoint,Ham1,Exp,initdat,Var,funcname,Mr,method='Metropolis',success=False,message='Metropolis stopped by user',iterations=gama,dattype=datype)
         return fitresult.Ham, fitresult
     bestpoint,_,_=Packtoscipy2(bestHam,Var)
     print("\n"+"="*50)
@@ -2103,7 +2118,7 @@ def Metro2(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
             print(f'D={bestHam.Mulham[i].D[0]:.4f} | E={bestHam.Mulham[i].D[1]:.4f}')
         if np.any(Var.Mvary[i].Hpp):
             print(f'Hppg={bestHam.Mulham[i].Hpp[0]:.4f} | Hppl={bestHam.Mulham[i].Hpp[1]:.4f}')
-    fitresult=Buildres(bestpoint,Ham1,Exp,dat,Var,funcname,Mr,method='Metropolis',success=True,message='Converged with Metropolis',iterations=gama)
+    fitresult=Buildres(bestpoint,Ham1,Exp,initdat,Var,funcname,Mr,method='Metropolis',success=True,message='Converged with Metropolis',iterations=gama,dattype=datype)
     return fitresult.Ham, fitresult
 
 def Metro(Hamer,Exp,Var,exper,maximal=2000,datype='data',mode='p',seed=451,Mr=70):
@@ -2206,7 +2221,7 @@ def UnpackHam(point,Hamer,Var):
 class Stopall(Exception):
     pass
 
-def Residuals(point,Hame,Exp,exper,Vary,fname,Mr=70):
+def Residuals(point,Hame,Exp,exper,Vary,fname,Mr=70,datype='data'):
     if stopvar.is_set():
         raise Stopall()
     Ham1=UnpackHam(point,Hame,Vary)
@@ -2214,6 +2229,9 @@ def Residuals(point,Hame,Exp,exper,Vary,fname,Mr=70):
         fielda,intena=Powder(Ham1,Exp,M=Mr,graph=False)
     elif fname in ['Eresonant']:
         fielda,intena=Eresonant(Ham1,Exp,graph=False,table=False)
+    if datype=='integral':
+        intena=scii.cumulative_trapezoid(intena,fielda,initial=0)
+        exper=scii.cumulative_trapezoid(exper,fielda,initial=0)
     normi=np.linalg.norm(intena)
     if normi==0 or np.isnan(normi):
         return exper*1e6
@@ -2342,7 +2360,7 @@ def UnpackHam2(point,Hamer,Var):
             idx+=2
     return Ham
 
-def Residuals2(point,Hame,Exp,exper,Vary,fname,Mr=70):
+def Residuals2(point,Hame,Exp,exper,Vary,fname,Mr=70,datype='data'):
     if stopvar.is_set():
         raise Stopall()
     Ham1=UnpackHam2(point,Hame,Vary)
@@ -2351,7 +2369,10 @@ def Residuals2(point,Hame,Exp,exper,Vary,fname,Mr=70):
             fielda,intena=Mulpol(Ham1,Exp,M=Mr,graph=False)
         elif fname in ['Music']:
             fielda,intena=Music(Ham1,Exp,graph=False,table=False)
-        normi=np.linalg.norm(intena)
+        if datype=='integral':
+            intena=scii.cumulative_trapezoid(intena,fielda,initial=0)
+            exper=scii.cumulative_trapezoid(exper,fielda,initial=0)
+            normi=np.linalg.norm(intena)
         if normi==0 or np.isnan(normi):
             return exper*1e6
         norme=np.linalg.norm(exper)
