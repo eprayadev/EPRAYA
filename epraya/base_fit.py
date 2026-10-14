@@ -196,24 +196,40 @@ def Buildres(bestpoint,Ham1,Exp,exper,Vary,functiona,Mr,method,J=None,success=Tr
     return Fitresult(Ham=besHam,spc=spect,params=bestpoint,method=method,chi2=chi2,redchi2=redchi2,residuals=residuals,denochi=deno,variance=variance,paramerrors=perr,paramlabels=labels,success=success,message=message,iterations=iterations)
 
     
-def CostfNM(exper,intens,metric='rmse'):
-    norm=np.sum(intens*intens)
-    if norm==0 or np.max(intens)<1e-10:
-        return 1e6
-    maxe=np.max(np.abs(exper))
-    maxi=np.max(np.abs(intens))
-    exper=exper/maxe
-    intens=intens/maxi
+def CostfNM(exper,intens,metric='L2'):
+
     if metric=='rmse':
         # Root Mean Squared Error
+        norm=np.sum(intens*intens)
+        if norm==0 or np.max(intens)<1e-10:
+            return 1e6
+        maxe=np.max(np.abs(exper))
+        maxi=np.max(np.abs(intens))
+        exper=exper/maxe
+        intens=intens/maxi
         error=np.sqrt(np.mean((intens-exper)**2))
         return error
     elif metric=='correlation':
+        norm=np.sum(intens*intens)
+        if norm==0 or np.max(intens)<1e-10:
+            return 1e6
+        maxe=np.max(np.abs(exper))
+        maxi=np.max(np.abs(intens))
+        exper=exper/maxe
+        intens=intens/maxi
         corr=np.corrcoef(exper,intens)
         pearson=corr[0, 1]
         if np.isnan(pearson):
             return 1e6
         return 1-pearson
+    elif 'L2':
+        normi=np.linalg.norm(intens)
+        if normi==0 or np.isnan(normi):
+            return exper*1e6
+        norme=np.linalg.norm(exper)
+        enorm=exper/norme
+        inorm=intens/normi
+        return inorm-enorm
 
 def Nelder1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p',seed=451,Mr=70):
     '''
@@ -796,25 +812,40 @@ def Nelder(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p',s
             Expe.Points=len(exper)
          return Nelder1(Hamer,Expe,Vara,exper,eps,maximal,datype,mode,seed,Mr)
 
-def CostfG(exper,intens,metric='rmse'):
-    norm=np.sum(intens*intens)
-    if norm==0 or np.max(np.abs(intens))<1e-10:
-        return 1e6
-    maxe=np.max(np.abs(exper))
-    maxi=np.max(np.abs(intens))
-    intens=intens/maxi
-    exper=exper/maxe
+def CostfG(exper,intens,metric='L2'):
     if metric=='rmse':
         # Root Mean Squared Error
+        norm=np.sum(intens*intens)
+        if norm==0 or np.max(intens)<1e-10:
+            return 1e6
+        maxe=np.max(np.abs(exper))
+        maxi=np.max(np.abs(intens))
+        exper=exper/maxe
+        intens=intens/maxi
         error=np.sqrt(np.mean((intens-exper)**2))
         return error
     elif metric=='correlation':
+        norm=np.sum(intens*intens)
+        if norm==0 or np.max(intens)<1e-10:
+            return 1e6
+        maxe=np.max(np.abs(exper))
+        maxi=np.max(np.abs(intens))
+        exper=exper/maxe
+        intens=intens/maxi
         corr=np.corrcoef(exper,intens)
         pearson=corr[0, 1]
         if np.isnan(pearson):
             return 1e6
         return 1-pearson
-
+    elif 'L2':
+        normi=np.linalg.norm(intens)
+        if normi==0 or np.isnan(normi):
+            return exper*1e6
+        norme=np.linalg.norm(exper)
+        enorm=exper/norme
+        inorm=intens/normi
+        return inorm-enorm
+        
 def Cross(vat1,vat2):
     ret=len(vat1)
     mask=np.random.randint(0,2,size=ret)
@@ -1332,24 +1363,39 @@ def Genio(Hamer,Expe,Vara,exper,eps=1e-10,maximal=100,datype='data',mode='p',see
             Expe.Points=len(exper)
          return Genio1(Hamer,Expe,Vara,exper,eps,maximal,datype,mode,seed,Mr)
 
-def Costf(exper,intens,metric='rmse'):
-    norm=np.sum(intens*intens)
-    if norm==0 or np.max(intens)<1e-10:
-        return 1e6
-    maxe=np.max(np.abs(exper))
-    maxi=np.max(np.abs(intens))
-    exper=exper/maxe
-    intens=intens/maxi
+def Costf(exper,intens,metric='L2'):
     if metric=='rmse':
         # Root Mean Squared Error
+        norm=np.sum(intens*intens)
+        if norm==0 or np.max(intens)<1e-10:
+            return 1e6
+        maxe=np.max(np.abs(exper))
+        maxi=np.max(np.abs(intens))
+        exper=exper/maxe
+        intens=intens/maxi
         error=np.sqrt(np.mean((intens-exper)**2))
         return error
     elif metric=='correlation':
+        norm=np.sum(intens*intens)
+        if norm==0 or np.max(intens)<1e-10:
+            return 1e6
+        maxe=np.max(np.abs(exper))
+        maxi=np.max(np.abs(intens))
+        exper=exper/maxe
+        intens=intens/maxi
         corr=np.corrcoef(exper,intens)
         pearson=corr[0, 1]
         if np.isnan(pearson):
             return 1e6
         return 1-pearson
+    elif 'L2':
+        normi=np.linalg.norm(intens)
+        if normi==0 or np.isnan(normi):
+            return exper*1e6
+        norme=np.linalg.norm(exper)
+        enorm=exper/norme
+        inorm=intens/normi
+        return inorm-enorm
 
 def Metrostair(Hamer,Exp,Var,date,stepsize,ocos,para,variable,funcname,iwas,jwas,kwas,weight,hulk,datype='data'):    
     Ham=deepcopy(Hamer)
