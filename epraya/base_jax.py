@@ -3578,11 +3578,14 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70,gtoler=1e-5)
               _,simul=JCalpowder(Hame,dExp,iwas,jwas,kwas,weight,hulk)
           elif mode=='c':
               _,simul,_,_,_,_,_=Calresonant(Hame,dExp)
-          maxl=jxn.maximum(jxn.max(jxn.abs(simul)),1e-8)
-          simul=simul/maxl
-          maxe=jxn.maximum(jxn.max(jxn.abs(exper)),1e-8)
-          exper=exper/maxe
-          return jxn.mean((simul-exper)**2)
+          #Change to L2 norm instead of maximum 
+          normi=jxn.linalg.norm(simul)
+          if normi==0 or jxn.isnan(normi):
+              return exper*1e6
+          norme=np.linalg.norm(exper)
+          enorm=exper/norme
+          snorm=simul/normi
+          return snorm-enorm
 
       Degrad=jx.value_and_grad(Errorcost1,argnums=0)
       step=0
@@ -3724,11 +3727,14 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70,gtoler=1e-5)
               _,simul=JMulpol(Hame,dExp,graph=False)
           elif mode=='c':
               _,simul=JMusic(Hame,dExp,graph=False)
-          maxl=jxn.maximum(jxn.max(jxn.abs(simul)),1e-8)
-          simul=simul/maxl
-          maxe=jxn.maximum(jxn.max(jxn.abs(exper)),1e-8)
-          exper=exper/maxe
-          return jxn.mean((simul-exper)**2)
+          #Change to L2 norm instead of maximum 
+          normi=jxn.linalg.norm(simul)
+          if normi==0 or jxn.isnan(normi):
+              return exper*1e6
+          norme=np.linalg.norm(exper)
+          enorm=exper/norme
+          snorm=simul/normi
+          return snorm-enorm
       Degrad=jx.value_and_grad(Errorcost2,argnums=0)
       step=0
       @jx.jit
