@@ -3321,9 +3321,9 @@ def BuildresJax(pravals,Ham,Exp,expr,Vary,mode,method,iwas=None,jwas=None,kwas=N
     pflat,unrav=ravel_pytree(pravals)
     Hat=Ham.replace(g=pravals.get('g',Ham.g),A=pravals.get('A',Ham.A),D=pravals.get('D',Ham.D),Q=pravals.get('Q',Ham.Q),Hpp=pravals.get('Hpp',Ham.Hpp))
     if mode=='p':
-        Blis,espc=JCalpowder(Hat,Exp,iwas,jwas,kwas,weight,hulk)
+        Blis,espc=JCalpowder(Hat,Exp,iwas,jwas,kwas,weight,hulk,hifi=True)
     else:
-        Blis,espc,_,_,_,_,_=Calresonant(Hat,Exp,graph=False,table=False)
+        Blis,espc,_,_,_,_,_=Calresonant(Hat,Exp,graph=False,table=False,hifi=True)
 
     residuals=Residualsjax(pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk)
     J=Computejacobian(Residualsjax,pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk)
@@ -3362,9 +3362,9 @@ def BuildresJax2(pravals,Ham,Exp,expr,Vary,mode,method,success=True,message='',i
     pflat,unrav=ravel_pytree(pravals)
     Hat=Ham.replace(g1=pravals.get('g1',Ham.g1),g2=pravals.get('g2',Ham.g2),A1=pravals.get('A1',Ham.A1),A2=pravals.get('A2',Ham.A2),D1=pravals.get('D1',Ham.D1),D2=pravals.get('D2',Ham.D2),Q1=pravals.get('Q1',Ham.Q1),Q2=pravals.get('Q2',Ham.Q2),Hpp=pravals.get('Hpp',Ham.Hpp))
     if mode=='p':
-        Blis,espc=JMulpol(Hat,Exp,graph=False)
+        Blis,espc=JMulpol(Hat,Exp,graph=False,hifi=True)
     else:
-        Blis,espc=JMusic(Hat,Exp,graph=False)
+        Blis,espc=JMusic(Hat,Exp,graph=False,hifi=True)
     residuals=Residualsjax2(pflat,unrav,Ham,Exp,expr,mode)
     J=ComputeJacobianSequential(Residualsjax2,pflat,unrav,Ham,Exp,expr,mode)
     active,span=Toconsiderset(pravals,Vary,J,residuals)
@@ -3733,9 +3733,6 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70,gtoler=1e-5)
           elif mode=='c':
               _,simul=JMusic(Hame,dExp,graph=False)
           #Change to L2 norm instead of maximum 
-          normi=jxn.linalg.norm(simul)
-          if normi==0 or jxn.isnan(normi):
-              return exper*1e6
           normi=jxn.maximum(jxn.linalg.norm(simul),1e-8)
           norme=jxn.maximum(jxn.linalg.norm(exper),1e-8)
           enorm=exper/norme
