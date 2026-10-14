@@ -3292,9 +3292,13 @@ def Residualsjax(pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk):
         _,simul=JCalpowder(Hat,Exp,iwas,jwas,kwas,weight,hulk,hifi=True)
     else:
         _,simul,_,_,_,_,_=Calresonant(Hat,Exp,graph=False,table=False,hifi=True)
-    simuln=simul/jxn.maximum(jxn.max(jxn.abs(simul)),1e-8)
-    experen=expr/jxn.maximum(jxn.max(jxn.abs(expr)),1e-8)
-    return simuln-experen
+    #Change to L2 norm instead of maximum 
+    normi=jxn.maximum(jxn.linalg.norm(simul),1e-8)
+    norme=jxn.maximum(jxn.linalg.norm(expr),1e-8)
+    enorm=expr/norme
+    snorm=simul/normi
+    return snorm-enorm
+
 
 def Toconsiderset(pravals,Vary,J,residuals,tol=1e-6):
     from jax.flatten_util import ravel_pytree
@@ -3346,9 +3350,12 @@ def Residualsjax2(pflat,unrav,Ham,Exp,expr,mode):
         _,simul=JMulpol(Hat,Exp,graph=False,hifi=True)
     elif mode=='c':
         _,simul=JMusic(Hat,Exp,graph=False,hifi=True)
-    simuln=simul/jxn.maximum(jxn.max(jxn.abs(simul)),1e-8)
-    experen=expr/jxn.maximum(jxn.max(jxn.abs(expr)),1e-8)
-    return simuln-experen
+    #Change to L2 norm instead of maximum 
+    normi=jxn.maximum(jxn.linalg.norm(simul),1e-8)
+    norme=jxn.maximum(jxn.linalg.norm(expr),1e-8)
+    enorm=expr/norme
+    snorm=simul/normi
+    return snorm-enorm
 
 def BuildresJax2(pravals,Ham,Exp,expr,Vary,mode,method,success=True,message='',iterations=None):
     from jax.flatten_util import ravel_pytree
@@ -3583,7 +3590,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70,gtoler=1e-5)
           norme=jxn.maximum(jxn.linalg.norm(exper),1e-8)
           enorm=exper/norme
           snorm=simul/normi
-          return snorm-enorm
+          return jxn.sum((snorm-enorm)**2)
 
       Degrad=jx.value_and_grad(Errorcost1,argnums=0)
       step=0
@@ -3733,7 +3740,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70,gtoler=1e-5)
           norme=jxn.maximum(jxn.linalg.norm(exper),1e-8)
           enorm=exper/norme
           snorm=simul/normi
-          return snorm-enorm
+          return jxn.sum((snorm-enorm)**2)
       Degrad=jx.value_and_grad(Errorcost2,argnums=0)
       step=0
       @jx.jit
@@ -3814,7 +3821,7 @@ def containeigh(A,hifi=False,epse=50):
 @containeigh.defjvp
 def containeigh_jvp(hifi,epse,primals,tangents):
     (A,),(dA,)=primals,tangents
-    w,v=containeigh(A,epse,hifi)
+    w,v=containeigh(A,hifi,epse)
     scale=jxn.linalg.norm(A)
     #Scale of the perturbation, lower than the hamiltonian 
     eps1=epse*scale*jxn.finfo(A.dtype).eps
