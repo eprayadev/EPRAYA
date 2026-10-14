@@ -194,6 +194,8 @@ def Buildres(bestpoint,Ham1,Exp,exper,Vary,functiona,Mr,method,J=None,success=Tr
     resfu=back['res']
     _,baixo,alto=back['pack'](Ham1,Vary)
     besHam=unpack(bestpoint,Ham1,Vary)
+    if functiona in ['Powder','Calpowder']:
+        functiona='Powder'
     residuals=resfu(bestpoint,Ham1,Exp,exper,Vary,functiona,Mr,dattype)
     if functiona in ['Powder']:
         spect=Powder(besHam,Exp,M=Mr,graph=False)[1]
@@ -205,7 +207,7 @@ def Buildres(bestpoint,Ham1,Exp,exper,Vary,functiona,Mr,method,J=None,success=Tr
         spect=Music(besHam,Exp,graph=False,table=False)[1]
     labels=Formatvar(Ham1,Vary)
     if J is None:
-        J=Jacobian(resfu,bestpoint,args=(Ham1,Exp,exper,Vary,functiona,Mr,datype),bounds=(baixo,alto))
+        J=Jacobian(resfu,bestpoint,args=(Ham1,Exp,exper,Vary,functiona,Mr,dattype),bounds=(baixo,alto))
     active=Toconsideset(np.asarray(bestpoint,float),baixo,alto,J,residuals)
     free=~active
     n,p=len(residuals),len(bestpoint)
@@ -2372,7 +2374,7 @@ def Residuals2(point,Hame,Exp,exper,Vary,fname,Mr=70,datype='data'):
         if datype=='integral':
             intena=scii.cumulative_trapezoid(intena,fielda,initial=0)
             exper=scii.cumulative_trapezoid(exper,fielda,initial=0)
-            normi=np.linalg.norm(intena)
+        normi=np.linalg.norm(intena)
         if normi==0 or np.isnan(normi):
             return exper*1e6
         norme=np.linalg.norm(exper)
