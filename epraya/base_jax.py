@@ -3579,10 +3579,8 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70,gtoler=1e-5)
           elif mode=='c':
               _,simul,_,_,_,_,_=Calresonant(Hame,dExp)
           #Change to L2 norm instead of maximum 
-          normi=jxn.linalg.norm(simul)
-          if normi==0 or jxn.isnan(normi):
-              return exper*1e6
-          norme=np.linalg.norm(exper)
+          normi=jxn.maximum(jxn.linalg.norm(simul),1e-8)
+          norme=jxn.maximum(jxn.linalg.norm(exper),1e-8)
           enorm=exper/norme
           snorm=simul/normi
           return snorm-enorm
@@ -3731,7 +3729,8 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70,gtoler=1e-5)
           normi=jxn.linalg.norm(simul)
           if normi==0 or jxn.isnan(normi):
               return exper*1e6
-          norme=np.linalg.norm(exper)
+          normi=jxn.maximum(jxn.linalg.norm(simul),1e-8)
+          norme=jxn.maximum(jxn.linalg.norm(exper),1e-8)
           enorm=exper/norme
           snorm=simul/normi
           return snorm-enorm
