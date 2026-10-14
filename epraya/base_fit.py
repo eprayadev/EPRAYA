@@ -106,23 +106,43 @@ class Fitresult:
     success : bool=True
     iterations : int=None
     
-def Jacobian(fx,x0,args=(),eps=1e-6):
+def Jacobian(fx,x0,args=(),eps=1e-6,bounds=None):
     '''
     Function for the calculation of the numerical jacobian using central finite difference.
     '''
+    x0=np.asarray(x0,float)
     f0=fx(x0,*args)
-    n,m=len(x0),len(f0)
-    J=np.zeros((m,n))
-    for i in range(n):
-        dx=np.zeros(n)
-        dx[i]=eps*max(1.0,abs(x0[i]))
-        f1=fx(x0+dx,*args)
-        f2=fx(x0-dx,*args)
-        J[:,i]=(f1-f2)/(2*dx[i])
+    J=np.zeros((len(f0),len(x0)))
+    for i in range(len(x0)):
+        h=eps*max(1.0,abs(x0[i]))
+        xp=x0.copy()
+        xm=x0.copy()
+        xp[i]+=h
+        xm[i]-=h
+        if bounds is not None:
+            xp[i]=min(xp[i],bounds[1][i])
+            xm[i]=max(xm[i],bounds[0][i])
+        if xp[i]==xm[i]:
+            continue
+        f1=fx(xpx,*args)
+        f2=fx(xm,*args)
+        J[:,i]=(f1-f2)/(xp[i]-xm[i])
     return J
+
+
+def Toconsideset(point,baixo,alto,J,residuals,tol=1e-6):
+    span=alto-baixo
+    fixed=span<=2e-4
+    frac=(point-lo)/np.where(span>0,span,1.0)
+    #Get chi2/2 derivative respect to parameters
+    grad=J.T@residuals                      # d(chi2/2)/dx
+    atlo=(~fixed)&(frac<=tol)&(grad>0.0)
+    athi=(~fixed)&(frac>=1.0-tol)&(grad<0.0)
+    return fixed|atlo|athi
+    
 #Establish the difference between multisystems and single systems.
 def findtypeham(Ham2):
-    fitfunctions={Hval: dict(unpack=UnpackHam,res=Residuals),Multham: dict(unpack=UnpackHam2,res=Residuals2)}
+    fitfunctions={Hval: dict(unpack=UnpackHam,res=Residuals,pack=Packtoscipy),Multham: dict(unpack=UnpackHam2,res=Residuals2,pack=Packtoscipy2)}
     return fitfunctions.get(type(Ham2))
 
 def Formatvar(Ham,Var):
@@ -172,32 +192,27 @@ def Buildres(bestpoint,Ham1,Exp,exper,Vary,functiona,Mr,method,J=None,success=Tr
         raise TypeError(f'Wrong Hamiltoinan type: {type(Ham1)}.')
     unpack=back['unpack']
     resfu=back['res']
+     _,baixo,alto=back['pack'](Ham1,Vary)
     besHam=unpack(bestpoint,Ham1,Vary)
     labels=Formatvar(Ham1,Vary)
-    if functiona in ['Powder','Calpowder']:
-        functiona='Powder'
-    residuals=resfu(bestpoint,Ham1,Exp,exper,Vary,functiona,Mr)
-    if functiona in ['Powder']:
-        spect=Powder(besHam,Exp,M=Mr,graph=False)[1]
-    elif functiona in ['Eresonant']:
-        spect=Eresonant(besHam,Exp,graph=False,table=False)[1]
-    elif functiona in ['Mulpol']:
-        spect=Mulpol(besHam,Exp,M=Mr,graph=False)[1]
-    elif functiona in ['Music']:
-        spect=Music(besHam,Exp,graph=False,table=False)[1]
-    
+    if J is None:
+        J=Jacobian(resfu,bestpoint,args=(Ham1,Exp,exper,Vary,functiona,Mr,datype),bounds=(lo,hi))
+    active=Toconsideset(np.asarray(bestpoint,float),baixo,alto,J,residuals)
+    free=~active
     n,p=len(residuals),len(bestpoint)
-    deno=max(n-p,1)
+    deno=max(n-int(free.sum()),1)
     chi2=float(np.sum(residuals**2))
     redchi2=chi2/deno
-    if J is None:
-        J=Jacobian(resfu,bestpoint,args=(Ham1,Exp,exper,Vary,functiona,Mr))
-    variance,perr,ident=Selectvarian(J,redchi2)
+    perr=np.full(p,np.nan) 
+    variance=np.full((p,p),np.nan)
+    if free.any():
+        varf,perrf,_=Selectvarian(J[:,free],redchi2)
+        perr[free]=perrf
+        variance[np.ix_(free,free)]=varf
     return Fitresult(Ham=besHam,spc=spect,params=bestpoint,method=method,chi2=chi2,redchi2=redchi2,residuals=residuals,denochi=deno,variance=variance,paramerrors=perr,paramlabels=labels,success=success,message=message,iterations=iterations)
 
     
 def CostfNM(exper,intens,metric='L2'):
-
     if metric=='rmse':
         # Root Mean Squared Error
         norm=np.sum(intens*intens)
@@ -222,14 +237,14 @@ def CostfNM(exper,intens,metric='L2'):
         if np.isnan(pearson):
             return 1e6
         return 1-pearson
-    elif 'L2':
+    elif metric=='L2':
         normi=np.linalg.norm(intens)
         if normi==0 or np.isnan(normi):
-            return exper*1e6
+            return 1e6
         norme=np.linalg.norm(exper)
         enorm=exper/norme
         inorm=intens/normi
-        return inorm-enorm
+        return np.sum((inorm-enorm)**2)
 
 def Nelder1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p',seed=451,Mr=70):
     '''
@@ -302,9 +317,11 @@ def Nelder1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p',
                 return 1e6
             Ham.Hpp=Htp
         if funcname in ['Powder']:
-            spect=Powder(Ham,Exp,M=Mr,graph=False)[1]
+            fieldae,spect=Powder(Ham,Exp,M=Mr,graph=False)
         elif funcname in ['Eresonant']:
-            spect=Eresonant(Ham,Exp,graph=False,table=False)[1]
+            fieldae,spect=Eresonant(Ham,Exp,graph=False,table=False)
+        if datype=='integral':
+            spect=scii.cumulative_trapezoid(spect,fieldae,initial=0)
         wcost=CostfNM(exper,spect)
         return wcost
     Ham=deepcopy(Hamer)
@@ -560,9 +577,11 @@ def Nelder2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=5000,datype='data',mode='p',
                 jl+=2
         try:
             if funcname in ['Mulpol']:
-                spect=funtiona(Ham,Exp,M=Mr,graph=False)[1]
+                fieldae,spect=funtiona(Ham,Exp,M=Mr,graph=False)
             elif funcname in ['Music']:
-                spect=funtiona(Ham,Exp,graph=False,table=False)[1]
+                fieldae,spect=funtiona(Ham,Exp,graph=False,table=False)
+            if datype=='integral':
+                spect=scii.cumulative_trapezoid(spect,fieldae,initial=0)
             wcost=CostfNM(exper,spect)
             return wcost
         except Exception:
@@ -837,14 +856,14 @@ def CostfG(exper,intens,metric='L2'):
         if np.isnan(pearson):
             return 1e6
         return 1-pearson
-    elif 'L2':
+    elif metric=='L2':
         normi=np.linalg.norm(intens)
         if normi==0 or np.isnan(normi):
-            return exper*1e6
+            return 1e6
         norme=np.linalg.norm(exper)
         enorm=exper/norme
         inorm=intens/normi
-        return inorm-enorm
+        return np.sum((inorm-enorm)**2)
         
 def Cross(vat1,vat2):
     ret=len(vat1)
@@ -945,9 +964,11 @@ def Genio1(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p',see
                 return 1e6
             Ham.Hpp=Htp
         if funcname in ['Powder']:
-            spect=Powder(Ham,Exp,M=Mr,graph=False)[1]
+            fieldae,spect=Powder(Ham,Exp,M=Mr,graph=False)
         elif funcname in ['Eresonant']:
-            spect=Eresonant(Ham,Exp,graph=False,table=False)[1]
+            fieldae,spect=Eresonant(Ham,Exp,graph=False,table=False)
+        if datype=='integral':
+            spect=scii.cumulative_trapezoid(spect,fieldae,initial=0)
         wcost=CostfG(exper,spect)
         return wcost
     Ham=deepcopy(Hamer)
@@ -1158,9 +1179,11 @@ def Genio2(Hamer,Expe,Vara,exper,eps=1e-10,maximal=30,datype='data',mode='p',see
                 jl+=2
         try:
             if funcname in ['Mulpol']:
-                spect=funtiona(Ham,Exp,M=Mr,graph=False)[1]
+                fieldae,spect=funtiona(Ham,Exp,M=Mr,graph=False)
             elif funcname in ['Music']:
-                spect=funtiona(Ham,Exp,graph=False,table=False)[1]
+                fieldae,spect=funtiona(Ham,Exp,graph=False,table=False)
+            if datype=='integral':
+                spect=scii.cumulative_trapezoid(spect,fieldae,initial=0)
             wcost=CostfG(exper,spect)
             return wcost
         except Exception:
@@ -1388,14 +1411,14 @@ def Costf(exper,intens,metric='L2'):
         if np.isnan(pearson):
             return 1e6
         return 1-pearson
-    elif 'L2':
+    elif metric=='L2':
         normi=np.linalg.norm(intens)
         if normi==0 or np.isnan(normi):
-            return exper*1e6
+            return 1e6
         norme=np.linalg.norm(exper)
         enorm=exper/norme
         inorm=intens/normi
-        return inorm-enorm
+        return np.sum((inorm-enorm)**2)
 
 def Metrostair(Hamer,Exp,Var,date,stepsize,ocos,para,variable,funcname,iwas,jwas,kwas,weight,hulk,datype='data'):    
     Ham=deepcopy(Hamer)
@@ -1436,14 +1459,14 @@ def Metrostair(Hamer,Exp,Var,date,stepsize,ocos,para,variable,funcname,iwas,jwas
     elif funcname in ['Eresonant']:
         fielda,intena=Eresonant(Ham,Exp,graph=False,table=False)
     if datype=='data':
-        ncos=Costf(date,intena,metric='rmse')
+        ncos=Costf(date,intena)
     elif datype=='integral':
         intenat=scii.cumulative_trapezoid(intena,fielda,initial=0)
-        ncos=Costf(date,intenat,metric='rmse')
+        ncos=Costf(date,intenat)
     else:
         ncos=1e6
 
-    if np.isnan(ncos) or ncos>=1e6:
+    if np.isnan(ncos) or ncos>=2:
         return Hamer,ocos,False
     if ncos<ocos:
         return Ham,ncos,True
@@ -1670,7 +1693,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
                     stp[k]*=0.95
             #Shake values
             improv=laster-besterror
-            if improv<1e-4:
+            if improv<1e-6:
                 defcon+=1
             else:
                 defcon=0
@@ -1781,14 +1804,14 @@ def Metrostair2(Hamer,Exp,Var,date,stepsize,ocos,para,variable,aktsys,funcname,d
     elif funcname in ['Music']:
         fielda,intena=Music(Ham,Exp,graph=False,table=False)
     if datype=='data':
-        ncos=Costf(date,intena,metric='rmse')
+        ncos=Costf(date,intena)
     elif datype=='integral':
         intenat=scii.cumulative_trapezoid(intena,fielda,initial=0)
-        ncos=Costf(date,intenat,metric='rmse')
+        ncos=Costf(date,intenat)
     else:
         ncos=1e6
 
-    if np.isnan(ncos) or ncos>=1e6:
+    if np.isnan(ncos) or ncos>=2:
         return Hamer,ocos,False
     if ncos<ocos:
         return Ham,ncos,True
@@ -2007,7 +2030,7 @@ def Metro2(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
                     stp[k]*=0.95
             #Shake values
             improv=laster-besterror
-            if improv<1e-4:
+            if improv<1e-6:
                 defcon+=1
             else:
                 defcon=0
@@ -2238,7 +2261,6 @@ def LSquare1(Ham1,Expe,Vary,exper,maximal=1000,mode='p',Mr=70):
     frontier=lowfron,hifron
     eps=1e-6
     pointx=np.clip(pointx,lowfron+eps,hifron-eps)
-    leasts
     try:
         res=leasts(fun=Residuals,args=(Ham1,Expe,exper,Vary,funcname,Mr),x0=pointx,bounds=frontier,method='trf',max_nfev=maximal,verbose=2,diff_step=1e-3,xtol=1e-14,ftol=1e-14,gtol=1e-14)
         bestone=res.x
@@ -2378,7 +2400,6 @@ def LSquare2(Ham1,Expe,Vary,exper,maximal=1000,mode='p',Mr=70):
     frontier=lowfron,hifron
     eps=1e-6
     pointx=np.clip(pointx,lowfron+eps,hifron-eps)
-    leasts
     try:
         res=leasts(fun=Residuals,args=(Ham1,Expe,exper,Vary,funcname,Mr),x0=pointx,bounds=frontier,method='trf',max_nfev=maximal,verbose=2,diff_step=1e-3,xtol=1e-14,ftol=1e-14,gtol=1e-14)
         bestone=res.x
