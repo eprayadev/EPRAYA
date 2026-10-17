@@ -1709,7 +1709,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
                     stp[k]*=0.95
             #Shake values
             improv=laster-besterror
-            if improv<1e-6:
+            if improv<1e-3*laster:
                 defcon+=1
             else:
                 defcon=0
@@ -2047,7 +2047,7 @@ def Metro2(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
                     stp[k]*=0.95
             #Shake values
             improv=laster-besterror
-            if improv<1e-6:
+            if improv<1e-3*laster:
                 defcon+=1
             else:
                 defcon=0
