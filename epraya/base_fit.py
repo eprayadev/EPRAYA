@@ -2366,21 +2366,20 @@ def Residuals2(point,Hame,Exp,exper,Vary,fname,Mr=70,datype='data'):
     if stopvar.is_set():
         raise Stopall()
     Ham1=UnpackHam2(point,Hame,Vary)
-    try:
-        if fname in ['Mulpol']:
-            fielda,intena=Mulpol(Ham1,Exp,M=Mr,graph=False)
-        elif fname in ['Music']:
-            fielda,intena=Music(Ham1,Exp,graph=False,table=False)
-        if datype=='integral':
-            intena=scii.cumulative_trapezoid(intena,fielda,initial=0)
-            exper=scii.cumulative_trapezoid(exper,fielda,initial=0)
-        normi=np.linalg.norm(intena)
-        if normi==0 or np.isnan(normi):
-            return exper*1e6
-        norme=np.linalg.norm(exper)
-        enorm=exper/norme
-        inorm=intena/normi
-        return inorm-enorm
+    if fname in ['Mulpol']:
+        fielda,intena=Mulpol(Ham1,Exp,M=Mr,graph=False)
+    elif fname in ['Music']:
+        fielda,intena=Music(Ham1,Exp,graph=False,table=False)
+    if datype=='integral':
+        intena=scii.cumulative_trapezoid(intena,fielda,initial=0)
+        exper=scii.cumulative_trapezoid(exper,fielda,initial=0)
+    normi=np.linalg.norm(intena)
+    if normi==0 or np.isnan(normi):
+        return exper*1e6
+    norme=np.linalg.norm(exper)
+    enorm=exper/norme
+    inorm=intena/normi
+    return inorm-enorm
 
 def LSquare2(Ham1,Expe,Vary,exper,maximal=1000,mode='p',Mr=70):
     '''
