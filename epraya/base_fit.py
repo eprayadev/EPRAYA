@@ -1481,7 +1481,7 @@ def Metrostair(Hamer,Exp,Var,date,stepsize,ocos,para,variable,funcname,iwas,jwas
     else:
         ncos=1e6
 
-    if np.isnan(ncos) or ncos>=2:
+    if np.isnan(ncos) or ncos>=1e6:
         return Hamer,ocos,False
     if ncos<ocos:
         return Ham,ncos,True
@@ -1827,7 +1827,7 @@ def Metrostair2(Hamer,Exp,Var,date,stepsize,ocos,para,variable,aktsys,funcname,d
     else:
         ncos=1e6
 
-    if np.isnan(ncos) or ncos>=2:
+    if np.isnan(ncos) or ncos>=1e6:
         return Hamer,ocos,False
     if ncos<ocos:
         return Ham,ncos,True
