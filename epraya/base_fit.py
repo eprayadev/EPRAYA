@@ -1589,7 +1589,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
     lowfron=np.array(lowfron,dtype=float)
     hifron=np.array(hifron,dtype=float)
     securestp=stp.copy()
-    metropa=ct1*0.008 #Montecarlo Temperature
+    metropa=np.sqrt(ct1)*0.008 #Montecarlo Temperature
     metropas=metropa
     besterror=ct1
     laster=ct1
@@ -1920,7 +1920,7 @@ def Metro2(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
     lowfron=np.array(lowfron,dtype=float)
     hifron=np.array(hifron,dtype=float)
     securestp=stp.copy()
-    metropa=ct1*0.008 #Montecarlo Temperature
+    metropa=np.sqrt(ct1)*0.008 #Montecarlo Temperature
     metropas=metropa
     besterror=ct1
     laster=ct1
@@ -2381,8 +2381,6 @@ def Residuals2(point,Hame,Exp,exper,Vary,fname,Mr=70,datype='data'):
         enorm=exper/norme
         inorm=intena/normi
         return inorm-enorm
-    except Exception:
-        return exper*1e6
 
 def LSquare2(Ham1,Expe,Vary,exper,maximal=1000,mode='p',Mr=70):
     '''
