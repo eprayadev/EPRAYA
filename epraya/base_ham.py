@@ -1054,9 +1054,7 @@ def Rotmatrix(alfa,beta,gamma):
     >>> import epraya as epr
     >>> alfa,beta,gamma=20,30,40
     >>> print(epr.Rotmatrix(alfa,beta,gamma))
-    [[ 0.40355888  0.83092371 -0.38302222]
-    [-0.7851017   0.52945382  0.3213938 ]
-    [ 0.46984631  0.17101007  0.8660254 ]]
+    [[0,−1,0],[0.9397,0,0.342],[−0.342,0,0.9397]]
     '''
     
     alfa,beta,gamma=np.radians(alfa),np.radians(beta),np.radians(gamma)
