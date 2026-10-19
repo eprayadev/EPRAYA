@@ -1683,7 +1683,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
             if Var.g!=0.0: varact.append('g')
             if Var.A!=0.0: varact.append('A')
             if Var.D!=0.0: varact.append('D')
-            if Var.D!=0.0: varact.append('Q')
+            if Var.Q!=0.0: varact.append('Q')
             if np.any(Var.Hpp): varact.append('Hpp')
             if len(varact)>1:
                 hemetro=metropa*1.5
