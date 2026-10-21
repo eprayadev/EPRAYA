@@ -3289,11 +3289,11 @@ def Computejacobian(func,pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hul
         cols.append(np.asarray(col))
     return np.column_stack(cols)
 
-def Residualsjax(pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk,K=None):
+def Residualsjax(pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk,K=K):
     pravals=unrav(pflat)
     Hat=Ham.replace(g=pravals.get('g',Ham.g),A=pravals.get('A',Ham.A),D=pravals.get('D',Ham.D),Q=pravals.get('Q',Ham.Q),Hpp=pravals.get('Hpp',Ham.Hpp))
     if mode=='p':
-        _,simul=JCalpowder(Hat,Exp,iwas,jwas,kwas,weight,hulk,hifi=True,ktra=K)
+        _,simul=JCalpowder(Hat,Exp,iwas,jwas,kwas,weight,hulk,hifi=True,ktra=K,ndev=1)
     else:
         _,simul,_,_,_,_,_=Calresonant(Hat,Exp,diagram=False,hifi=True)
     #Change to L2 norm instead of maximum 
@@ -3325,7 +3325,7 @@ def BuildresJax(pravals,Ham,Exp,expr,Vary,mode,method,iwas=None,jwas=None,kwas=N
     pflat,unrav=ravel_pytree(pravals)
     Hat=Ham.replace(g=pravals.get('g',Ham.g),A=pravals.get('A',Ham.A),D=pravals.get('D',Ham.D),Q=pravals.get('Q',Ham.Q),Hpp=pravals.get('Hpp',Ham.Hpp))
     if mode=='p':
-        Blis,espc=JCalpowder(Hat,Exp,iwas,jwas,kwas,weight,hulk,hifi=True,ktra=K)
+        Blis,espc=JCalpowder(Hat,Exp,iwas,jwas,kwas,weight,hulk,hifi=True,ktra=K,ndev=1)
     else:
         Blis,espc,_,_,_,_,_=Calresonant(Hat,Exp,diagram=False,hifi=True,ktra=K)
 
