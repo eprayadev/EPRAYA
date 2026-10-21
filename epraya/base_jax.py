@@ -1198,24 +1198,19 @@ def JGaussp(field,Int,rfield,Hpp):
     return espec
 
 @jx.jit
-def JVoigtp(field,Int,rfield,Hpp,eta):
+def JVoigtp(sketch,dB,Hpp):
     '''
-    Determinates the voigtian profile of the spectrum as a lineal combination of gaussian and lorentzian profiles.
+    Determinates the voigtian profile of the spectrum by convolution using dB as step of field.
     
     Parameters
     ----------
 
-    field : jax.np.array
-        Array of the field values of the spectrum.
-
-    Int : jax.np.array
-        Array of the intensity calculated in the *field* values.
-    rfield : jax.np.array
-        List of the resonant fields of the system.
+    sketch : jax.np.array
+        Initial sketch of the spectrum.
+    dB : float
+		Differential of field for convolution.
     Hpp : list
         Peak to peak distance in mT, for gaussian and lorentzian profiles.
-    eta : float
-        Percentage of the voigitan profile that corresponds to a gaussian profile, from 0 to 1.
     
     Returns
     -------
@@ -1223,39 +1218,12 @@ def JVoigtp(field,Int,rfield,Hpp,eta):
     espec : jax.np.array
         EPR spectrum
     
-    Example
-    -------
-    .. code-block:: python
-    
-       import matplotlib.pyplot as plt
-       import epraya as epr
-       import numpy as np
-       Ham,Exp,_=epr.Jstart()
-       Ham.Hpp=np.array([10,20])
-       Ham.eta=0.5
-       Exp.Frange=[200,500]
-       Exp.Points=2000
-
-       fieldr=np.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
-       mu,sigma=350,50
-       rsonant=np.array([300,350,320])
-       inten=np.random.normal(mu,sigma,len(rsonant))
-
-       spc=epr.JVoigtp(fieldr,inten,rsonant,Ham.Hpp,Ham.eta)
-       plt.plot(fieldr,spc)
-       plt.grid()
-       plt.show()
-       
-    .. image:: /_static/jvoigt.png
-       :alt: Plot of the Voigtp function
-       :align: center
     '''
-    hppg=jxn.where(Hpp[0]==0.0,1e-10,Hpp[0])
-    hppl=jxn.where(Hpp[1]==0.0,1e-10,Hpp[1])
-    gas=JGaussp(field,Int,rfield,hppg)
-    lor=JLorentzp(field,Int,rfield,hppl)
-    espec=(lor*eta)+(gas*(1.0-eta))
-    return espec
+	n=sketch.shape[0]
+	npad=2*n
+    k=2*jxn.pi*jxn.arange(npad//2+1)/(npad*dB)
+    H=(1j*k)*jxn.exp(-0.5*((Hpp[0]/2.0)*k)**2-(jxn.sqrt(3.0)/2.0*Hpp[1])*jxn.abs(k))
+    return jxn.fft.irfft(jxn.fft.rfft(sketch,n=npad)*H,n=npad)[:n]/dB
 
 #Find energy values in function of field
 @partial(jx.jit, static_argnames=['hifi'])
@@ -1884,11 +1852,7 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None',hifi=False,ktra
             break
         K*=2
     sketch=JCaltriangle(Bmin,dB,allres,allint,ntrans,hulk,weight,Exp.Points)
-    maxlenght=jxn.max(jxn.array(Ham.Hpp))*50
-    kpoints=int(Exp.Points)|1 
-    kaxis=jxn.arange(-kpoints//2+1,kpoints//2+1)*dB
-    kvoigt=JVoigtp(kaxis,jxn.array([1.0]),jxn.array([0.0]),Ham.Hpp,etas)
-    espectotal=jsig.fftconvolve(sketch,kvoigt,mode='same')
+    espectotal=JVoigtp(sketch,dB,Ham.Hpp)
     Blist2=jxn.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
     if info:
         return Blist2,espectotal,K,jx.lax.stop_gradient(jxn.max(ntrans))
@@ -2257,12 +2221,8 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False,ktra=None,info=F
     sketch=jxn.zeros(Exp.Points)
     sketch=sketch.at[vecl].add(Ilef)
     sketch=sketch.at[vecr].add(Irig)
-
     #FFT convolution as in JPowder
-    kpoints=int(Exp.Points)|1
-    kaxis=jxn.arange(-kpoints//2+1,kpoints//2+1)*dB
-    kvoigt=JVoigtp(kaxis,jxn.array([1.0]),jxn.array([0.0]),Ham.Hpp,etas)
-    espectotal=jsig.fftconvolve(sketch,kvoigt,mode='same')
+    espectotal=JVoigtp(sketch,dB,Ham.Hpp)
     Blist2=jxn.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
     if info:
         return Blist2,espectotal,h1,hzex,hzey,hzez,hmw,jx.lax.stop_gradient(ntrans)
@@ -2802,11 +2762,7 @@ def Jcalmulta(maham,Expe,Nucl1='None',Nucl2='None',M=70,hifi=False,ktra=None):
         allint=allint.reshape(-1,allint.shape[-1])[:tlen]
         ntrans=ntrans.reshape(-1)[:tlen]
         sketch=JCaltriangle(Bmin,dB,allres,allint,ntrans,hulk,weight,Exp1.Points)
-        maxlenght=jxn.max(jxn.array(Ham1.Hpp))*50
-        kpoints=int(Exp.Points)|1 
-        kaxis=jxn.arange(-kpoints//2+1,kpoints//2+1)*dB
-        kvoigt=JVoigtp(kaxis,jxn.array([1.0]),jxn.array([0.0]),Ham1.Hpp,etas)
-        espectotal=jsig.fftconvolve(sketch,kvoigt,mode='same')
+        espectotal=JVoigtp(sketch,dB,Ham1.Hpp)
         Blist2=jxn.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
         fielde,specs=Blist2,espectotal
     return fielde,specs
@@ -3318,12 +3274,12 @@ def Plotbriggs(Blis,expr,espc):
     plt.title('EPR Spectrum')
     plt.show()
     
-def Computejacobian(func,pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk):
+def Computejacobian(func,pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk,K=None):
     pflatj=jxn.array(pflat)
     nparam=len(pflatj)
     @jx.jit
     def Jacolumn(pflat_,tangent_):
-        _,col=jx.jvp(lambda p: func(p,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk),(pflat_,),(tangent_,))
+        _,col=jx.jvp(lambda p: func(p,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk,K=K),(pflat_,),(tangent_,))
         return col
     cols=[]
     for i in range(nparam):
@@ -3332,11 +3288,11 @@ def Computejacobian(func,pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hul
         cols.append(np.asarray(col))
     return np.column_stack(cols)
 
-def Residualsjax(pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk):
+def Residualsjax(pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk,K=None):
     pravals=unrav(pflat)
     Hat=Ham.replace(g=pravals.get('g',Ham.g),A=pravals.get('A',Ham.A),D=pravals.get('D',Ham.D),Q=pravals.get('Q',Ham.Q),Hpp=pravals.get('Hpp',Ham.Hpp))
     if mode=='p':
-        _,simul=JCalpowder(Hat,Exp,iwas,jwas,kwas,weight,hulk,hifi=True)
+        _,simul=JCalpowder(Hat,Exp,iwas,jwas,kwas,weight,hulk,hifi=True,ktra=K)
     else:
         _,simul,_,_,_,_,_=Calresonant(Hat,Exp,diagram=False,hifi=True)
     #Change to L2 norm instead of maximum 
@@ -3363,17 +3319,17 @@ def Toconsiderset(pravals,Vary,J,residuals,tol=1e-6):
     return fixed|atlo|athi,span
 
 
-def BuildresJax(pravals,Ham,Exp,expr,Vary,mode,method,iwas=None,jwas=None,kwas=None,weight=None,hulk=None,success=True,message='',iterations=None):
+def BuildresJax(pravals,Ham,Exp,expr,Vary,mode,method,iwas=None,jwas=None,kwas=None,weight=None,hulk=None,success=True,message='',iterations=None,K=None):
     from jax.flatten_util import ravel_pytree
     pflat,unrav=ravel_pytree(pravals)
     Hat=Ham.replace(g=pravals.get('g',Ham.g),A=pravals.get('A',Ham.A),D=pravals.get('D',Ham.D),Q=pravals.get('Q',Ham.Q),Hpp=pravals.get('Hpp',Ham.Hpp))
     if mode=='p':
-        Blis,espc=JCalpowder(Hat,Exp,iwas,jwas,kwas,weight,hulk,hifi=True)
+        Blis,espc=JCalpowder(Hat,Exp,iwas,jwas,kwas,weight,hulk,hifi=True,ktra=K)
     else:
-        Blis,espc,_,_,_,_,_=Calresonant(Hat,Exp,diagram=False,hifi=True)
+        Blis,espc,_,_,_,_,_=Calresonant(Hat,Exp,diagram=False,hifi=True,ktra=K)
 
-    residuals=Residualsjax(pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk)
-    J=Computejacobian(Residualsjax,pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk)
+    residuals=Residualsjax(pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk,K=K)
+    J=Computejacobian(Residualsjax,pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk,K=K)
     active,span=Toconsiderset(pravals,Vary,J,residuals)
     free=~active
     n,p=len(residuals),J.shape[1]
@@ -3687,7 +3643,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70,gtoler=1e-5,
           Hat,praval=Fromsigtophy(param,Ham,Vary)
           Showparam(param,Vary)
           fitres,Blis=BuildresJax(praval,Hat,Exp,expr,Vary,mode,method='Adam',iwas=iwas,jwas=jwas,kwas=kwas,weight=weight,hulk=hulk,
-                                success=False,message='Interrupted by user',iterations=step)
+                                success=False,message='Interrupted by user',iterations=step,K=K)
           result['Ham']=fitres.Ham
           result['fit']=fitres
           print(f"\nchi2 = {fitres.chi2:.5e} | chi2 residual = {fitres.redchi2:.5e}")
@@ -3700,7 +3656,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70,gtoler=1e-5,
       Hat,praval=Fromsigtophy(param,Ham,Vary)
       Showparam(param,Vary)
       fitres,Blis=BuildresJax(praval,Hat,Exp,expr,Vary,mode,method='Adam',iwas=iwas,jwas=jwas,kwas=kwas,weight=weight,hulk=hulk,
-                                success=converged,message='Converged' if converged else 'Maximum iterations reached',iterations=step)
+                                success=converged,message='Converged' if converged else 'Maximum iterations reached',iterations=step,K=K)
       
       result['Ham']=fitres.Ham
       result['fit']=fitres
