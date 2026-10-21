@@ -3289,7 +3289,7 @@ def Computejacobian(func,pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hul
         cols.append(np.asarray(col))
     return np.column_stack(cols)
 
-def Residualsjax(pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk,K=K):
+def Residualsjax(pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk,K=None):
     pravals=unrav(pflat)
     Hat=Ham.replace(g=pravals.get('g',Ham.g),A=pravals.get('A',Ham.A),D=pravals.get('D',Ham.D),Q=pravals.get('Q',Ham.Q),Hpp=pravals.get('Hpp',Ham.Hpp))
     if mode=='p':
