@@ -237,6 +237,33 @@ def Voigtp(field,Int,rfield,Hpp,eta):
               espec[we]+=(lor*eta)+((1-eta)*gas)
       return espec
 
+def Voigtconv(sketch,dB,Hpp):
+    '''
+    Determinates the voigtian profile of the spectrum by convolution using dB as step of field.
+    
+    Parameters
+    ----------
+
+    sketch : np.array
+        Initial sketch of the spectrum.
+    dB : float
+		Differential of field for convolution.
+    Hpp : list
+        Peak to peak distance in mT, for gaussian and lorentzian profiles.
+    
+    Returns
+    -------
+
+    espec : np.array
+        EPR spectrum
+    
+    '''
+    n=sketch.shape[0]
+    npad=2*n
+    k=2*np.pi*np.arange(npad//2+1)/(npad*dB)
+    H=(1j*k)*np.exp(-0.5*((Hpp[0]/2.0)*k)**2-(np.sqrt(3.0)/2.0*Hpp[1])*np.abs(k))
+    return np.fft.irfft(np.fft.rfft(sketch,n=npad)*H,n=npad)[:n]/dB
+
 #Find energy values in function of field
 def Padaptarray(espac,h1,hx,hy,hz,nx,ny,nz):
     '''
@@ -1007,14 +1034,8 @@ def Calpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk):
     Bmin=Exp.Frange[0]
     dB=(Exp.Frange[1]-Exp.Frange[0])/(Exp.Points-1)
     Caltriangle(sketch,Bmin,dB,allres,allint,ntrans,hulk,weight)
-
     #Convolution of the function to create the derivated spectrum
-    maxlenght=np.max(Ham.Hpp)*50
-    kerpoint=int(maxlenght/dB)*2+1
-    kaxis=np.arange(-kerpoint//2+1,kerpoint//2+1)*dB
-    #Int=1, no resonant field
-    kvoigt=Voigtp(kaxis,np.array([1.0]),np.array([0.0]),Ham.Hpp,eta)
-    espectotal=scs.fftconvolve(sketch,kvoigt,mode='same')
+    espectotal=Voigtconv(sketch,dB,Ham.Hpp)
     return espac1,espectotal
 
 
@@ -1274,11 +1295,7 @@ def Mulpol(Hamer,Expe,M=70,graph=True):
             Caltriangle(sketch,Bmin,dB,allres,allint,ntrans,hulk,weight)
 
             #Convolution of the function to create the derivated spectrum
-            maxlenght=np.max(Ham.Mulham[0].Hpp)*50
-            kerpoint=int(maxlenght/dB)*2+1
-            kaxis=np.arange(-kerpoint//2+1,kerpoint//2+1)*dB
-            kvoigt=Voigtp(kaxis,np.array([1.0]),np.array([0.0]),Ham.Mulham[0].Hpp,Ham.Mulham[0].eta)
-            espectotal=scs.fftconvolve(sketch,kvoigt,mode='same')
+            espectotal=Voigtconv(sketch,dB,Ham.Mulham[0].Hpp)
             sumespct+=espectotal
             fild1=espac1
     if graph:
