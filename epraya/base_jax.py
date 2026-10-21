@@ -1219,11 +1219,12 @@ def JVoigtp(sketch,dB,Hpp):
         EPR spectrum
     
     '''
+
 	n=sketch.shape[0]
 	npad=2*n
-    k=2*jxn.pi*jxn.arange(npad//2+1)/(npad*dB)
-    H=(1j*k)*jxn.exp(-0.5*((Hpp[0]/2.0)*k)**2-(jxn.sqrt(3.0)/2.0*Hpp[1])*jxn.abs(k))
-    return jxn.fft.irfft(jxn.fft.rfft(sketch,n=npad)*H,n=npad)[:n]/dB
+	k=2*jxn.pi*jxn.arange(npad//2+1)/(npad*dB)
+	H=(1j*k)*jxn.exp(-0.5*((Hpp[0]/2.0)*k)**2-(jxn.sqrt(3.0)/2.0*Hpp[1])*jxn.abs(k))
+	return jxn.fft.irfft(jxn.fft.rfft(sketch,n=npad)*H,n=npad)[:n]/dB
 
 #Find energy values in function of field
 @partial(jx.jit, static_argnames=['hifi'])
