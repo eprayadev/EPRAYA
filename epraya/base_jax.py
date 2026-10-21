@@ -24,6 +24,8 @@ from matplotlib.ticker import FormatStrFormatter,EngFormatter
 from pandas import DataFrame, concat, read_csv
 import warnings
 from copy import deepcopy
+import os
+os.environ["XLA_FLAGS"]="--xla_force_host_platform_device_count=4"
 import jax as jx
 import jax.numpy as jxn
 from chex import dataclass as jaxdatclass
@@ -40,10 +42,10 @@ from joblib import Parallel, delayed
 from threadpoolctl import threadpool_limits
 import re
 from itertools import product as iterproduct
-from .base_powd import *
-from .base_ham import *
-from .base_cris import Plotsim
-from .base_fit import Fitresult,result,Selectvarian
+from base_powd import *
+from base_ham import *
+from base_cris import Plotsim
+from base_fit import Fitresult,result,Selectvarian
 import matplotlib.cm as cm
 
 jx.config.update("jax_enable_x64", True)
@@ -1420,8 +1422,8 @@ def JBoltfactor(Eghz,di,dj,Temp):
     popuj=boltz[dj]/Z
     return jxn.where(Temp<=0.0,1.0,jxn.abs(popui-popuj))
 
-@partial(jx.jit,static_argnames=['dim','hifi'])
-def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2,hifi=False):
+@partial(jx.jit,static_argnames=['dim','hifi','ktra'])
+def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2,hifi=False,ktra=None):
     '''
     Determinates the resonant fields and intensities of the spectrum using the expression for the first order perturbation limit. The intensity is calculated as the product of the transition rate (probability of transition), the Boltzmann factor (Boltzmann distribution) and a frecuency to field conversion factor. 
     
@@ -1456,7 +1458,11 @@ def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2,hifi=Fal
         Temperature of the system.
     h2 : jax.np.array
         Zeeman interaction matrix of the system.
-        
+    hifi : bool
+        Bool condition for the Jacobian calculation.
+    ktra : float
+        Reference value of number of transitions.
+    
     Returns
     -------
     ffres : jax.np.array 
@@ -1481,8 +1487,7 @@ def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2,hifi=Fal
     cross=cross&(res>(Blist[0]+2.0))
     ntrans=jxn.sum(cross).astype(jxn.float64)
     #Scores for transition possibility
-    Ktra=2500 if hifi else 1000
-    Ktra=min(Ktra,cross.size)
+    Ktra=min(ktra or (2500 if hifi else 1000),cross.size)
     scores=jxn.where(cross.reshape(-1),1.0,-1.0)
     topv,idx=jx.lax.top_k(scores,Ktra)
     idx=jx.lax.stop_gradient(idx)
@@ -1644,7 +1649,7 @@ def JCaltriangle(Bmin,dB,allres,allint,transi,hulk,weight,points):
     
 ww1,ww2,ww3,tpoints=Meshtriangle()
 
-def JPowder(Hamer,Expe,Nucl='None',M=70,graph=True):
+def JPowder(Hamer,Expe,Nucl='None',M=70,graph=True,ktra=None,ndev=None):
     '''
     Wrap function for the simulation of the EPR spectrum for powder samples. It also use the SOPHE modified method to create the triangular grid and its weights.
     
@@ -1665,6 +1670,10 @@ def JPowder(Hamer,Expe,Nucl='None',M=70,graph=True):
         
     graph : Bool
         Plots the resulting spectrum.
+    ktra : float
+        Reference value of number of transitions.
+    ndev : int
+	Number of devices to use in the simulation.    
 
     Returns
     -------
@@ -1702,7 +1711,7 @@ def JPowder(Hamer,Expe,Nucl='None',M=70,graph=True):
     '''
     iwas,jwas,kwas,weight,hulk=Delaunay(Expe,M)
     iwas,jwas,kwas,weight,hulk=jxn.array(iwas),jxn.array(jwas),jxn.array(kwas),jxn.array(weight),jxn.array(hulk)
-    Blist,epc=JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl)
+    Blist,epc=JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl,ktra=ktra)
     if graph:
         plt.figure(figsize=(10,6))
         plt.plot(Blist,epc,color='navy',label='Spectrum')
@@ -1716,7 +1725,7 @@ def JPowder(Hamer,Expe,Nucl='None',M=70,graph=True):
         plt.show(block=False)
     return Blist,epc
 
-def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None',hifi=False):
+def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None',hifi=False,ktra=None,ndev=None,info=False):
     '''
     Function for the simulation of the EPR spectrum for powder samples using the JAX functions. Instead of making the calculations with fors cycles, uses the vmap function for the calculations, dividing the points of calculations in blocks, that pass using the Oneori (One orientation) and Processvmap functions.
     
@@ -1747,6 +1756,13 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None',hifi=False):
         Isotope of the sample. Can be the quantum number and the element or only the element ('55Mn' or 'Mn') 
     hifi : bool
         Bool value for the calculation of the Jacobian matrix.
+    ktra : float
+        Reference value of number of transitions.
+    ndev : int
+	Number of devices to use in the simulation.
+    info : Bool
+        Variable to pass the number of transitions.
+
     Returns
     -------
     Blist2 : jax.np.array
@@ -1829,36 +1845,44 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None',hifi=False):
         hzey-=nhzey
         hzez-=nhzez
     h1=jxn.asarray(h1,dtype=jxn.complex64)
-    Blist1=jxn.linspace(frange0,Exp.Frange[1],400)
+    Blist1=jxn.linspace(frange0,Exp.Frange[1],500)
     dB=(Exp.Frange[1]-Exp.Frange[0])/(Exp.Points-1)
     Bmin=Exp.Frange[0]
-    
-    @jx.jit
-    def Oneori(nx,ny,nz):
-        Elist,Vlist,h2=JPadaptarray(Blist1,h1,hzex,hzey,hzez,nx,ny,nz,hifi)
-        resfield,intensy,ntrans=JNresina(Blist1,Elist,Vlist,dim,Exp.Freq,isx,isy,isz,nx,ny,nz,Exp.Temperature,Ham.Hpp,h2,hifi=hifi)
-        return resfield,intensy,ntrans
-    voneori=jx.vmap(Oneori,in_axes=(0,0,0))
-    csize=100 #Divides the orientations blocks so the RAM doesn't explote
+    def makeoneori(K):
+        @jx.jit
+        def Oneori(nx,ny,nz):
+            Elist,Vlist,h2=JPadaptarray(Blist1,h1,hzex,hzey,hzez,nx,ny,nz,hifi)
+            return JNresina(Blist1,Elist,Vlist,dim,Exp.Freq,isx,isy,isz,nx,ny,nz,Exp.Temperature,Ham.Hpp,h2,hifi=hifi,ktra=K)
+        return jx.vmap(Oneori,in_axes=(0,0,0))
+    ndev=jx.local_device_count() if ndev is None else int(ndev)
+    K=int(ktra) if ktra is not None else estimatek(makeoneori,iwas,jwas,kwas)
+    #Defines block size at a maximum of 32 and min of 8 with a RAM maximum use of 3GB
+    csize=int(np.clip(3e9/ndev//(500*(2.2*dim**2*16 + 20*dim*8)), 8, 32))
     tlen=len(weight)
-    plen=(csize-(tlen%csize))%csize
-    pdw=jxn.pad(weight,(0,plen))
-    pdi=jxn.pad(iwas,(0, plen))
-    pdj=jxn.pad(jwas,(0,plen))
-    pdk=jxn.pad(kwas,(0,plen))
-    nparts=len(pdi)//csize
-    bati=pdi.reshape(nparts,csize)
-    batj=pdj.reshape(nparts,csize)
-    batk=pdk.reshape(nparts,csize)
-    @jx.checkpoint
-    def Processvmap(curspect,bat):
-        bnx,bny,bnz=bat
-        batres,batint,batntras=voneori(bnx,bny,bnz)
-        return curspect,(batres,batint,batntras)
-    _,(allres,allint,ntrans)=jx.lax.scan(Processvmap,None,(bati,batj,batk))
-    allres=allres.reshape(-1,allres.shape[-1])[:tlen]
-    allint=allint.reshape(-1,allint.shape[-1])[:tlen]
-    ntrans=ntrans.reshape(-1)[:tlen]
+    blk=csize*ndev
+    plen=(blk-(tlen%blk))%blk
+    bati=jxn.pad(iwas,(0, plen)).reshape(ndev,-1,csize)
+    batj=jxn.pad(jwas,(0, plen)).reshape(ndev,-1,csize)
+    batk=jxn.pad(kwas,(0, plen)).reshape(ndev,-1,csize)
+    def Processallvmap(K):
+        voneori=makeoneori(K)
+        @jx.checkpoint
+        def Processvmap(carry,bat):
+            return carry,voneori(*bat)
+        def Runvmap(bi,bj,bk):
+            _,ret=jx.lax.scan(Processvmap,None,(bi,bj,bk))
+            return ret
+        if ndev==1:
+            r,i,n=Runvmap(bati[0],batj[0],batk[0])
+        else:
+            r,i,n=jx.pmap(Runvmap)(bati,batj,batk)
+        return (r.reshape(-1,r.shape[-1])[:tlen],i.reshape(-1,i.shape[-1])[:tlen],n.reshape(-1)[:tlen])
+    #Condition the process to have a K higher than the number of transitions
+    while True:
+        allres,allint,ntrans=Processallvmap(K)
+        if isinstance(ntrans,jx.core.Tracer) or int(jxn.max(ntrans))<=K:
+            break
+        K*=2
     sketch=JCaltriangle(Bmin,dB,allres,allint,ntrans,hulk,weight,Exp.Points)
     maxlenght=jxn.max(jxn.array(Ham.Hpp))*50
     kpoints=int(Exp.Points)|1 
@@ -1866,7 +1890,21 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None',hifi=False):
     kvoigt=JVoigtp(kaxis,jxn.array([1.0]),jxn.array([0.0]),Ham.Hpp,etas)
     espectotal=jsig.fftconvolve(sketch,kvoigt,mode='same')
     Blist2=jxn.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
+    if info:
+        return Blist2,espectotal,K,jx.lax.stop_gradient(jxn.max(ntrans))
     return Blist2,espectotal
+
+def estimatek(makeoneori,nx,ny,nz,csize=16,nsample=256,margin=1.5):
+    idx=np.unique(np.linspace(0,len(nx)-1,nsample).astype(int))
+    f=makeoneori(1)
+    nmax=0.0
+    #By blocks
+    for s in range(0,len(idx),csize):               
+        sl=idx[s:s+csize]
+        _, _,nt=f(nx[sl],ny[sl],nz[sl])
+        nmax=max(nmax,float(jxn.max(nt)))
+    return int(np.ceil(nmax*margin))+4
+    
 @jx.jit
 def oneori(nx,ny,nz):
         '''
@@ -2073,7 +2111,7 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None',Mcolor=True,relevance
             Plotsim(espac1=Blist,inten1=epc,resfield=resfield,espac2=Blist,enegria=Elist,vectors=Vlist,curvebasis=curvebasis,splines=splines,resonants=resonants,Ham=Hamer,Exp=Expe,Mcolor=Mcolor)
     return Blist,epc
 
-def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
+def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False,ktra=None,info=False):
     '''
     Function for the calculation of the EPR cw spectrum of monocristal systems. Uses a formulation similar to the *Eresonant* function, to calculate the resonant fields and intensities, but calculates de absorption curve (first integral) of the spectrum that is numerically  derived, producing the final spectrum.
     
@@ -2090,7 +2128,9 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
     diagram : Bool
         To pass the Energy data.
     hifi : Bool
-        Bool to calculate the Jacobian matrix.
+        Bool to calculate the Jacobian matrix. 
+    info : Bool
+        Variable to pass the number of transitions.
         
     Returns
     -------
@@ -2199,7 +2239,7 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
     dB=(Exp.Frange[1]-Exp.Frange[0])/(Exp.Points-1)
     Bmin=Exp.Frange[0]
     Elist,Vlist,h2=JPadaptarray(Blist1,h1,hzex,hzey,hzez,nx,ny,nz,hifi)
-    resfield,intensy,ntrans=JNresina(Blist1,Elist,Vlist,dim,Exp.Freq,isx,isy,isz,nx,ny,nz,Exp.Temperature,Ham.Hpp,h2,hifi=hifi)
+    resfield,intensy,ntrans=JNresina(Blist1,Elist,Vlist,dim,Exp.Freq,isx,isy,isz,nx,ny,nz,Exp.Temperature,Ham.Hpp,h2,hifi=hifi,ktra=ktra)
     #1D projection of the orientation
     diferb=(resfield-Bmin)/dB
     vecl=jxn.floor(diferb).astype(jxn.int64)
@@ -2224,7 +2264,8 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False):
     kvoigt=JVoigtp(kaxis,jxn.array([1.0]),jxn.array([0.0]),Ham.Hpp,etas)
     espectotal=jsig.fftconvolve(sketch,kvoigt,mode='same')
     Blist2=jxn.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
-
+    if info:
+        return Blist2,espectotal,h1,hzex,hzey,hzez,hmw,jx.lax.stop_gradient(ntrans)
     return Blist2,espectotal,h1,hzex,hzey,hzez,hmw
    
 @jaxdatclass
@@ -2485,7 +2526,7 @@ def Jmstart():
     Ham,Exp,Vary=Mjhval(),JEmco(),JEmva()
     return Ham,Exp,Vary
 
-def JMulpol(maham,Expe,Nucl1='None',Nucl2='None',M=70,graph=True,hifi=False):
+def JMulpol(maham,Expe,Nucl1='None',Nucl2='None',M=70,graph=True,hifi=False,ktra=None):
     '''
     Wrap function for the simulation of the EPR spectrum for powder samples of two systems. If there is an interaction between the systems (electron-eletron or hiperfine), solves the total hamiltonian. Otherwise, sums the contributions to the total spectrum.
     
@@ -2504,6 +2545,9 @@ def JMulpol(maham,Expe,Nucl1='None',Nucl2='None',M=70,graph=True,hifi=False):
         PLots the spectrum of the multisystem.
     hifi : Bool
         Bool value to calculate the Jacobian matrix.
+    ktra : float
+        Reference value of number of transitions.
+
     Returns
     -------
     
@@ -2540,7 +2584,7 @@ def JMulpol(maham,Expe,Nucl1='None',Nucl2='None',M=70,graph=True,hifi=False):
        :alt: Plot of the JMulpol function
        :align: center
     '''
-    Blist,epc=Jcalmulta(maham,Expe,Nucl1,Nucl2,M,hifi)
+    Blist,epc=Jcalmulta(maham,Expe,Nucl1,Nucl2,M,hifi,ktra)
     if graph:
         plt.figure(figsize=(10,6))
         plt.plot(Blist,epc,color='navy',label='Spectrum')
@@ -2555,7 +2599,7 @@ def JMulpol(maham,Expe,Nucl1='None',Nucl2='None',M=70,graph=True,hifi=False):
     return Blist,epc
     
 
-def Jcalmulta(maham,Expe,Nucl1='None',Nucl2='None',M=70,hifi=False):
+def Jcalmulta(maham,Expe,Nucl1='None',Nucl2='None',M=70,hifi=False,ktra=None):
     '''
     Determinates the spectrum for a two paramagnetic centers system. Follows the same logic from the function Jpowder, but adapted to the two centers system.
     
@@ -2574,6 +2618,9 @@ def Jcalmulta(maham,Expe,Nucl1='None',Nucl2='None',M=70,hifi=False):
         PLots the spectrum of the multisystem.
     hifi : Bool
         Bool value to calculate the Jacobian matrix.
+    ktra : float
+        Reference value of number of transitions.
+
     Returns
     -------
     
@@ -2622,8 +2669,8 @@ def Jcalmulta(maham,Expe,Nucl1='None',Nucl2='None',M=70,hifi=False):
     iwas,jwas,kwas,weight,hulk=Delaunay(Exp1,M)
     iwas,jwas,kwas,weight,hulk=jxn.array(iwas),jxn.array(jwas),jxn.array(kwas),jxn.array(weight),jxn.array(hulk)
     if np.allclose(maham.X1_2,0.0) and np.allclose(maham.A1_2,0.0) and np.allclose(maham.A2_1,0.0):
-        fielde,specs1=JCalpowder(Ham1,Exp1,iwas,jwas,kwas,weight,hulk,Nucl1)
-        _,specs2=JCalpowder(Ham2,Exp2,iwas,jwas,kwas,weight,hulk,Nucl2)
+        fielde,specs1=JCalpowder(Ham1,Exp1,iwas,jwas,kwas,weight,hulk,Nucl1,hifi=hifi,ktra=ktra)
+        _,specs2=JCalpowder(Ham2,Exp2,iwas,jwas,kwas,weight,hulk,Nucl2,hifi=hifi,ktra=ktra)
         specs=specs1+specs2
     else:
         frange0=jxn.where(Exp1.Frange[0]<0.0,1e-4,Exp1.Frange[0])
@@ -2891,7 +2938,7 @@ def Jcalmusic(maham,Expe,Nucl1='None',Nucl2='None',hifi=False):
     Ham1=JHval()
     Ham2=JHval()
     Ham1.S,Ham1.g,Ham1.I,Ham1.L,Ham1.A,Ham1.Q,Ham1.D,Ham1.Bk2,Ham1.Bk4,Ham1.Bk6,Ham1.lc,Ham1.Hpp,Ham1.eta=maham.S1,maham.g1,maham.I1,maham.L1,maham.A1,maham.Q1,maham.D1,maham.Bk2,maham.Bk4,maham.Bk6,maham.lc1,maham.Hpp,maham.eta
-    Ham2.S,Ham2.g,Ham2.I,Ham1.L,Ham2.A,Ham2.Q,Ham2.D,Ham2.lc,Ham2.Hpp,Ham2.eta=maham.S2,maham.g2,maham.I2,maham.L2,maham.A2,maham.Q2,maham.D2,maham.lc2,maham.Hpp,maham.eta
+    Ham2.S,Ham2.g,Ham2.I,Ham2.L,Ham2.A,Ham2.Q,Ham2.D,Ham2.lc,Ham2.Hpp,Ham2.eta=maham.S2,maham.g2,maham.I2,maham.L2,maham.A2,maham.Q2,maham.D2,maham.lc2,maham.Hpp,maham.eta
     Exp1=JEco()
     Exp2=JEco()
     Exp1.Freq,Exp1.Points,Exp1.Temperature,Exp1.Fdirection,Exp1.Mwdirection,Exp1.Frange,Exp1.Sampleframe,Exp1.Molframe,Exp1.gframe,Exp1.Aframe,Exp1.Dframe,Exp1.Qframe=Expe.Freq,Expe.Points,Expe.Temperature,Expe.Fdirection,Expe.Mwdirection,Expe.Frange,Expe.Sampleframe1,Expe.Molframe1,Expe.gframe1,Expe.Aframe1,Expe.Dframe1,Expe.Qframe1
@@ -3291,7 +3338,7 @@ def Residualsjax(pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk):
     if mode=='p':
         _,simul=JCalpowder(Hat,Exp,iwas,jwas,kwas,weight,hulk,hifi=True)
     else:
-        _,simul,_,_,_,_,_=Calresonant(Hat,Exp,graph=False,table=False,hifi=True)
+        _,simul,_,_,_,_,_=Calresonant(Hat,Exp,diagram=False,hifi=True)
     #Change to L2 norm instead of maximum 
     normi=jxn.maximum(jxn.linalg.norm(simul),1e-8)
     norme=jxn.maximum(jxn.linalg.norm(expr),1e-8)
@@ -3323,7 +3370,7 @@ def BuildresJax(pravals,Ham,Exp,expr,Vary,mode,method,iwas=None,jwas=None,kwas=N
     if mode=='p':
         Blis,espc=JCalpowder(Hat,Exp,iwas,jwas,kwas,weight,hulk,hifi=True)
     else:
-        Blis,espc,_,_,_,_,_=Calresonant(Hat,Exp,graph=False,table=False,hifi=True)
+        Blis,espc,_,_,_,_,_=Calresonant(Hat,Exp,diagram=False,hifi=True)
 
     residuals=Residualsjax(pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk)
     J=Computejacobian(Residualsjax,pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk)
@@ -3396,8 +3443,18 @@ def Progradnorm(p,g):
     return optax.global_norm(jx.tree.map(free,p,g))
 
 
+def Jestimatek(SHam,dExp,Vary,param,M,Nucl='None',mode='p',nsamp=8,margin=1.5,seed=0):
+    keys=jx.random.split(jx.random.PRNGKey(seed),nsamp)
+    cands=[Fromsigtophy(param,SHam,Vary)[0]]
+    cands+=[Fromsigtophy(jx.tree.map(lambda x: jx.random.uniform(k,x.shape),param),SHam,Vary)[0] for k in keys]
+    if mode=='p':
+        iwas,jwas,kwas,weight,hulk=[jxn.array(a) for a in Delaunay(dExp,M)]
+        nm=lambda H: JCalpowder(H,dExp,iwas,jwas,kwas,weight,hulk,Nucl,ktra=1000,ndev=1,info=True)[3]
+    else:
+        nm=lambda H: Calresonant(H,dExp,Nucl,info=True)[7]
+    return int(np.ceil(max(int(nm(H)) for H in cands)*margin))+4
 
-def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70,gtoler=1e-5):
+def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70,gtoler=1e-5,Nucl='None',Nucl1='None',Nucl2='None'):
     '''
     Fitting function for the experimental data using the ADAM Algorithm. Uses the *Optax* (part of the Deepmind proyect) ADAM algorithm implementation with a learning rate of 0.007. The parameters are normalized to [0,1] within the range given in *Vary* 
     It's recommended to use the function in VS code, Jupyter or Colab, because the process can be stop at any moment using the stop process button of the notebook.
@@ -3423,6 +3480,13 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70,gtoler=1e-5)
         Number of divisions for the Delaunay grid.
     gtoler : float
         Relative tolerance of the projected gradient norm with respect to the error. Default is 1e-5.
+    Nucl: str
+	Isotope for the simulation of system.
+    Nucl1: str
+	First isotope for the simulation of the multisystem.
+    Nucl2: str
+	Second isotope for the simulation of the multisystem.
+
     Returns
     -------
     Ham : Class
@@ -3520,6 +3584,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70,gtoler=1e-5)
       if mode=='p':
           iwas,jwas,kwas,weight,hulk=Delaunay(Exp,M)
           iwas,jwas,kwas,weight,hulk=jxn.array(iwas),jxn.array(jwas),jxn.array(kwas),jxn.array(weight),jxn.array(hulk)
+	  
       SHam=StaticHam()
       SHam.S=float(Ham.S)
       SHam.I=float(Ham.I)
@@ -3578,33 +3643,36 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70,gtoler=1e-5)
       optimus=optax.adam
       optimus=optax.chain(optax.clip_by_global_norm(1.0),optax.adam(learning_rate=0.007))#,optax.zero_nans(),optax.adam(learning_rate=0.007))
       state=optimus.init(param)
-
-      def Errorcost1(params,exper):
+      K=Jestimatek(SHam,dExp,Vary,param,M,Nucl,mode)
+      def Errorcost1(params,exper,K):
           Hame,_=Fromsigtophy(params,SHam,Vary)
           if mode=='p':
-              _,simul=JCalpowder(Hame,dExp,iwas,jwas,kwas,weight,hulk)
-          elif mode=='c':
-              _,simul,_,_,_,_,_=Calresonant(Hame,dExp)
-          #Change to L2 norm instead of maximum 
+              _,simul,_,nmax=JCalpowder(Hame,dExp,iwas,jwas,kwas,weight,hulk,Nucl,ktra=K,ndev=1,info=True)
+          elif mode == 'c':
+              reto=Calresonant(Hame,dExp,Nucl,ktra=K,info=True)
+              simul,nmax=reto[1],reto[7]
           normi=jxn.maximum(jxn.linalg.norm(simul),1e-8)
           norme=jxn.maximum(jxn.linalg.norm(exper),1e-8)
-          enorm=exper/norme
-          snorm=simul/normi
-          return jxn.sum((snorm-enorm)**2)
-
-      Degrad=jx.value_and_grad(Errorcost1,argnums=0)
+          return jxn.sum((simul/normi-exper/norme)**2),nmax
+      Degrad=jx.value_and_grad(Errorcost1,argnums=0,has_aux=True)
       step=0
-      @jx.jit
-      def updatenext(parats,current,exper):
-          error,grad=Degrad(parats,exper)
+      @partial(jx.jit, static_argnames=('K',))
+      def updatenext(parats,current,exper,K):
+          (error,nmax),grad=Degrad(parats,exper,K)
           gnorm=Progradnorm(parats,grad)
           next,state=optimus.update(grad,current,parats)
           param=Proyectar(optax.apply_updates(parats,next))
-          return param,state,error,gnorm
+          return param,state,error,gnorm,nmax
       converged=False
       try:
           while step<(maximal):
-              param,state,error,gnorm=updatenext(param,state,expr)
+              prev=(param,state)
+              param,state,error,gnorm,nmax=updatenext(param,state,expr,K)
+	      #K to low for the fit
+              if float(nmax)>K:                          
+                  K=int(np.ceil(float(nmax)*1.5))+4
+                  param,state=prev
+                  continue
               if error<eps or gnorm<(gtoler)*error:
                   converged=True
                   break
