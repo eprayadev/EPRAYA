@@ -328,13 +328,13 @@ def EVoigt(rfields,inten,Blist,Hpp):
     
     '''
     n=len(Blist)
-    dB=(Blist[-1]-Bgrid[0])/(n-1)
+    dB=(Blist[-1]-Blist[0])/(n-1)
     npad=2*n
     k=2*np.pi*np.arange(npad//2+1)/(npad*dB)
     #Voigt function definition
-    fvoig=(1j*k)*np.exp(-0.5*((Hpp[0]/2.0)*k)**2-(np.sqrt(3.0)/2.0*Hpp[1])*np.abs(k))
+    fvoigt=(1j*k)*np.exp(-0.5*((Hpp[0]/2.0)*k)**2-(np.sqrt(3.0)/2.0*Hpp[1])*np.abs(k))
     S=np.exp(-1j*np.outer(k,np.asarray(rfields,float)-Blist[0]))@np.asarray(inten,float)
-    return np.fft.irfft(S*fvoigt),n=npad)[:n]/dB
+    return np.fft.irfft(S*fvoigt,n=npad)[:n]/dB
 
 def Eresonant(Hamer,Expe,graph=True,table=True,relevance=1e-4,Mcolor=True):  #Function for finding the resonant fields and energies
     '''
