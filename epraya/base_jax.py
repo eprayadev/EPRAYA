@@ -40,10 +40,10 @@ from joblib import Parallel, delayed
 from threadpoolctl import threadpool_limits
 import re
 from itertools import product as iterproduct
-from base_powd import *
-from base_ham import *
-from base_cris import Plotsim
-from base_fit import Fitresult,result,Selectvarian
+from .base_powd import *
+from .base_ham import *
+from .base_cris import Plotsim
+from .base_fit import Fitresult,result,Selectvarian
 import matplotlib.cm as cm
 
 jx.config.update("jax_enable_x64", True)
