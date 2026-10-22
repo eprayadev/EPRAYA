@@ -18,6 +18,7 @@ Intensity and resonant fields functions
    Plotsim
    Cristalfm
    Music
+   EVoigt
    
 .. list-table::
    :widths: 25 75
@@ -32,7 +33,9 @@ Intensity and resonant fields functions
    * - :doc:`epraya.Cristalfm <Cristalfm>`
      - Function for the calculation of the spectrum of monocristals without producing the graphs. 
    * - :doc:`epraya.Music <Music>`
-     - Wrap function that calculates the spectrum and table of transitions of multisystems.     
+     - Wrap function that calculates the spectrum and table of transitions of multisystems.    
+   * - :doc:`epraya.EVoigt <EVoigt>`
+     - Function for the calculation of the voigtian profile of the spectrum.         
      
 Eigen values and vectors functions
 ----------------------------------

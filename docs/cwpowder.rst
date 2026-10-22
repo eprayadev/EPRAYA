@@ -61,6 +61,7 @@ Line profile functions
    Lorentzp
    Gaussp
    Voigtp
+   Voigtconv
 
 .. list-table::
    :widths: 25 75
@@ -73,8 +74,10 @@ Line profile functions
    * - :doc:`epraya.Gaussp <Gaussp>`
      - Determinates the gaussian profile of the spectrum.
    * - :doc:`epraya.Voigtp <Voigtp>`
+     - Determinates the pseudo-voigtian profile of the spectrum.
+   * - :doc:`epraya.Voigtconv <Voigtconv>`
      - Determinates the voigtian profile of the spectrum.
-    
+     
 Eigen values and vectors functions
 ----------------------------------
 
