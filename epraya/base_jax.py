@@ -23,10 +23,7 @@ from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
 from matplotlib.ticker import FormatStrFormatter,EngFormatter
 from pandas import DataFrame, concat, read_csv
 import warnings
-from copy import deepcopy
-import os
-
-os.environ["XLA_FLAGS"]="--xla_force_host_platform_device_count=4"
+from copy import deepcopyJ
 import jax as jx
 import jax.numpy as jxn
 from chex import dataclass as jaxdatclass
@@ -1680,7 +1677,7 @@ def JPowder(Hamer,Expe,Nucl='None',M=70,graph=True,ktra=None,ndev=None):
     '''
     iwas,jwas,kwas,weight,hulk=Delaunay(Expe,M)
     iwas,jwas,kwas,weight,hulk=jxn.array(iwas),jxn.array(jwas),jxn.array(kwas),jxn.array(weight),jxn.array(hulk)
-    Blist,epc=JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl,ktra=ktra)
+    Blist,epc=JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl,ktra=ktra,ndev=ndev)
     if graph:
         plt.figure(figsize=(10,6))
         plt.plot(Blist,epc,color='navy',label='Spectrum')
