@@ -1527,7 +1527,7 @@ def Metro1(Hamer,Exp,Var,dat,maximal,datype='data',mode='p',seed=451,Mr=70):
     np.random.seed(int(seed))
     Ham1=deepcopy(Hamer)
     initdat=dat
-    iwas,jwas,kwas,weight,hulk=Delaunay(Exp)
+    iwas,jwas,kwas,weight,hulk=Delaunay(Exp,Mr)
     if mode=='p':
         funtiona=Calpowder#(Ham,Exp,graph=False)
     elif mode=='c':
