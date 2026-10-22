@@ -302,10 +302,43 @@ def EBoltfactor(Eghz,di,dj,Temp):
     popui=boltz[di]/Z
     popuj=boltz[dj]/Z
     return np.abs(popui-popuj)
+    
+
+def EVoigt(rfields,inten,Blist,Hpp):
+    '''
+    Function for the calculation of the voigtian profile of singlecrystal samples. Follows the same structure that Voigtconv, making the convolution of the spectrum, using the resonant fields as reference.
+
+    Parameters
+    ----------
+
+    rfields : np.array
+        Array of the resonant fields of the system.
+    inten : np.array
+        Array of the intensities related to the resonant fields.
+    Blist : np.array
+        Array of the magnetic field of the spectrum.
+    Hpp : list
+        List of the gaussian and lorentzian contributions to the spectrum.
+
+    Returns 
+    -------
+    
+    spc : np.array
+        EPR spectrum.
+    
+    '''
+    n=len(Blist)
+    dB=(Blist[-1]-Bgrid[0])/(n-1)
+    npad=2*n
+    k=2*np.pi*np.arange(npad//2+1)/(npad*dB)
+    #Voigt function definition
+    fvoig=(1j*k)*np.exp(-0.5*((Hpp[0]/2.0)*k)**2-(np.sqrt(3.0)/2.0*Hpp[1])*np.abs(k))
+    S=np.exp(-1j*np.outer(k,np.asarray(rfields,float)-Blist[0]))@np.asarray(inten,float)
+    return np.fft.irfft(S*fvoigt),n=npad)[:n]/dB
 
 def Eresonant(Hamer,Expe,graph=True,table=True,relevance=1e-4,Mcolor=True):  #Function for finding the resonant fields and energies
     '''
-    Function for the simulation of the EPR spectrum for monocrystal samples, creating the energy diagrams and a table of the resonant fields.
+    Function for the simulation of the EPR spectrum for singlecrystal samples, creating the energy diagrams and a table of the resonant fields.
     
     Parameters
     ----------
@@ -511,7 +544,7 @@ def Eresonant(Hamer,Expe,graph=True,table=True,relevance=1e-4,Mcolor=True):  #Fu
         for r in resonants:
             r['relevance']=r['relevance']/smax
     if len(resfield)>0:
-        inten1=Voigtp(espac1,np.asarray(intensy,dtype=float),np.asarray(resfield,dtype=float),Ham.Hpp,Ham.eta)
+        inten1=EVoigt(np.asarray(resfield,dtype=float),np.asarray(intensy,dtype=float),espac1,Ham.Hpp)
     else:
         inten1=np.zeros_like(espac1)
     if len(resfield)>0:
@@ -1076,7 +1109,7 @@ def Cristalfm(Hamer,Exp,relevance=1e-4):  #Function for finding the resonant fie
         for r in resonants:
             r['relevance']=r['relevance']/smax
     if len(resfield)>0:
-        inten1=Voigtp(espac1,np.asarray(intensy,dtype=float),np.asarray(resfield,dtype=float),Ham.Hpp,Ham.eta)
+        inten1=EVoigt(np.asarray(resfield,dtype=float),np.asarray(intensy,dtype=float),espac1,Ham.Hpp)
     else:
         inten1=np.zeros_like(espac1)
     if len(resfield)>0:
@@ -1413,7 +1446,7 @@ def Music(Hamer,Exper,graph=True,table=True,relevance=1e-4):
                 resfield=[resfield[k] for k in keep]
                 intensy=[intensy[k] for k in keep]
             if len(resfield)>0:
-                inten1=Voigtp(espac1,np.asarray(intensy,dtype=float),np.asarray(resfield,dtype=float),Ham.Mulham[0].Hpp,Ham.Mulham[0].eta)
+                inten1=EVoigt(resfield,intensy,espac1,Ham.Mulham[0].Hpp)
             else:
                 inten1=np.zeros_like(espac1)
             sumespct+=inten1
