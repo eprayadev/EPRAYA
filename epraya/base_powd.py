@@ -781,8 +781,8 @@ def Caltriangle(sketch,Bmin,dB,allres,allint,transi,hulk,weight):
                         frac=xdam-igdam
                         sketch[igdam]+=Iint*pointweg*(1.0-frac)
 						#If it is outside the range
-						if 0 <=igdam<len(sketch):
-							sketch[igdam]+=Iint*pointweg*(1.0-frac)
+                        if 0 <=igdam<len(sketch):
+                            sketch[igdam]+=Iint*pointweg*(1.0-frac)
                         if 0<=igdam+1<len(sketch):
                             sketch[igdam+1]+=Iint*pointweg*frac
 
