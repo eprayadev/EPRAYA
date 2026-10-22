@@ -1487,7 +1487,7 @@ def Metrostair(Hamer,Exp,Var,date,stepsize,ocos,para,variable,funcname,iwas,jwas
         return Ham,ncos,True
     else:
         Tsaf=max(para,1e-8)
-        prob=np.exp(-(ncos-ocos)/Tsaf)
+        prob=np.exp(-(np.sqrt(ncos)-np.sqrt(ocos))/Tsaf)
         if np.random.rand()<prob:
             return Ham,ncos,True
         else:
@@ -1833,7 +1833,7 @@ def Metrostair2(Hamer,Exp,Var,date,stepsize,ocos,para,variable,aktsys,funcname,d
         return Ham,ncos,True
     else:
         Tsaf=max(para,1e-8)
-        prob=np.exp(-(ncos-ocos)/Tsaf)
+        prob=np.exp(-(np.sqrt(ncos)-np.sqrt(ocos))/Tsaf)
         if np.random.rand()<prob:
             return Ham,ncos,True
         else:
