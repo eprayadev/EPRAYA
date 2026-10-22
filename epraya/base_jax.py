@@ -2220,8 +2220,12 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False,ktra=None,info=F
     sketch=sketch.at[vecl].add(Ilef)
     sketch=sketch.at[vecr].add(Irig)
     #FFT convolution as in JPowder
-    espectotal=JVoigtp(sketch,dB,Ham.Hpp)
-    Blist2=jxn.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
+    n=Exp.Points
+    npad=2*n
+    k=2*jxn.pi*jxn.arange(npad//2+1)/(npad*dB)
+    S=jxn.exp(-1j*k[:,None]*(resfield-Bmin)[None,:])@intensy
+    H=(1j*k)*jxn.exp(-0.5*((Ham.Hpp[0]/2.0)*k)**2-(jxn.sqrt(3.0)/2.0*Ham.Hpp[1])*jxn.abs(k))
+    espectotal=jxn.fft.irfft(S*H,n=npad)[:n]/dB
     if info:
         return Blist2,espectotal,h1,hzex,hzey,hzez,hmw,jx.lax.stop_gradient(ntrans)
     return Blist2,espectotal,h1,hzex,hzey,hzez,hmw
