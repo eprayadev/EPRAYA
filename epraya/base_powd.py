@@ -752,7 +752,7 @@ def Caltriangle(sketch,Bmin,dB,allres,allint,transi,hulk,weight):
     '''
     
     #Barycentral mesh of triangles
-    numd=15  # Resolution
+    numd=20  # Resolution
     tpoints=(numd*(numd+1))/2.0
     for tx in range(len(hulk)):
         i1=hulk[tx,0]
@@ -780,6 +780,9 @@ def Caltriangle(sketch,Bmin,dB,allres,allint,transi,hulk,weight):
                         igdam=int(np.floor(xdam))
                         frac=xdam-igdam
                         sketch[igdam]+=Iint*pointweg*(1.0-frac)
+						#If it is outside the range
+						if 0 <=igdam<len(sketch):
+							sketch[igdam]+=Iint*pointweg*(1.0-frac)
                         if 0<=igdam+1<len(sketch):
                             sketch[igdam+1]+=Iint*pointweg*frac
 
