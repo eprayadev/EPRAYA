@@ -2202,23 +2202,6 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False,ktra=None,info=F
     Bmin=Exp.Frange[0]
     Elist,Vlist,h2=JPadaptarray(Blist1,h1,hzex,hzey,hzez,nx,ny,nz,hifi)
     resfield,intensy,ntrans=JNresina(Blist1,Elist,Vlist,dim,Exp.Freq,isx,isy,isz,nx,ny,nz,Exp.Temperature,Ham.Hpp,h2,hifi=hifi,ktra=ktra)
-    #1D projection of the orientation
-    diferb=(resfield-Bmin)/dB
-    vecl=jxn.floor(diferb).astype(jxn.int64)
-    vecr=vecl+1
-    fracr=diferb-vecl
-    fracl=1.0-fracr
-    Ilef=intensy*fracl
-    Irig=intensy*fracr
-    valid=(vecl>=0)&(vecl<Exp.Points)
-    vecl=jxn.where(valid,vecl,0)
-    vecr=jxn.where(valid & (vecr<Exp.Points),vecr,0)
-    Ilef=jxn.where(valid,Ilef,0.0)
-    Irig=jxn.where(valid,Irig,0.0)
-
-    sketch=jxn.zeros(Exp.Points)
-    sketch=sketch.at[vecl].add(Ilef)
-    sketch=sketch.at[vecr].add(Irig)
     #FFT convolution as in JPowder
     n=Exp.Points
     npad=2*n
