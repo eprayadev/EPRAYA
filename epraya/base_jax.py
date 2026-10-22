@@ -23,7 +23,7 @@ from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
 from matplotlib.ticker import FormatStrFormatter,EngFormatter
 from pandas import DataFrame, concat, read_csv
 import warnings
-from copy import deepcopyJ
+from copy import deepcopy
 import jax as jx
 import jax.numpy as jxn
 from chex import dataclass as jaxdatclass
