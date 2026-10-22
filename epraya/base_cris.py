@@ -361,7 +361,7 @@ def Eresonant(Hamer,Expe,graph=True,table=True,relevance=1e-4,Mcolor=True):  #Fu
         Relative threshold for the transition strength (Intensity/Boltzmann factor), if lower it is discarded. Default is 1e-4.
         
     Mcolor : Bool
-        Bool value to follow with colors the change in the expectation value for |mS| near anticrossings.    
+        Bool value to follow with colors the change in the expectation value for Ims> near anticrossings.    
         
     Returns
     -------
@@ -601,7 +601,7 @@ def Plotsim(espac1,inten1,resfield,espac2,enegria,vectors,curvebasis,splines,res
     Exp : Class
         Container for the experimental conditions.
     Mcolor : Bool
-        Bool value to follow with colors the change in the expectation value for |mS| near anticrossings.
+        Bool value to follow with colors the change in the expectation value for Ims> near anticrossings.
     '''
     slit,nlit,llit,transitions=Msmi(Ham.I,Ham.S,Ham.L)
     if is_notebook():
