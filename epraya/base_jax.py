@@ -1836,7 +1836,7 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None',hifi=False,ktra
 
 @partial(jx.jit,static_argnames=('dim','K','hifi'))
 def makeoneori(P,nx,ny,nz,dim,K,hifi):
-    oneori(nnx,nny,nnz):
+    def oneori(nnx,nny,nnz):
         Elist,Vlist,h2=JPadaptarray(P['B'],P['h1'],P['hx'],P['hy'],P['hz'],nnx,nny,nnz,hifi)
         return JNresina(P['B'],Elist,Vlist,dim,P['Freq'],P['isx'],P['isy'],P['isz'],nnx,nny,nnz,P['Temp'],P['Hpp'],h2,hifi=hifi,ktra=K)
     return jx.vmap(oneori)(nx,ny,nz)
