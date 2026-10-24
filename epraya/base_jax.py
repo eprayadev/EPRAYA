@@ -39,7 +39,9 @@ import concurrent.futures
 from joblib import Parallel, delayed
 from threadpoolctl import threadpool_limits
 import re
+from importlib import resources
 from itertools import product as iterproduct
+from functools import lru_cache
 from .base_powd import *
 from .base_ham import *
 from .base_cris import Plotsim
@@ -1814,91 +1816,72 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None',hifi=False,ktra
     Blist1=jxn.linspace(frange0,Exp.Frange[1],500)
     dB=(Exp.Frange[1]-Exp.Frange[0])/(Exp.Points-1)
     Bmin=Exp.Frange[0]
-    def makeoneori(K):
-        @jx.jit
-        def Oneori(nx,ny,nz):
-            Elist,Vlist,h2=JPadaptarray(Blist1,h1,hzex,hzey,hzez,nx,ny,nz,hifi)
-            return JNresina(Blist1,Elist,Vlist,dim,Exp.Freq,isx,isy,isz,nx,ny,nz,Exp.Temperature,Ham.Hpp,h2,hifi=hifi,ktra=K)
-        return jx.vmap(Oneori,in_axes=(0,0,0))
     ndev=jx.local_device_count() if ndev is None else int(ndev)
-    K=int(ktra) if ktra is not None else estimatek(makeoneori,iwas,jwas,kwas)
-    #Defines block size at a maximum of 32 and min of 8 with a RAM maximum use of 3GB
-    csize=int(np.clip(3e9/ndev//(500*(2.2*dim**2*16 + 20*dim*8)), 8, 32))
-    tlen=len(weight)
-    blk=csize*ndev
-    plen=(blk-(tlen%blk))%blk
-    bati=jxn.pad(iwas,(0, plen)).reshape(ndev,-1,csize)
-    batj=jxn.pad(jwas,(0, plen)).reshape(ndev,-1,csize)
-    batk=jxn.pad(kwas,(0, plen)).reshape(ndev,-1,csize)
-    def Processallvmap(K):
-        voneori=makeoneori(K)
-        @jx.checkpoint
-        def Processvmap(carry,bat):
-            return carry,voneori(*bat)
-        def Runvmap(bi,bj,bk):
-            _,ret=jx.lax.scan(Processvmap,None,(bi,bj,bk))
-            return ret
-        if ndev==1:
-            r,i,n=Runvmap(bati[0],batj[0],batk[0])
-        else:
-            r,i,n=jx.pmap(Runvmap)(bati,batj,batk)
-        return (r.reshape(-1,r.shape[-1])[:tlen],i.reshape(-1,i.shape[-1])[:tlen],n.reshape(-1)[:tlen])
-    #Condition the process to have a K higher than the number of transitions
-    while True:
-        allres,allint,ntrans=Processallvmap(K)
-        if isinstance(ntrans,jx.core.Tracer) or int(jxn.max(ntrans))<=K:
-            break
-        K*=2
+    P=dict(B=Blist1,h1=h1,hx=hzex,hy=hzey,hz=hzez,isx=isx,isy=isy,isz=isz,Freq=jxn.asarray(Exp.Freq,float),Temp=jxn.asarray(Exp.Temperature,float),Hpp=Ham.Hpp)
+    allres,allint,ntrans,K=Jorientblocks(P,iwas,jwas,kwas,dim,hifi,ktra,ndev)
     sketch=JCaltriangle(Bmin,dB,allres,allint,ntrans,hulk,weight,Exp.Points)
     espectotal=JVoigtp(sketch,dB,Ham.Hpp)
-    Blist2=jxn.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
+	Blist2=jxn.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
     if info:
         return Blist2,espectotal,K,jx.lax.stop_gradient(jxn.max(ntrans))
     return Blist2,espectotal
 
-def estimatek(makeoneori,nx,ny,nz,csize=16,nsample=256,margin=1.5):
+@partial(jx.jit,static_argnames=('dim','K','hifi'))
+def makeoneori(P,nx,ny,nz,dim,K,hifi):
+    (nnx,nny,nnz):
+        Elist,Vlist,h2=JPadaptarray(P['B'],P['h1'],P['hx'],P['hy'],P['hz'],nnx,nny,nnz,hifi)
+        return JNresina(P['B'],Elist,Vlist,dim,P['Freq'],P['isx'],P['isy'],P['isz'],nnx,nny,nnz,P['Temp'],P['Hpp'],h2,hifi=hifi,ktra=K)
+    return jx.vmap(oneori)(nx,ny,nz)
+
+@partial(jx.jit,static_argnames=('dim','K','hifi'))
+def Jlaxscan(P,bi,bj,bk,dim,K,hifi):
+    @jx.checkpoint
+    def step(c,param):
+        return c,makeoneori(P,*param,dim=dim,K=K,hifi=hifi)
+    return jx.lax.scan(step,None,(bi,bj,bk))[1]
+
+@lru_cache(maxsize=None)
+def Jlaxscanp(dim,K,hifi):
+    return jx.pmap(partial(Jlaxscan,dim=dim,K=K,hifi=hifi),in_axes=(None,0,0,0))
+
+def Jorientblocks(P,iwas,jwas,kwas,dim,hifi=False,ktra=None,ndev=None):
+    '''
+    Resonant fields and intensities for all the orientations, by blocks of csize orientations.
+    Common to JCalpowder and Jcalmulta. Returns allres, allint, ntrans and the K used.
+    '''
+    ndev=jx.local_device_count() if ndev is None else int(ndev)
+    #Block size: max 32, min 8, for approx 3 GB
+	#On GPU, batched eigh fails above 10000 matrices for dim>32
+    csize=int(np.clip(3e9/ndev//(500*(2.2*dim**2*16+20*dim*8)),8,32))
+    if jx.default_backend()=='gpu' and dim>32:
+        csize=min(csize,12)
+    K=int(ktra) if ktra is not None else estimatek(P,iwas,jwas,kwas,dim,hifi,csize=min(16,csize))
+    tlen=len(iwas)
+    blk=csize*ndev
+    plen=(blk-(tlen%blk))%blk
+    bi,bj,bk=[jxn.pad(v,(0,plen)).reshape(ndev,-1,csize) for v in (iwas,jwas,kwas)]
+    #Condition the process to have a K higher than the number of transitions
+    while True:
+        if ndev==1:
+            r,i,n=Jlaxscan(P,bi[0],bj[0],bk[0],dim=dim,K=K,hifi=hifi)
+        else:
+            r,i,n=Jlaxscanp(dim,K,hifi)(P,bi,bj,bk)
+        r,i,n =r.reshape(-1,r.shape[-1])[:tlen],i.reshape(-1,i.shape[-1])[:tlen],n.reshape(-1)[:tlen]
+        if isinstance(n,jx.core.Tracer) or int(jxn.max(n))<=K:
+            return r,i,n,K
+        K*=2
+
+
+def estimatek(P,nx,ny,nz,dim,hifi,csize=16,nsample=256,margin=1.5):
     idx=np.unique(np.linspace(0,len(nx)-1,nsample).astype(int))
-    f=makeoneori(1)
+    idx=np.concatenate([idx,np.full((-len(idx))%csize,idx[-1])])
     nmax=0.0
-    #By blocks
-    for s in range(0,len(idx),csize):               
+    for s in range(0,len(idx),csize):
         sl=idx[s:s+csize]
-        _, _,nt=f(nx[sl],ny[sl],nz[sl])
+        _,_,nt=makeoneori(P,nx[sl],ny[sl],nz[sl],dim=dim,K=1,hifi=hifi)
         nmax=max(nmax,float(jxn.max(nt)))
     return int(np.ceil(nmax*margin))+4
-    
-@jx.jit
-def oneori(nx,ny,nz):
-        '''
-        Wrap function to use JPadaptarray and JNresina with the JAX.vmap implementation. Vmap vectorizes this two functions, making them work with block of data instead of individual process in a loop. The blocks are divided in parts of csize size, and process with the function Processvmap, that calculates the total values of resonant fields, intenitys and transitions.
-        
-        Parameters
-        ----------
-        
-        nx : jax.np.array
-            Vectors (points in the grid) to consider in the calculation of the spectrum in the x direction.
-        ny : jax.np.array
-            Vectors (points in the grid) to consider in the calculation of the spectrum in the y direction.
-        nz : jax.np.array
-            Vectors (points in the grid) to consider in the calculation of the spectrum in the z direction.
-        
-        Returns
-        -------
-        resfield : jax.np.array 
-            List of the resonant fields of the system.
-        intensy : jax.np.array 
-            List of the intensity of the spectrum, evaluated in the resonant fields.
-        ntrans : jax.np.array
 
-            Zero dimensional array with the number of possible transitions related to the resonant fields.
-        
-    
-        '''
-        Elist,Vlist,h2=JPadaptarray(Blist1,h1,hzex,hzey,hzez,nx,ny,nz,hifi)
-        resfield,intensy,ntrans=JNresina(Blist1,Elist,Vlist,dim,Exp.Freq,isx,isy,isz,nx,ny,nz,Exp.Temperature,Ham.Hpp,h2,hifi=hifi)
-        return resfield,intensy,ntrans   
-        
-        
 def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None',Mcolor=True,relevance=1e-4):
     '''
     Wrap function for the simulation of the EPR spectrum for monocrystal samples. Also creates the table of transitions and energy diagrams of the system.
@@ -2198,6 +2181,7 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False,ktra=None,info=F
         hzez-=nhzez
     h1=jxn.asarray(h1,dtype=complex)
     Blist1=jxn.linspace(frange0,Exp.Frange[1],500)
+	Blist2=jxn.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
     dB=(Exp.Frange[1]-Exp.Frange[0])/(Exp.Points-1)
     Bmin=Exp.Frange[0]
     Elist,Vlist,h2=JPadaptarray(Blist1,h1,hzex,hzey,hzez,nx,ny,nz,hifi)
@@ -2471,7 +2455,7 @@ def Jmstart():
     Ham,Exp,Vary=Mjhval(),JEmco(),JEmva()
     return Ham,Exp,Vary
 
-def JMulpol(maham,Expe,Nucl1='None',Nucl2='None',M=70,graph=True,hifi=False,ktra=None):
+def JMulpol(maham,Expe,Nucl1='None',Nucl2='None',M=70,graph=True,hifi=False,ktra=None,ndev=None):
     '''
     Wrap function for the simulation of the EPR spectrum for powder samples of two systems. If there is an interaction between the systems (electron-eletron or hiperfine), solves the total hamiltonian. Otherwise, sums the contributions to the total spectrum.
     
@@ -2492,7 +2476,9 @@ def JMulpol(maham,Expe,Nucl1='None',Nucl2='None',M=70,graph=True,hifi=False,ktra
         Bool value to calculate the Jacobian matrix.
     ktra : float
         Reference value of number of transitions.
-
+    ndev : int
+		Number of devices
+		
     Returns
     -------
     
@@ -2529,7 +2515,7 @@ def JMulpol(maham,Expe,Nucl1='None',Nucl2='None',M=70,graph=True,hifi=False,ktra
        :alt: Plot of the JMulpol function
        :align: center
     '''
-    Blist,epc=Jcalmulta(maham,Expe,Nucl1,Nucl2,M,hifi,ktra)
+    Blist,epc=Jcalmulta(maham,Expe,Nucl1,Nucl2,M,hifi,ktra,ndev)
     if graph:
         plt.figure(figsize=(10,6))
         plt.plot(Blist,epc,color='navy',label='Spectrum')
@@ -2544,7 +2530,7 @@ def JMulpol(maham,Expe,Nucl1='None',Nucl2='None',M=70,graph=True,hifi=False,ktra
     return Blist,epc
     
 
-def Jcalmulta(maham,Expe,Nucl1='None',Nucl2='None',M=70,hifi=False,ktra=None):
+def Jcalmulta(maham,Expe,Nucl1='None',Nucl2='None',M=70,hifi=False,ktra=None,ndev=None):
     '''
     Determinates the spectrum for a two paramagnetic centers system. Follows the same logic from the function Jpowder, but adapted to the two centers system.
     
@@ -2565,7 +2551,9 @@ def Jcalmulta(maham,Expe,Nucl1='None',Nucl2='None',M=70,hifi=False,ktra=None):
         Bool value to calculate the Jacobian matrix.
     ktra : float
         Reference value of number of transitions.
-
+    ndev : int
+		Number of devices
+	
     Returns
     -------
     
@@ -2614,8 +2602,8 @@ def Jcalmulta(maham,Expe,Nucl1='None',Nucl2='None',M=70,hifi=False,ktra=None):
     iwas,jwas,kwas,weight,hulk=Delaunay(Exp1,M)
     iwas,jwas,kwas,weight,hulk=jxn.array(iwas),jxn.array(jwas),jxn.array(kwas),jxn.array(weight),jxn.array(hulk)
     if np.allclose(maham.X1_2,0.0) and np.allclose(maham.A1_2,0.0) and np.allclose(maham.A2_1,0.0):
-        fielde,specs1=JCalpowder(Ham1,Exp1,iwas,jwas,kwas,weight,hulk,Nucl1,hifi=hifi,ktra=ktra)
-        _,specs2=JCalpowder(Ham2,Exp2,iwas,jwas,kwas,weight,hulk,Nucl2,hifi=hifi,ktra=ktra)
+        fielde,specs1=JCalpowder(Ham1,Exp1,iwas,jwas,kwas,weight,hulk,Nucl1,hifi=hifi,ktra=ktra,ndev=ndev)
+        _,specs2=JCalpowder(Ham2,Exp2,iwas,jwas,kwas,weight,hulk,Nucl2,hifi=hifi,ktra=ktra,ndev=ndev)
         specs=specs1+specs2
     else:
         frange0=jxn.where(Exp1.Frange[0]<0.0,1e-4,Exp1.Frange[0])
@@ -2637,7 +2625,6 @@ def Jcalmulta(maham,Expe,Nucl1='None',Nucl2='None',M=70,hifi=False,ktra=None):
         ix1,iy1,iz1=JPauli(Ham1.I)
         sx2,sy2,sz2=JPauli(Ham2.S)
         ix2,iy2,iz2=JPauli(Ham2.I)
-        E=Exp.Freq
         beta=(scic.physical_constants["Bohr magneton"][0]/scic.physical_constants["Planck constant"][0])/1e12
         betan=(scic.physical_constants["nuclear magneton"][0]/scic.physical_constants["Planck constant"][0])/1e12
         h1=np.zeros((dim,dim),dtype='complex')
@@ -2702,54 +2689,29 @@ def Jcalmulta(maham,Expe,Nucl1='None',Nucl2='None',M=70,hifi=False,ktra=None):
         dimwns1=int((2*Ham1.I+1)*(2*Ham1.L+1))
         dimwns2=int((2*Ham2.I+1)*(2*Ham2.L+1))
         if Ham1.S>0:
-            sx1r=jxn.kron(sx1,jxn.eye(dimwns1,dtype=complex))
-            sy1r=jxn.kron(sy1,jxn.eye(dimwns1,dtype=complex))
-            sz1r=jxn.kron(sz1,jxn.eye(dimwns1,dtype=complex))
+            gx1,gy1,gz1=[Ham1.g[a,0]*sx1+Ham1.g[a,1]*sy1+Ham1.g[a,2]*sz1 for a in range(3)]
+            sx1r=jxn.kron(gx1,jxn.eye(dimwns1,dtype=complex))
+            sy1r=jxn.kron(gy1,jxn.eye(dimwns1,dtype=complex))
+            sz1r=jxn.kron(gz1,jxn.eye(dimwns1,dtype=complex))
             stodx+=jxn.kron(sx1r,jxn.eye(dim2,dtype=complex))
             stody+=jxn.kron(sy1r,jxn.eye(dim2,dtype=complex))
             stodz+=jxn.kron(sz1r,jxn.eye(dim2,dtype=complex))
         if Ham2.S>0:
-            sx2r=jxn.kron(sx2,jxn.eye(dimwns2,dtype=complex))
-            sy2r=jxn.kron(sy2,jxn.eye(dimwns2,dtype=complex))
-            sz2r=jxn.kron(sz2,jxn.eye(dimwns2,dtype=complex))
+            gx2,gy2,gz2=[Ham2.g[a,0]*sx2+Ham2.g[a,1]*sy2+Ham2.g[a,2]*sz2 for a in range(3)]
+            sx2r=jxn.kron(gx2,jxn.eye(dimwns2,dtype=complex))
+            sy2r=jxn.kron(gy2,jxn.eye(dimwns2,dtype=complex))
+            sz2r=jxn.kron(gz2,jxn.eye(dimwns2,dtype=complex))
             stodx+=jxn.kron(jxn.eye(dim1,dtype=complex),sx2r)
             stody+=jxn.kron(jxn.eye(dim1,dtype=complex),sy2r)
             stodz+=jxn.kron(jxn.eye(dim1,dtype=complex),sz2r)
-
-        Blist1=jxn.linspace(frange0,Exp.Frange[1],500)
-        dB=(Exp.Frange[1]-Exp.Frange[0])/(Exp.Points-1)
-        Bmin=Exp.Frange[0]
-        
-        @jx.jit
-        def Oneori(nx,ny,nz):
-            Elist,Vlist,h2=JPadaptarray(Blist1,h1,hzex,hzey,hzez,nx,ny,nz,hifi)
-            resfield,intensy,ntrans=JNresina(Blist1,Elist,Vlist,dim,Exp1.Freq,stodx,stody,stodz,nx,ny,nz,Exp1.Temperature,Ham1.Hpp,h2,hifi=hifi)
-            return resfield,intensy,ntrans
-        voneori=jx.vmap(Oneori,in_axes=(0,0,0))
-        csize=50 #Divides the orientations blocks so the RAM doesn't explote
-        tlen=len(weight)
-        plen=(csize-(tlen%csize))%csize
-        pdw=jxn.pad(weight,(0,plen))
-        pdi=jxn.pad(iwas,(0, plen))
-        pdj=jxn.pad(jwas,(0,plen))
-        pdk=jxn.pad(kwas,(0,plen))
-        nparts=len(pdi)//csize
-        bati=pdi.reshape(nparts,csize)
-        batj=pdj.reshape(nparts,csize)
-        batk=pdk.reshape(nparts,csize)
-        @jx.checkpoint
-        def Processvmap(curspect,bat):
-            bnx,bny,bnz=bat
-            batres,batint,batntras=voneori(bnx,bny,bnz)
-            return curspect,(batres,batint,batntras)
-        _,(allres,allint,ntrans)=jx.lax.scan(Processvmap,None,(bati,batj,batk))
-        allres=allres.reshape(-1,allres.shape[-1])[:tlen]
-        allint=allint.reshape(-1,allint.shape[-1])[:tlen]
-        ntrans=ntrans.reshape(-1)[:tlen]
+        Blist1=jxn.linspace(frange0,Exp1.Frange[1],500)
+        dB=(Exp1.Frange[1]-Exp1.Frange[0])/(Exp1.Points-1)
+        Bmin=Exp1.Frange[0]
+        P=dict(B=Blist1,h1=h1,hx=hzex,hy=hzey,hz=hzez,isx=stodx,isy=stody,isz=stodz,Freq=jxn.asarray(Exp1.Freq,float),Temp=jxn.asarray(Exp1.Temperature,float),Hpp=Ham1.Hpp)
+        allres,allint,ntrans,K=Jorientblocks(P,iwas,jwas,kwas,dim,hifi,ktra,ndev)
         sketch=JCaltriangle(Bmin,dB,allres,allint,ntrans,hulk,weight,Exp1.Points)
-        espectotal=JVoigtp(sketch,dB,Ham1.Hpp)
-        Blist2=jxn.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
-        fielde,specs=Blist2,espectotal
+        specs=JVoigtp(sketch,dB,Ham1.Hpp)
+        fielde=jxn.linspace(Exp1.Frange[0],Exp1.Frange[1],Exp1.Points)
     return fielde,specs
 
 def JMusic(maham,Expe,Nucl1='None',Nucl2='None',graph=True,hifi=False):
@@ -2817,6 +2779,39 @@ def JMusic(maham,Expe,Nucl1='None',Nucl2='None',graph=True,hifi=False):
         plt.legend()
         plt.show(block=False)
     return Blist,epc
+
+def Jevoigt(rfields,inten,Blist,Hpp):
+    '''
+    Function for the calculation of the voigtian profile of singlecrystal samples. Follows the same structure that Voigtconv, making the convolution of the spectrum, using the resonant fields as reference.
+
+    Parameters
+    ----------
+
+    rfields : jax.np.array
+        Array of the resonant fields of the system.
+    inten : jax.np.array
+        Array of the intensities related to the resonant fields.
+    Blist : jax.np.array
+        Array of the magnetic field of the spectrum.
+    Hpp : list
+        List of the gaussian and lorentzian contributions to the spectrum.
+
+    Returns 
+    -------
+    
+    spc : jax.np.array
+        EPR spectrum.
+    
+    '''
+    n=len(Blist)
+    dB=(Blist[-1]-Blist[0])/(n-1)
+    npad=2*n
+    k=2*jxn.pi*jxn.arange(npad//2+1)/(npad*dB)
+    #Voigt function definition
+    fvoigt=(1j*k)*jxn.exp(-0.5*((Hpp[0]/2.0)*k)**2-(jxn.sqrt(3.0)/2.0*Hpp[1])*jxn.abs(k))
+    S=jxn.exp(-1j*jxn.outer(k,jxn.asarray(rfields,float)-Blist[0]))@jxn.asarray(inten,float)
+    return jxn.fft.irfft(S*fvoigt,n=npad)[:n]/dB
+
 
 def Jcalmusic(maham,Expe,Nucl1='None',Nucl2='None',hifi=False):
     '''
@@ -2961,13 +2956,13 @@ def Jcalmusic(maham,Expe,Nucl1='None',Nucl2='None',hifi=False):
             hzey-=jxn.kron(jxn.eye(dim1,dtype=complex),nhzey)
             hzez-=jxn.kron(jxn.eye(dim1,dtype=complex),nhzez)
         if jxn.any(maham.A1_2):
-            Aref=jxn.asarray(Ham.A1_2)/1000.0
+            Aref=jxn.asarray(maham.A1_2)/1000.0
             Aref=Aref*jxn.eye(3)
-            h1+=Hfi(sx1,sy1,sz1,ix2,iy2,iz2,Aref,dim)
+            h1+=JHfi(sx1,sy1,sz1,ix2,iy2,iz2,Aref,dim)
         if jxn.any(maham.A2_1):
             Aref=jxn.asarray(maham.A2_1)/1000.0
             Aref=Aref*jxn.eye(3)
-            h1+=Hfi(sx2,sy2,sz2,ix1,iy1,iz1,Aref,dim)
+            h1+=JHfi(sx2,sy2,sz2,ix1,iy1,iz1,Aref,dim)
         if jxn.any(maham.X1_2):
             Xref=jxn.asarray(maham.X1_2)/1000.0
             Xref=Xref*jxn.eye(3)
@@ -2980,84 +2975,28 @@ def Jcalmusic(maham,Expe,Nucl1='None',Nucl2='None',hifi=False):
         dimwns1=int((2*Ham1.I+1)*(2*Ham1.L+1))
         dimwns2=int((2*Ham2.I+1)*(2*Ham2.L+1))
         if Ham1.S>0:
-            sx1r=jxn.kron(sx1,jxn.eye(dimwns1,dtype=complex))
-            sy1r=jxn.kron(sy1,jxn.eye(dimwns1,dtype=complex))
-            sz1r=jxn.kron(sz1,jxn.eye(dimwns1,dtype=complex))
+            gx1,gy1,gz1=[Ham1.g[a,0]*sx1+Ham1.g[a,1]*sy1+Ham1.g[a,2]*sz1 for a in range(3)]
+            sx1r=jxn.kron(gx1,jxn.eye(dimwns1,dtype=complex))
+            sy1r=jxn.kron(gy1,jxn.eye(dimwns1,dtype=complex))
+            sz1r=jxn.kron(gz1,jxn.eye(dimwns1,dtype=complex))
             stodx+=jxn.kron(sx1r,jxn.eye(dim2,dtype=complex))
             stody+=jxn.kron(sy1r,jxn.eye(dim2,dtype=complex))
             stodz+=jxn.kron(sz1r,jxn.eye(dim2,dtype=complex))
         if Ham2.S>0:
-            sx2r=jxn.kron(sx2,jxn.eye(dimwns2,dtype=complex))
-            sy2r=jxn.kron(sy2,jxn.eye(dimwns2,dtype=complex))
-            sz2r=jxn.kron(sz2,jxn.eye(dimwns2,dtype=complex))
+            gx2,gy2,gz2=[Ham2.g[a,0]*sx2+Ham2.g[a,1]*sy2+Ham2.g[a,2]*sz2 for a in range(3)]
+            sx2r=jxn.kron(gx2,jxn.eye(dimwns2,dtype=complex))
+            sy2r=jxn.kron(gy2,jxn.eye(dimwns2,dtype=complex))
+            sz2r=jxn.kron(gz2,jxn.eye(dimwns2,dtype=complex))
             stodx+=jxn.kron(jxn.eye(dim1,dtype=complex),sx2r)
             stody+=jxn.kron(jxn.eye(dim1,dtype=complex),sy2r)
             stodz+=jxn.kron(jxn.eye(dim1,dtype=complex),sz2r)
         hze=nx*hzex+ny*hzey+nz*hzez
-        Blist=jxn.linspace(frange0,Exp1.Frange[1],Exp1.Points)
-        def Jdiagop(B):
-            h5=h1+B*hze
-            Elist,Vlist=containeigh(h5,hifi)
-            return Elist,Vlist
-        Elist,Vlist=jx.vmap(Jdiagop)(Blist)
-        spc=jxn.zeros(Exp1.Points)
-        dim=Elist.shape[1]
-        iidx,jidx=jxn.triu_indices(dim,k=1)
-        Vdag=Vlist.conj().swapaxes(-1,-2)
-        Tx=Vdag@stodx@Vlist
-        Ty=Vdag@stody@Vlist
-        Tz=Vdag@stodz@Vlist
-        #Interpolate for intensities
-        Txij=Tx[:,iidx,jidx]
-        Tyij=Ty[:,iidx,jidx]
-        Tzij=Tz[:,iidx,jidx]
-        #Probability definition and interpolation
-        M2=jxn.real(Txij*jxn.conj(Txij))+jxn.real(Tyij*jxn.conj(Tyij))+jxn.real(Tzij*jxn.conj(Tzij))
-        Mn=mx*Txij+my*Tyij+mz*Tzij
-        prob=jxn.abs(Mn)**2
-        #Frecuency to field
-        h22=jxn.real(Vdag@hze@Vlist)
-        h2diag=jxn.diagonal(h22,axis1=1,axis2=2)
-        dert=h2diag[:,iidx]
-        izrt=h2diag[:,jidx]
-        gma=jxn.abs(izrt-dert)
-        gma=jxn.where(gma<1e-4,1e-4,gma)
-        gema=1.0/gma
-        gmas=jxn.minimum(gema,100.0)
-        #Boltzmann distribution
-        conver=1e9*scc.h
-        Ej=Elist*conver
-        Temp=jxn.where(Exp.Temperature<=0.0,1.0,Exp.Temperature)
-        beta=1.0/(scc.k*Temp)
-        Emin=jxn.min(Ej,axis=-1,keepdims=True)
-        boltz=jxn.exp(-beta*(Ej-Emin))
-        Z=jxn.sum(boltz,axis=-1,keepdims=True)
-        boltz=boltz/Z
-        popui=boltz[:,iidx]
-        popuj=boltz[:,jidx]
-        boltzm=jxn.abs(popui-popuj)
-        boltzm=jxn.where(Exp.Temperature<=0.0,1.0,boltzm)
-        #Relevance of the transition
-        relev=prob*gmas
-        smax=jxn.max(relev)
-        mask=jxn.where(smax>0,relev>=(1e-4*smax),1.0)
-        deltaE=jxn.abs(Elist[:,jidx]-Elist[:,iidx])
-        dfe=deltaE-Exp.Freq
-        intensy=prob*gmas*boltzm*mask
-        hppg=jxn.maximum(Ham1.Hpp[0]*gma,0.01)
-        hppl=jxn.maximum(Ham1.Hpp[1]*gma,0.01)
-        gammag=hppg*jxn.sqrt(jxn.log(2.0)/2.0)
-        gbs=jxn.exp(-jxn.log(2.0)*(dfe/gammag)**2)
-        gammal=hppl*jxn.sqrt(3.0)
-        gamma2l=gammal/2.0
-        lbs=(gamma2l**2)/(dfe**2+gamma2l**2)
-        window=jxn.exp(-(dfe/0.3)**2)
-        voigt=((lbs*etas)+(gbs*(1.0-etas)))*window
-        spcint=jxn.sum(intensy*voigt,axis=1)
-        dB=Blist[1]-Blist[0]
-        spc=jxn.gradient(spcint,dB)
-        fielde=Blist
-        specs=spc
+        Blist1=jxn.linspace(frange0,Exp1.Frange[1],500)
+        Elist,Vlist,h2=JPadaptarray(Blist1,h1,hzex,hzey,hzez,nx,ny,nz,hifi)
+        resfield,intensy,_=JNresina(Blist1,Elist,Vlist,dim,Exp1.Freq,stodx,stody,stodz,nx,ny,nz,
+                                    Exp1.Temperature,Ham1.Hpp,h2,hifi=hifi)
+        fielde=jxn.linspace(Exp1.Frange[0],Exp1.Frange[1],Exp1.Points)
+        specs=Jevoigt(resfield,intensy,fielde,Ham1.Hpp)
     return fielde,specs
  
 def Showparam(param,Vary):
@@ -3279,7 +3218,7 @@ def Residualsjax(pflat,unrav,Ham,Exp,expr,mode,iwas,jwas,kwas,weight,hulk,K=None
     if mode=='p':
         _,simul=JCalpowder(Hat,Exp,iwas,jwas,kwas,weight,hulk,hifi=True,ktra=K,ndev=1)
     else:
-        _,simul,_,_,_,_,_=Calresonant(Hat,Exp,diagram=False,hifi=True)
+        _,simul,_,_,_,_,_=Calresonant(Hat,Exp,diagram=False,hifi=True,ktra=K)
     #Change to L2 norm instead of maximum 
     normi=jxn.maximum(jxn.linalg.norm(simul),1e-8)
     norme=jxn.maximum(jxn.linalg.norm(expr),1e-8)
@@ -3335,7 +3274,7 @@ def Residualsjax2(pflat,unrav,Ham,Exp,expr,mode):
     pravals=unrav(pflat)
     Hat=Ham.replace(g1=pravals.get('g1',Ham.g1),g2=pravals.get('g2',Ham.g2),A1=pravals.get('A1',Ham.A1),A2=pravals.get('A2',Ham.A2),D1=pravals.get('D1',Ham.D1),D2=pravals.get('D2',Ham.D2),Q1=pravals.get('Q1',Ham.Q1),Q2=pravals.get('Q2',Ham.Q2),Hpp=pravals.get('Hpp',Ham.Hpp))
     if mode=='p':
-        _,simul=JMulpol(Hat,Exp,graph=False,hifi=True)
+        _,simul=JMulpol(Hat,Exp,graph=False,hifi=True,ktra=1000)
     elif mode=='c':
         _,simul=JMusic(Hat,Exp,graph=False,hifi=True)
     #Change to L2 norm instead of maximum 
@@ -3350,11 +3289,13 @@ def BuildresJax2(pravals,Ham,Exp,expr,Vary,mode,method,success=True,message='',i
     pflat,unrav=ravel_pytree(pravals)
     Hat=Ham.replace(g1=pravals.get('g1',Ham.g1),g2=pravals.get('g2',Ham.g2),A1=pravals.get('A1',Ham.A1),A2=pravals.get('A2',Ham.A2),D1=pravals.get('D1',Ham.D1),D2=pravals.get('D2',Ham.D2),Q1=pravals.get('Q1',Ham.Q1),Q2=pravals.get('Q2',Ham.Q2),Hpp=pravals.get('Hpp',Ham.Hpp))
     if mode=='p':
-        Blis,espc=JMulpol(Hat,Exp,graph=False,hifi=True)
+        Blis,espc=JMulpol(Hat,Exp,graph=False,hifi=True,ktra=1000)
     else:
         Blis,espc=JMusic(Hat,Exp,graph=False,hifi=True)
     residuals=Residualsjax2(pflat,unrav,Ham,Exp,expr,mode)
-    J=ComputeJacobianSequential(Residualsjax2,pflat,unrav,Ham,Exp,expr,mode)
+    pj=jxn.array(pflat)
+    jac=jx.jit(lambda p,t: jx.jvp(lambda q: Residualsjax2(q,unrav,Ham,Exp,expr,mode),(p,),(t,))[1])
+    J=np.column_stack([np.asarray(jac(pj,jxn.zeros_like(pj).at[i].set(1.0))) for i in range(len(pj))])
     active,span=Toconsiderset(pravals,Vary,J,residuals)
     free=~active
     n,p=len(residuals),J.shape[1]
@@ -3522,6 +3463,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70,gtoler=1e-5,
           return nham
       class StaticExp:
           pass
+      iwas,jwas,kwas,weight,hulk=None,None,None,None,None
       if mode=='p':
           iwas,jwas,kwas,weight,hulk=Delaunay(Exp,M)
           iwas,jwas,kwas,weight,hulk=jxn.array(iwas),jxn.array(jwas),jxn.array(kwas),jxn.array(weight),jxn.array(hulk)
@@ -3738,7 +3680,7 @@ def Briggs(Hamer,Exp,Vary,expr,maximal=2000,eps=1e-11,mode='p',M=70,gtoler=1e-5,
       def Errorcost2(params,exper):
           Hame,_=Fromsigtophy2(params,SHam,Vary)
           if mode=='p':
-              _,simul=JMulpol(Hame,dExp,graph=False)
+              _,simul=JMulpol(Hame,dExp,graph=False,ktra=1000)
           elif mode=='c':
               _,simul=JMusic(Hame,dExp,graph=False)
           #Change to L2 norm instead of maximum 
