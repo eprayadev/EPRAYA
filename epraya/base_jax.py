@@ -1391,7 +1391,7 @@ def JBoltfactor(Eghz,di,dj,Temp):
     return jxn.where(Temp<=0.0,1.0,jxn.abs(popui-popuj))
 
 @partial(jx.jit,static_argnames=['dim','hifi','ktra'])
-def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2,hifi=False,ktra=None):
+def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2,hifi=False,ktra=None,mw=None):
     '''
     Determinates the resonant fields and intensities of the spectrum using the expression for the first order perturbation limit. The intensity is calculated as the product of the transition rate (probability of transition), the Boltzmann factor (Boltzmann distribution) and a frecuency to field conversion factor. 
     
@@ -1430,9 +1430,12 @@ def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2,hifi=Fal
         Bool condition for the Jacobian calculation.
     ktra : float
         Reference value of number of transitions.
+    mw : jax.np.array
+        Unit vector of the microwave field B1 (single crystal). If None, B1 is averaged over the plane perpendicular to B0 (powder).
     
     Returns
     -------
+	
     ffres : jax.np.array 
         List of the resonant fields of the system.
     ffint : jax.np.array 
@@ -1483,8 +1486,14 @@ def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2,hifi=Fal
     rovi=jxn.einsum('cde,ke->kcd',rops,vik)
     T=jxn.einsum('kcd,kd->kc',rovi,jxn.conj(vjk))
     M2=jxn.sum(jxn.abs(T)**2,axis=1)
-    Mn=nx*T[:,0]+ny*T[:,1]+nz*T[:,2]
-    prob=M2-jxn.abs(Mn)**2
+    if mw is None:
+        #B1 averaged in the plane perpendicular to B0 (powder)
+        Mn=nx*T[:,0]+ny*T[:,1]+nz*T[:,2]
+        prob=M2-jxn.abs(Mn)**2
+    else:
+        #Fixed B1 direction (single crystal), as |<j|mw·g·S|i>|^2 in Eresonant
+        Mm=mw[0]*T[:,0]+mw[1]*T[:,1]+mw[2]*T[:,2]
+        prob=jxn.abs(Mm)**2
     #Frequency to field
     h2vik=jxn.einsum('de,ke->kd',h2,vik)
     h2vjk=jxn.einsum('de,ke->kd',h2,vjk)
@@ -1504,7 +1513,6 @@ def JNresina(Blist,Elist,Vlist,dim,Freq,isx,isy,isz,nx,ny,nz,Tem,Hpp,h2,hifi=Fal
     ar=jxn.arange(Ktra)
     boltzm=jxn.abs(boltz[ar,ii]-boltz[ar,jj])
     boltzm=jxn.where(Tem<=0.0,1.0,boltzm)
-
     eintensy=prob*gema*boltzm
     ffres=jxn.where(valid,rk,0.0)
     ffint=jxn.where(valid,eintensy,0.0)
@@ -1821,14 +1829,14 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None',hifi=False,ktra
     allres,allint,ntrans,K=Jorientblocks(P,iwas,jwas,kwas,dim,hifi,ktra,ndev)
     sketch=JCaltriangle(Bmin,dB,allres,allint,ntrans,hulk,weight,Exp.Points)
     espectotal=JVoigtp(sketch,dB,Ham.Hpp)
-	Blist2=jxn.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
+    Blist2=jxn.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
     if info:
         return Blist2,espectotal,K,jx.lax.stop_gradient(jxn.max(ntrans))
     return Blist2,espectotal
 
 @partial(jx.jit,static_argnames=('dim','K','hifi'))
 def makeoneori(P,nx,ny,nz,dim,K,hifi):
-    (nnx,nny,nnz):
+    oneori(nnx,nny,nnz):
         Elist,Vlist,h2=JPadaptarray(P['B'],P['h1'],P['hx'],P['hy'],P['hz'],nnx,nny,nnz,hifi)
         return JNresina(P['B'],Elist,Vlist,dim,P['Freq'],P['isx'],P['isy'],P['isz'],nnx,nny,nnz,P['Temp'],P['Hpp'],h2,hifi=hifi,ktra=K)
     return jx.vmap(oneori)(nx,ny,nz)
@@ -2181,11 +2189,11 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False,ktra=None,info=F
         hzez-=nhzez
     h1=jxn.asarray(h1,dtype=complex)
     Blist1=jxn.linspace(frange0,Exp.Frange[1],500)
-	Blist2=jxn.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
+    Blist2=jxn.linspace(Exp.Frange[0],Exp.Frange[1],Exp.Points)
     dB=(Exp.Frange[1]-Exp.Frange[0])/(Exp.Points-1)
     Bmin=Exp.Frange[0]
     Elist,Vlist,h2=JPadaptarray(Blist1,h1,hzex,hzey,hzez,nx,ny,nz,hifi)
-    resfield,intensy,ntrans=JNresina(Blist1,Elist,Vlist,dim,Exp.Freq,isx,isy,isz,nx,ny,nz,Exp.Temperature,Ham.Hpp,h2,hifi=hifi,ktra=ktra)
+    resfield,intensy,ntrans=JNresina(Blist1,Elist,Vlist,dim,Exp.Freq,isx,isy,isz,nx,ny,nz,Exp.Temperature,Ham.Hpp,h2,hifi=hifi,ktra=ktra,mw=mdir)
     #FFT convolution as in JPowder
     n=Exp.Points
     npad=2*n
@@ -2898,10 +2906,10 @@ def Jcalmusic(maham,Expe,Nucl1='None',Nucl2='None',hifi=False):
         dim=int(2*Ham1.S+1)*int(2*Ham1.I+1)*int(2*Ham1.L+1)*int(2*Ham2.S+1)*int(2*Ham2.I+1)*int(2*Ham2.L+1)
         dim1=int(2*Ham1.S+1)*int(2*Ham1.I+1)*int(2*Ham1.L+1)
         dim2=int(2*Ham2.S+1)*int(2*Ham2.I+1)*int(2*Ham2.L+1)
-        ndir=jxn.array(Exp1.Fdirection,dtype=jxn.float32)
+        ndir=jxn.array(Exp1.Fdirection,dtype=jxn.float64)
         ndir=ndir/jxn.linalg.norm(ndir)
         nx,ny,nz=ndir[0],ndir[1],ndir[2]
-        mdir=jxn.array(Exp1.Mwdirection,dtype=jxn.float32)
+        mdir=jxn.array(Exp1.Mwdirection,dtype=jxn.float64)
         mdir=mdir/jxn.linalg.norm(mdir)
         mx,my,mz=mdir[0],mdir[1],mdir[2]
         Ham1=Jchaframe(Ham1,Exp1)
@@ -2994,7 +3002,7 @@ def Jcalmusic(maham,Expe,Nucl1='None',Nucl2='None',hifi=False):
         Blist1=jxn.linspace(frange0,Exp1.Frange[1],500)
         Elist,Vlist,h2=JPadaptarray(Blist1,h1,hzex,hzey,hzez,nx,ny,nz,hifi)
         resfield,intensy,_=JNresina(Blist1,Elist,Vlist,dim,Exp1.Freq,stodx,stody,stodz,nx,ny,nz,
-                                    Exp1.Temperature,Ham1.Hpp,h2,hifi=hifi)
+                                    Exp1.Temperature,Ham1.Hpp,h2,hifi=hifi,mw=mdir)
         fielde=jxn.linspace(Exp1.Frange[0],Exp1.Frange[1],Exp1.Points)
         specs=Jevoigt(resfield,intensy,fielde,Ham1.Hpp)
     return fielde,specs
