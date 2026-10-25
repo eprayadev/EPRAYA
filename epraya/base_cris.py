@@ -451,7 +451,7 @@ def Eresonant(Hamer,Expe,graph=True,table=True,relevance=1e-4,Mcolor=True):  #Fu
     hze=np.asarray(beta*Hze(sx,sy,sz,Ham.g,Exp.Fdirection,dim),dtype=complex)
     hmw=np.asarray(beta*Hze(sx,sy,sz,Ham.g,Exp.Mwdirection,dim),dtype=complex)
     if Ham.S>=1:
-        h1=h1+StevensO(sx,sy,sz,Ham.S,Ham,dim)
+        h1=h1+Stevensrot(sx,sy,sz,Ham.S,Ham,dim,Exp)
     if Ham.L!=0:
         h1=h1+Lorbit(sx,sy,sz,Ham.lc,dim,Ham.L)
     if Ham.I!=0:
@@ -1013,7 +1013,7 @@ def Cristalfm(Hamer,Exp,relevance=1e-4):  #Function for finding the resonant fie
     hze=np.asarray(beta*Hze(sx,sy,sz,Ham.g,Exp.Fdirection,dim),dtype=complex)
     hmw=np.asarray(beta*Hze(sx,sy,sz,Ham.g,Exp.Mwdirection,dim),dtype=complex)
     if Ham.S>=1:
-        h1=h1+StevensO(sx,sy,sz,Ham.S,Ham,dim)
+        h1=h1+Stevensrot(sx,sy,sz,Ham.S,Ham,dim,Exp)
     if Ham.L!=0:
         h1=h1+Lorbit(sx,sy,sz,Ham.lc,dim,Ham.L)
     if Ham.I!=0:
@@ -1295,7 +1295,7 @@ def Music(Hamer,Exper,graph=True,table=True,relevance=1e-4):
                 hzez+=Kroexpand(hzezz,elka.index(orka),dimerq)
                 hmw+=Kroexpand(np.asarray(beta*Hze(Pmatrixs[orka][0],Pmatrixs[orka][1],Pmatrixs[orka][2],Ham.Mulham[orka].g,Exp.Mexp[0].Mwdirection,dimerq[elka.index(orka)]),dtype=complex),elka.index(orka),dimerq)
                 if Ham.Mulham[orka].S>=1:
-                    h1=h1+Kroexpand(StevensO(Pmatrixs[orka][0],Pmatrixs[orka][1],Pmatrixs[orka][2],Ham.Mulham[orka].S,Ham.Mulham[orka],dimerq[elka.index(orka)]),elka.index(orka),dimerq)
+                    h1=h1+Kroexpand(Stevensrot(Pmatrixs[orka][0],Pmatrixs[orka][1],Pmatrixs[orka][2],Ham.Mulham[orka].S,Ham.Mulham[orka],dimerq[elka.index(orka)]),elka.index(orka),dimerq,Exp)
                 if Ham.Mulham[orka].I!=0:
                     h1=h1+Kroexpand(Hfi(Pmatrixs[orka][0],Pmatrixs[orka][1],Pmatrixs[orka][2],Pmatrixi[orka][0],Pmatrixi[orka][1],Pmatrixi[orka][2],Ham.Mulham[orka].A,dimerq[elka.index(orka)]),elka.index(orka),dimerq)
                     nhzexx=np.asarray(betan*Nhze(Ham.Mulham[orka].I,Pmatrixi[orka][0],Pmatrixi[orka][1],Pmatrixi[orka][2],dimerq[elka.index(orka)],Ham.Mulham[orka].Nucl,[1,0,0]),dtype=complex)
