@@ -1030,6 +1030,27 @@ def JStevensO(ssx,ssy,ssz,s,Ham,dim):
         totales=jxn.kron(total,jxn.eye(int(dim/(total).shape[1])))
         return totales
 
+def JStevensrot(sx,sy,sz,s,Ham,dim,Exp):
+    '''
+    Stevens operators with all the terms in the same frame: k=2 from the D tensor rotated in chaframe,
+    k=4 and k=6 built in the crystal frame and rotated in spin space with the same matrix.
+    '''
+    H2=deepcopy(Ham)
+    H2.Bk4=[0]*9
+    H2.Bk6=[0]*13
+    H2.Bk2=[0]*5
+    H46=deepcopy(Ham)
+    H46.D=np.zeros((3,3))     
+    h2=JStevensO(sx,sy,sz,s,H2,dim)
+    h46=JStevensO(sx,sy,sz,s,H46,dim)
+    M=JRotationmat(Exp)
+    if s>=2 and not np.allclose(M,np.eye(3)):
+        rv=Rotation.from_matrix(M).as_rotvec()
+        Us=expm(-1j*(rv[0]*sx+rv[1]*sy+rv[2]*sz))
+        U=jxn.kron(Us,np.eye(dim//Us.shape[0]))          # acts only on the electron spin
+        h46=U.conj().T@h46@U
+    return h2+h46
+
 
 def JMsmi(I,S,L=0):
     '''
@@ -1806,7 +1827,7 @@ def JCalpowder(Hamer,Expe,iwas,jwas,kwas,weight,hulk,Nucl='None',hifi=False,ktra
     hzez=jxn.asarray(beta*JHze(sx,sy,sz,Ham.g,[0,0,1],dim),dtype=jxn.complex64)
     h1=jxn.zeros((dim,dim),dtype='complex64')
     if Ham.S>=1:
-        h1=h1+JStevensO(sx,sy,sz,Ham.S,Ham,dim)
+        h1=h1+JStevensrot(sx,sy,sz,Ham.S,Ham,dim,Exp)
     if Ham.L!=0:
         h1=h1+JLorbit(sx,sy,sz,Ham.lc,dim,Ham.L)
     if Ham.I!=0:
@@ -2172,7 +2193,7 @@ def Calresonant(Hamer,Expe,Nucl='None',diagram=False,hifi=False,ktra=None,info=F
     hmw=jxn.asarray(beta*JHze(sx,sy,sz,Ham.g,Exp.Mwdirection,dim),dtype=complex)
     h1=jxn.zeros((dim,dim),dtype='complex64')
     if Ham.S>=1:
-        h1=h1+JStevensO(sx,sy,sz,Ham.S,Ham,dim)
+        h1=h1+JStevensrot(sx,sy,sz,Ham.S,Ham,dim,Exp)
     if Ham.L!=0:
         h1=h1+JLorbit(sx,sy,sz,Ham.lc,dim,Ham.L)
     if Ham.I!=0:
@@ -2648,9 +2669,9 @@ def Jcalmulta(maham,Expe,Nucl1='None',Nucl2='None',M=70,hifi=False,ktra=None,nde
         hzey+=jxn.kron(hzey1,jxn.eye(dim2,dtype=complex))+jxn.kron(jxn.eye(dim1,dtype=complex),hzey2)
         hzez+=jxn.kron(hzez1,jxn.eye(dim2,dtype=complex))+jxn.kron(jxn.eye(dim1,dtype=complex),hzez2)
         if Ham1.S>=1:
-            h1=h1+JStevensO(sx1,sy1,sz1,Ham1.S,Ham1,dim)
+            h1=h1+JStevensrot(sx1,sy1,sz1,Ham1.S,Ham1,dim,Exp1)
         if Ham2.S>=1:
-            h1=h1+JStevensO(sx2,sy2,sz2,Ham2.S,Ham2,dim)
+            h1=h1+JStevensrot(sx2,sy2,sz2,Ham2.S,Ham2,dim,Exp2)
         if Ham1.L!=0:
             h1=h1+JLorbit(sx1,sy1,sz1,Ham1.lc,dim,Ham1.L)
         if Ham2.L!=0:
@@ -2934,9 +2955,9 @@ def Jcalmusic(maham,Expe,Nucl1='None',Nucl2='None',hifi=False):
         hzey+=jxn.kron(hzey1,jxn.eye(dim2,dtype=complex))+jxn.kron(jxn.eye(dim1,dtype=complex),hzey2)
         hzez+=jxn.kron(hzez1,jxn.eye(dim2,dtype=complex))+jxn.kron(jxn.eye(dim1,dtype=complex),hzez2)
         if Ham1.S>=1:
-            h1=h1+JStevensO(sx1,sy1,sz1,Ham1.S,Ham1,dim)
+            h1=h1+JStevensrot(sx1,sy1,sz1,Ham1.S,Ham1,dim,Exp1)
         if Ham2.S>=1:
-            h1=h1+JStevensO(sx2,sy2,sz2,Ham2.S,Ham2,dim)
+            h1=h1+JStevensrot(sx2,sy2,sz2,Ham2.S,Ham2,dim,Exp2)
         if Ham1.L!=0:
             h1=h1+JLorbit(sx1,sy1,sz1,Ham1.lc,dim,Ham1.L)
         if Ham2.L!=0:
