@@ -1993,8 +1993,7 @@ def Jresonant(Hamer,Expe,graph=True,table=True,Nucl='None',Mcolor=True,relevance
                     if res.converged:
                         Hres=h1+hze*res.root
                         Eres,Vres=jxn.linalg.eigh(Hres)
-                        Vres=Fieldframe(Vres,Expe.Fdirection,Hamer.S,Hamer.I)
-                        localbasis=Assingstatestobasis(Vres)
+                        localbasis=Assingstatestobasis(Fieldframe(Vres,Exp.Fdirection,Ham.S,Ham.I))
                         basis1=localbasis[i]
                         basis2=localbasis[j]
                         vecci=Vres[:,i]
