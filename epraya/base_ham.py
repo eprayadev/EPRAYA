@@ -41,7 +41,7 @@ from threadpoolctl import threadpool_limits
 import re
 from itertools import product as iterproduct
 from importlib import resources
-
+from scipy.spatial.transform import Rotation
 #Finds the shell for the programm
 def is_notebook():
     try:
