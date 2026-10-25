@@ -933,13 +933,13 @@ def JStevensO(ssx,ssy,ssz,s,Ham,dim):
     [ 199.99998+0.j    0.     +0.j  233.33333+0.j]]
     '''
     k=int(2*s)
-    if np.any(np.asarray(Ham.Bk2)):
-        B22,B21,B20,Bq21,Bq22=Ham.Bk2
-    else:
-        B20,B22=3*Ham.D[2,2]/2,(Ham.D[0,0]-Ham.D[1,1])/2
-        B21=Ham.D[0,2]
-        Bq21=Ham.D[1,2]
-        Bq22=Ham.D[0,1]
+    bk2=jxn.asarray(Ham.Bk2,dtype=float)  
+    usebk2=jxn.any(bk2!=0)
+    B22=jxn.where(usebk2,bk2[0],(Ham.D[0,0]-Ham.D[1,1])/2)
+    B21=jxn.where(usebk2,bk2[1],Ham.D[0,2])
+    B20=jxn.where(usebk2,bk2[2],3*Ham.D[2,2]/2)
+    Bq21=jxn.where(usebk2,bk2[3],Ham.D[1,2])
+    Bq22=jxn.where(usebk2,bk2[4],Ham.D[0,1])
     B44,B43,B42,B41,B40,Bq41,Bq42,Bq43,Bq44=Ham.Bk4
     B66,B65,B64,B63,B62,B61,B60,Bq61,Bq62,Bq63,Bq64,Bq65,Bq66=Ham.Bk6
     sour=(int(k-k%2))
