@@ -137,7 +137,7 @@ def Nrotate(Hamer,Expe,phi=0):
     hzey=np.asarray(beta*Hze(sx,sy,sz,Ham.g,[0,1,0],dim),dtype=np.complex128)
     hzez=np.asarray(beta*Hze(sx,sy,sz,Ham.g,[0,0,1],dim),dtype=np.complex128)
     if Ham.S>=1:
-        h1=h1+StevensO(sx,sy,sz,Ham.S,Ham,dim)
+        h1=h1+Stevensrot(sx,sy,sz,Ham.S,Ham,dim,Exp)
     if Ham.L!=0:
         h1=h1+Lorbit(sx,sy,sz,Ham.lc,dim,Ham.L)
     if Ham.I!=0:
@@ -547,7 +547,7 @@ def Ori(Hamer,Expe,Mcolor=False):
     hzey=np.asarray(beta*Hze(sx,sy,sz,Ham.g,[0,1,0],dim),dtype=np.complex128)
     hzez=np.asarray(beta*Hze(sx,sy,sz,Ham.g,[0,0,1],dim),dtype=np.complex128)
     if Ham.S>=1:
-        h1=h1+StevensO(sx,sy,sz,Ham.S,Ham,dim)
+        h1=h1+Stevensrot(sx,sy,sz,Ham.S,Ham,dim,Exp)
     if Ham.L!=0:
         h1=h1+Lorbit(sx,sy,sz,Ham.lc,dim,Ham.L)
     if Ham.I!=0:
@@ -719,7 +719,7 @@ def Spectre(Hamer,Expe,Mcolor=True,phi=0,orient='Z'):
     hzey=np.asarray(beta*Hze(sx,sy,sz,Ham.g,[0,1,0],dim),dtype=complex)
     hzez=np.asarray(beta*Hze(sx,sy,sz,Ham.g,[0,0,1],dim),dtype=complex)
     if Ham.S>=1:
-        h1=h1+StevensO(sx,sy,sz,Ham.S,Ham,dim)
+        h1=h1+Stevensrot(sx,sy,sz,Ham.S,Ham,dim,Exp)
     if Ham.L!=0:
         h1=h1+Lorbit(sx,sy,sz,Ham.lc,dim,Ham.L)
     if Ham.I!=0:
@@ -766,12 +766,7 @@ def Spectre(Hamer,Expe,Mcolor=True,phi=0,orient='Z'):
     dB=(Exp.Frange[1]-Exp.Frange[0])/(Exp.Points-1)
     Caltriangle(sketch,Bmin,dB,allres,allint,ntrans,hulk,weight)
     #Convolution of the function to create the derivated spectrum
-    maxlenght=np.max(Ham.Hpp)*50
-    kerpoint=int(maxlenght/dB)*2+1
-    kaxis=np.arange(-kerpoint//2+1,kerpoint//2+1)*dB
-    #Int=1, no resonant field
-    kvoigt=Voigtp(kaxis,np.array([1.0]),np.array([0.0]),Ham.Hpp,eta)
-    espectotal=scs.fftconvolve(sketch,kvoigt,mode='same')
+    espectotal=Voigtconv(sketch,dB,Ham.Hpp)
     if is_notebook():
         #Rotations
         direct=[]
