@@ -1291,7 +1291,7 @@ def StevensO(ssx,ssy,ssz,s,Ham,dim):
     k=int(2*s)
     if np.any(np.asarray(Ham.Bk2)):
         B22,B21,B20,Bq21,Bq22=Ham.Bk2
-    else
+    else:
         B20,B22=3*Ham.D[2,2]/2,(Ham.D[0,0]-Ham.D[1,1])/2
         B21=Ham.D[0,2]
         Bq21=Ham.D[1,2]
