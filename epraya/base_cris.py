@@ -487,8 +487,7 @@ def Eresonant(Hamer,Expe,graph=True,table=True,relevance=1e-4,Mcolor=True):  #Fu
                     if res.converged:
                         Hres=h1+hze*res.root
                         Eres,Vres=np.linalg.eigh(Hres)
-                        Vres=Fieldframe(Vres,Exp.Fdirection,Ham.S,Ham.I)
-                        localbasis=Assingstatestobasis(Vres)
+                        localbasis=Assingstatestobasis(Fieldframe(Vres,Exp.Fdirection,Ham.S,Ham.I))
                         basis1=localbasis[i]
                         basis2=localbasis[j]
                         vecci=Vres[:,i]
@@ -1052,8 +1051,7 @@ def Cristalfm(Hamer,Exp,relevance=1e-4):  #Function for finding the resonant fie
                     if res.converged:
                         Hres=h1+hze*res.root
                         Eres,Vres=np.linalg.eigh(Hres)
-                        Vres=Fieldframe(Vres,Exp.Fdirection,Ham.S,Ham.I)
-                        localbasis=Assingstatestobasis(Vres)
+                        localbasis=Assingstatestobasis(Fieldframe(Vres,Exp.Fdirection,Ham.S,Ham.I))
                         basis1=localbasis[i]
                         basis2=localbasis[j]
                         vecci=Vres[:,i]
