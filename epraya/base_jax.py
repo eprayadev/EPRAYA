@@ -47,6 +47,8 @@ from .base_ham import *
 from .base_cris import Plotsim
 from .base_fit import Fitresult,result,Selectvarian
 import matplotlib.cm as cm
+from scipy.spatial.transform import Rotation
+from jax.scipy.linalg import expm as jexpm
 
 jx.config.update("jax_enable_x64", True)
 
@@ -892,9 +894,8 @@ def JConvtarray(Ham):
 #Rule: k<=2s
 def JStevensO(ssx,ssy,ssz,s,Ham,dim):
     '''
-    Expanded Stevens operators following the rule k<=2s and the definition by Rudowicz and Chung.
-
-
+    Expanded Stevens operators following the rule k<=2s and the definition by Rudowicz and Chung. Variable Ham.Bk2 takes precedence over Ham.D, so if both are defined, only the value of Ham.Bk2 is used.
+	
     Parameters
     ----------
     
@@ -932,11 +933,13 @@ def JStevensO(ssx,ssy,ssz,s,Ham,dim):
     [ 199.99998+0.j    0.     +0.j  233.33333+0.j]]
     '''
     k=int(2*s)
-    B22,B21,B20,Bq21,Bq22=Ham.Bk2
-    B20,B22=3*Ham.D[2,2]/2,(Ham.D[0,0]-Ham.D[1,1])*0.5
-    B21=Ham.D[0,2]
-    Bq21=Ham.D[1,2]
-    Bq22=Ham.D[0,1]
+    if np.any(np.asarray(Ham.Bk2)):
+        B22,B21,B20,Bq21,Bq22=Ham.Bk2
+    else:
+        B20,B22=3*Ham.D[2,2]/2,(Ham.D[0,0]-Ham.D[1,1])/2
+        B21=Ham.D[0,2]
+        Bq21=Ham.D[1,2]
+        Bq22=Ham.D[0,1]
     B44,B43,B42,B41,B40,Bq41,Bq42,Bq43,Bq44=Ham.Bk4
     B66,B65,B64,B63,B62,B61,B60,Bq61,Bq62,Bq63,Bq64,Bq65,Bq66=Ham.Bk6
     sour=(int(k-k%2))
@@ -1032,22 +1035,18 @@ def JStevensO(ssx,ssy,ssz,s,Ham,dim):
 
 def JStevensrot(sx,sy,sz,s,Ham,dim,Exp):
     '''
-    Stevens operators with all the terms in the same frame: k=2 from the D tensor rotated in chaframe,
+    Stevens operators with all the terms in the same frame: k=2 from the D tensor rotated in Jchaframe,
     k=4 and k=6 built in the crystal frame and rotated in spin space with the same matrix.
     '''
-    H2=deepcopy(Ham)
-    H2.Bk4=[0]*9
-    H2.Bk6=[0]*13
-    H2.Bk2=[0]*5
-    H46=deepcopy(Ham)
-    H46.D=np.zeros((3,3))     
+    H2=Ham.replace(Bk2=[0]*5,Bk4=[0]*9,Bk6=[0]*13)
+    H46=Ham.replace(D=jxn.zeros((3,3)))
     h2=JStevensO(sx,sy,sz,s,H2,dim)
     h46=JStevensO(sx,sy,sz,s,H46,dim)
-    M=JRotationmat(Exp)
+    M=np.asarray(Rotationmat(Exp),float)           
     if s>=2 and not np.allclose(M,np.eye(3)):
         rv=Rotation.from_matrix(M).as_rotvec()
-        Us=expm(-1j*(rv[0]*sx+rv[1]*sy+rv[2]*sz))
-        U=jxn.kron(Us,np.eye(dim//Us.shape[0]))          # acts only on the electron spin
+        Us=jexpm(-1j*(rv[0]*sx+rv[1]*sy+rv[2]*sz))
+        U=jxn.kron(Us,jxn.eye(dim//Us.shape[0]))      # acts only on the electron spin
         h46=U.conj().T@h46@U
     return h2+h46
 
