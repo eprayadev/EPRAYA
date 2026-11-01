@@ -1,0 +1,23 @@
+{
+  "meta": {"schema": 1, "based_on": "cases.json",
+           "angles": "grados; B0 en el marco del cristal = (sin t cos p, sin t sin p, cos t); B1 = cos(chi) e_theta + sin(chi) e_phi"},
+  "orientations": [
+    {"id": "z",   "theta": 0,  "phi": 0,  "chi": 0},
+    {"id": "x",   "theta": 90, "phi": 0,  "chi": 0},
+    {"id": "y",   "theta": 90, "phi": 90, "chi": 0},
+    {"id": "gen", "theta": 50, "phi": 30, "chi": 0}
+  ],
+  "nucl": {"Aisotro": "13C", "Anisotro": "13C", "QandA": "14N", "DgandA": "14N", "CaCO_3": "55Mn"},
+  "calibration": {
+    "id": "cal_g", "group": "calibracion",
+    "system": {"S": 0.5, "I": 0, "g": [1.90, 2.00, 2.10], "Hpp": [0, 0.5]},
+    "exp": {"Freq": 9.43, "Frange": [300, 370], "Points": 4096, "Temperature": 300},
+    "orientations": [
+      {"id": "x",     "theta": 90, "phi": 0,  "chi": 0},
+      {"id": "y",     "theta": 90, "phi": 90, "chi": 0},
+      {"id": "z",     "theta": 0,  "phi": 0,  "chi": 0},
+      {"id": "o1",    "theta": 40, "phi": 25, "chi": 0},
+      {"id": "o1chi", "theta": 40, "phi": 25, "chi": 90}
+    ]
+  }
+}
